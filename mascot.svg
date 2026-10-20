@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Il Mister — Allenatore Giocatore Fuoriclasse">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f293a"/>
+      <stop offset="100%" stop-color="#0c4a3e"/>
+    </linearGradient>
+    <linearGradient id="kitGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1cb0f6"/>
+      <stop offset="100%" stop-color="#0d74b8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Badge Circolare Stadio -->
+  <circle cx="100" cy="100" r="94" fill="url(#bgGrad)" stroke="#ffc800" stroke-width="6"/>
+
+  <!-- Busto Maglia #10 + Giacca Tecnica da Mister -->
+  <path d="M42 184 C46 136 68 124 100 124 C132 124 154 136 158 184 Z" fill="url(#kitGrad)"/>
+  <!-- Rever Giacca Allenatore Navy -->
+  <path d="M42 184 C45 144 64 130 82 126 L88 184 Z" fill="#132232"/>
+  <path d="M158 184 C155 144 136 130 118 126 L112 184 Z" fill="#132232"/>
+
+  <!-- Numero 10 sul petto -->
+  <text x="100" y="168" text-anchor="middle" font-family="Nunito, Arial, sans-serif" font-weight="900" font-size="24" fill="#ffffff">10</text>
+
+  <!-- Cordino e Fischietto da Allenatore -->
+  <path d="M82 126 Q100 148 118 126" fill="none" stroke="#ffc800" stroke-width="3"/>
+  <rect x="94" y="140" width="12" height="8" rx="3" fill="#e2e8f0" stroke="#475569" stroke-width="1.5"/>
+
+  <!-- Collo e Viso Umano (Il Mister) -->
+  <rect x="88" y="106" width="24" height="22" rx="8" fill="#f1c27d"/>
+  <rect x="68" y="54" width="64" height="62" rx="28" fill="#f5cba7"/>
+
+  <!-- Orecchie -->
+  <circle cx="66" cy="86" r="7" fill="#f1c27d"/>
+  <circle cx="134" cy="86" r="7" fill="#f1c27d"/>
+
+  <!-- Capelli Stile Fantasista / Mister Italiano -->
+  <path d="M64 76 C62 46 84 36 104 38 C124 40 138 52 136 76 C130 62 116 56 98 58 C80 60 70 66 64 76 Z" fill="#2c1d11"/>
+  <path d="M76 42 Q100 28 122 44" fill="none" stroke="#3e2723" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Sopracciglia e Occhi Espressivi -->
+  <path d="M78 74 Q86 70 92 73" fill="none" stroke="#2c1d11" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M108 73 Q114 70 122 74" fill="none" stroke="#2c1d11" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="85" cy="83" r="5.5" fill="#1e293b"/>
+  <circle cx="115" cy="83" r="5.5" fill="#1e293b"/>
+  <circle cx="83" cy="81" r="2" fill="#ffffff"/>
+  <circle cx="113" cy="81" r="2" fill="#ffffff"/>
+
+  <!-- Barba curata e Sorriso carismatico -->
+  <path d="M72 92 C72 112 86 118 100 118 C114 118 128 112 128 92 C124 102 114 108 100 108 C86 108 76 102 72 92 Z" fill="#3b2618" opacity="0.85"/>
+  <path d="M88 97 Q100 106 112 97" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+
+  <!-- Pallone da calcio in primo piano -->
+  <circle cx="152" cy="156" r="22" fill="#ffffff" stroke="#1e293b" stroke-width="3"/>
+  <polygon points="152,146 160,152 157,161 147,161 144,152" fill="#1e293b"/>
+</svg>

@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
+  <meta name="description" content="Fuoriclasse — Il gioco educativo del calcio stile Duolingo. Oltre 1.080 sfide tra carriere, tabellini storici, capocannonieri, derby e Champions." />
+  <meta name="theme-color" content="#101b24" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Fuoriclasse" />
+  <title>Fuoriclasse — Impara il Calcio Giocando</title>
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="apple-touch-icon" href="assets/mascot-coach.jpg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="mobile.css" />
+  <link rel="stylesheet" href="dark-theme.css" />
+</head>
+<body data-theme="light">
+  <a class="skip-link" href="#mainStage">Vai al percorso di gioco</a>
+
+  <!-- TOP GAMIFICATION BAR -->
+  <header class="duo-topbar" role="banner">
+    <div class="topbar-inner">
+      <a href="#percorso" class="brand-pill" aria-label="Fuoriclasse Home" id="brandHomeLink">
+        <span class="brand-logo-wrap">
+          <img src="assets/mascot-coach.jpg" alt="Mister Bomber" class="brand-avatar-img" width="36" height="36" />
+          <span class="brand-online-dot" aria-hidden="true"></span>
+        </span>
+        <span class="brand-wordmark">FUORICLASSE</span>
+      </a>
+
+      <!-- Selettore rapido Unità -->
+      <button class="section-badge-btn" id="sectionDropdownBtn" type="button" title="Salta a un'Unità del percorso">
+        <span class="flag-icon" aria-hidden="true">🇮🇹</span>
+        <span class="section-title" id="currentUnitBadgeText">UNITÀ 1 • SERIE A</span>
+        <span class="chevron-down" aria-hidden="true">▾</span>
+      </button>
+
+      <!-- Statistiche Giocatore (Streak, Calcio-Coins, Vite) -->
+      <div class="gamification-stats" role="status" aria-label="Statistiche giocatore">
+        <div class="stat-item stat-streak" title="Giorni di fila (Streak)">
+          <span class="stat-emoji" aria-hidden="true">🔥</span>
+          <b id="streakCount">1</b>
+        </div>
+        <div class="stat-item stat-gems" title="Calcio-Coins (Gemme)">
+          <span class="stat-emoji" aria-hidden="true">💎</span>
+          <b id="gemsCount">250</b>
+        </div>
+        <div class="stat-item stat-hearts" title="Cuori (Vite disponibili)">
+          <span class="stat-emoji" aria-hidden="true">❤️</span>
+          <b id="heartsCount">5</b>
+        </div>
+      </div>
+
+      <!-- Azioni rapide (Audio & Tema Notturno) -->
+      <div class="topbar-tools">
+        <button class="tool-btn" id="audioToggle" type="button" aria-pressed="true" title="Effetti sonori">
+          <span id="audioIcon" aria-hidden="true">♫</span>
+        </button>
+        <button class="tool-btn" id="themeToggle" type="button" aria-label="Cambia tema chiaro/scuro" title="Modalità Notturna / Diurna">
+          <span id="themeIcon" aria-hidden="true">🌙</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- SHELL PRINCIPALE A 3 COLONNE (SIDEBAR SINISTRA + PERCORSO CENTRALE + WIDGET DESTRA) -->
+  <div class="duo-shell">
+
+    <!-- SIDEBAR NAVIGAZIONE DESKTOP -->
+    <aside class="duo-sidebar" aria-label="Menu principale">
+      <nav class="sidebar-nav">
+        <a href="#percorso" class="nav-item active" data-tab="path">
+          <span class="nav-icon" aria-hidden="true">🏟️</span>
+          <span class="nav-label">PERCORSO</span>
+        </a>
+        <a href="#classifica" class="nav-item" data-tab="league">
+          <span class="nav-icon" aria-hidden="true">🏆</span>
+          <span class="nav-label">CLASSIFICA</span>
+        </a>
+        <a href="#missioni" class="nav-item" data-tab="quests">
+          <span class="nav-icon" aria-hidden="true">🎯</span>
+          <span class="nav-label">MISSIONI</span>
+        </a>
+        <a href="#modalita" class="nav-item" data-tab="extra">
+          <span class="nav-icon" aria-hidden="true">⚡</span>
+          <span class="nav-label">SFIDE EXTRA</span>
+        </a>
+        <a href="#profilo" class="nav-item" data-tab="profile">
+          <span class="nav-icon" aria-hidden="true">👕</span>
+          <span class="nav-label">PROFILO</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-PromoCard">
+        <div class="promo-card-header">
+          <img src="assets/trophy-fuoriclasse.jpg" alt="Coppa Fuoriclasse" class="promo-trophy-img" width="44" height="44" />
+          <div>
+            <span class="promo-badge">1.080+ QUIZ</span>
+            <h4>Archivio Storico</h4>
+          </div>
+        </div>
+        <p>10 Unità didattiche complete + 4 Modalità Arcade verificate con cache Wikidata.</p>
+        <div class="sidebar-promo-actions">
+          <button class="btn-secondary btn-sm w-full" id="sidebarSourcesBtn" type="button">📚 Fonti & Licenze</button>
+          <button class="btn-outline btn-sm w-full" id="sidebarDeployBtn" type="button">🚀 Guida Deploy & Login</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- AREA CENTRALE PRINCIPALE -->
+    <main class="duo-main" id="mainStage">
+
+      <!-- =========================================================
+           TAB 1: PERCORSO PRINCIPALE (SNAKE PATH STILE DUOLINGO)
+           ========================================================= -->
+      <section class="view-panel active" id="view-path" aria-label="Percorso di apprendimento">
+        <!-- HERO BANNER STADIO + MISTER BOMBER -->
+        <div class="path-header-banner">
+          <div class="hero-stadium-backdrop" aria-hidden="true"></div>
+          <div class="hero-content-grid">
+            <div class="path-header-copy">
+              <div class="hero-pills-row">
+                <span class="eyebrow-pill">⚽ STAGIONE UFFICIALE</span>
+                <span class="eyebrow-pill pill-glass">1.080 DOMANDE</span>
+                <span class="eyebrow-pill pill-glass" id="heroProgressPill">0 / 60 TAPPE</span>
+              </div>
+              <h1>Scala le Leghe del Calcio</h1>
+              <p>Supera le tappe sul campo, apri i <b>Bauli del Campione</b> e dimostra di essere un vero Fuoriclasse.</p>
+              <div class="hero-cta-row">
+                <button class="btn-primary btn-hero-play" id="heroQuickPlayBtn" type="button">
+                  <span>SCENDI IN CAMPO</span>
+                  <span aria-hidden="true">⚡</span>
+                </button>
+                <button class="btn-glass-light" id="heroJumpUnitBtn" type="button">
+                  <span>🗺️ Mappa Unità</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Mascotte 3D Mister Bomber -->
+            <div class="hero-mascot-card">
+              <div class="hero-mascot-avatar-wrap">
+                <img src="assets/mascot-coach.jpg" alt="Mister Bomber — Mascotte Fuoriclasse" class="hero-mascot-img" width="96" height="96" />
+                <span class="mascot-role-tag">MISTER BOMBER</span>
+              </div>
+              <div class="mascot-bubble" id="mascotGreeting">
+                "Pronto per il calcio d'inizio? Indovina la carriera dei campioni e sblocca il baule d'oro!"
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTENITORE DINAMICO DELLE 10 UNITÀ E DEI NODI A SERPENTINA -->
+        <div id="unitsContainer" class="units-snake-container">
+          <!-- Popolato da app.js -->
+        </div>
+      </section>
+
+      <!-- =========================================================
+           TAB 2: CLASSIFICA / LEGA SETTIMANALE
+           ========================================================= -->
+      <section class="view-panel" id="view-league" hidden aria-label="Classifica Lega">
+        <div class="panel-card league-header-card">
+          <div class="league-trophy-showcase">
+            <img src="assets/trophy-fuoriclasse.jpg" alt="Trofeo Divisione" class="league-hero-trophy" width="96" height="96" />
+          </div>
+          <span class="eyebrow-pill pill-gold">DIVISIONE SCUDETTO</span>
+          <h2>Classifica Settimanale</h2>
+          <p>I primi 5 classificati avanzano nella <b>Lega Fuoriclasse</b>! Guadagna XP completando lezioni e sfide extra.</p>
+          <div class="podium-section" id="leaguePodium">
+            <div class="podium-step step-2">
+              <span class="podium-medal">🥈</span>
+              <div class="podium-avatar av-blue">V</div>
+              <b>BomberVieri</b>
+              <span class="podium-xp">510 XP</span>
+            </div>
+            <div class="podium-step step-1">
+              <span class="podium-crown">👑</span>
+              <span class="podium-medal">🥇</span>
+              <div class="podium-avatar av-gold">C</div>
+              <b>Campione82</b>
+              <span class="podium-xp">620 XP</span>
+            </div>
+            <div class="podium-step step-3">
+              <span class="podium-medal">🥉</span>
+              <div class="podium-avatar av-green">B</div>
+              <b>IlDivinCodino</b>
+              <span class="podium-xp">440 XP</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="leaderboard-list" id="leaderboardList">
+            <!-- Popolato da app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           TAB 3: MISSIONI DEL GIORNO & TROFEI
+           ========================================================= -->
+      <section class="view-panel" id="view-quests" hidden aria-label="Missioni del giorno">
+        <div class="panel-card quests-banner">
+          <div class="quests-banner-flex">
+            <div>
+              <span class="eyebrow-pill">OBIETTIVI GIORNALIERI</span>
+              <h2>Missioni & Bauli Premio</h2>
+              <p>Completa le missioni ogni giorno per accumulare Calcio-Coins 💎 e sbloccare i trofei in bacheca.</p>
+            </div>
+            <img src="assets/chest-gold.jpg" alt="Baule del Campione" class="quests-banner-chest" width="84" height="84" />
+          </div>
+        </div>
+
+        <div class="quests-list" id="questsList">
+          <div class="quest-item-card">
+            <div class="quest-icon">⚡</div>
+            <div class="quest-body">
+              <div class="quest-title-row">
+                <h4>Riscaldamento Tattico</h4>
+                <span class="quest-reward">💎 +20</span>
+              </div>
+              <p>Rispondi correttamente a 5 domande oggi</p>
+              <div class="duo-progress-bar">
+                <div class="duo-progress-fill" id="quest1Fill" style="width: 0%"></div>
+              </div>
+              <span class="quest-progress-label" id="quest1Label">0 / 5 campioni indovinati</span>
+            </div>
+          </div>
+
+          <div class="quest-item-card">
+            <div class="quest-icon">🔥</div>
+            <div class="quest-body">
+              <div class="quest-title-row">
+                <h4>Bomber Implacabile</h4>
+                <span class="quest-reward">💎 +50</span>
+              </div>
+              <p>Ottieni almeno 50 XP in una sessione di gioco</p>
+              <div class="duo-progress-bar">
+                <div class="duo-progress-fill" id="quest2Fill" style="width: 0%"></div>
+              </div>
+              <span class="quest-progress-label" id="quest2Label">0 / 50 XP guadagnati</span>
+            </div>
+          </div>
+
+          <div class="quest-item-card">
+            <div class="quest-icon">🌟</div>
+            <div class="quest-body">
+              <div class="quest-title-row">
+                <h4>Collezionista di Leggende</h4>
+                <span class="quest-reward">💎 +100</span>
+              </div>
+              <p>Completa 3 lezioni sul percorso principale</p>
+              <div class="duo-progress-bar">
+                <div class="duo-progress-fill" id="quest3Fill" style="width: 0%"></div>
+              </div>
+              <span class="quest-progress-label" id="quest3Label">0 / 3 lezioni completate</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card mt-16">
+          <div class="card-header-flex">
+            <h3>🏅 Bacheca Trofei Sbloccabili</h3>
+            <span class="badge-counter-pill" id="badgesUnlockedCount">2 / 6 Sbloccati</span>
+          </div>
+          <div class="badges-grid" id="achievementsGrid">
+            <div class="badge-card unlocked" id="badge-esordiente">
+              <span class="badge-emoji">⚽</span>
+              <b>Esordiente</b>
+              <small>Prima partita giocata</small>
+            </div>
+            <div class="badge-card unlocked" id="badge-fantasista">
+              <span class="badge-emoji">🔟</span>
+              <b>Fantasista</b>
+              <small>Indovina un numero 10</small>
+            </div>
+            <div class="badge-card" id="badge-bandiera">
+              <span class="badge-emoji">🛡️</span>
+              <b>Bandiera</b>
+              <small>Completa l'Unità 1</small>
+            </div>
+            <div class="badge-card" id="badge-capocannoniere">
+              <span class="badge-emoji">👑</span>
+              <b>Re dei Bomber</b>
+              <small>Raggiungi 200 XP</small>
+            </div>
+            <div class="badge-card" id="badge-champions">
+              <span class="badge-emoji">🌍</span>
+              <b>Notte Champions</b>
+              <small>Completa 5 tappe</small>
+            </div>
+            <div class="badge-card" id="badge-fuoriclasse">
+              <span class="badge-emoji">🐐</span>
+              <b>Fuoriclasse</b>
+              <small>Raggiungi 500 XP</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           TAB 4: MODALITÀ EXTRA (ALLENAMENTO RAPIDO 480 DOMANDE)
+           ========================================================= -->
+      <section class="view-panel" id="view-extra" hidden aria-label="Sfide e modalità extra">
+        <div class="panel-card extra-hero-card">
+          <span class="eyebrow-pill">ALLENAMENTO LIBERO • 480 SFIDE</span>
+          <h2>Arena Sfide Speciali</h2>
+          <p>Scegli una modalità tematica: ogni partita estrae <b>5 domande casuali</b> dal database storico e ti premia con XP extra senza consumare cuori!</p>
+        </div>
+
+        <div class="extra-modes-grid">
+          <button class="extra-card mode-goals" data-mode="goals" type="button">
+            <div class="extra-card-top">
+              <span class="extra-card-icon">🥅</span>
+              <span class="extra-pool-pill">150 Domande</span>
+            </div>
+            <div class="extra-card-info">
+              <b>Chi ha segnato?</b>
+              <p>Rivivi i tabellini delle partite leggendarie e indovina il marcatore decisivo.</p>
+            </div>
+            <div class="extra-card-footer">
+              <span class="extra-xp-tag">+50 XP</span>
+              <span class="extra-card-cta">GIOCA ORA ➔</span>
+            </div>
+          </button>
+
+          <button class="extra-card mode-scorers" data-mode="scorers" type="button">
+            <div class="extra-card-top">
+              <span class="extra-card-icon">👑</span>
+              <span class="extra-pool-pill">150 Domande</span>
+            </div>
+            <div class="extra-card-info">
+              <b>Re dei Bomber</b>
+              <p>Classifiche marcatori, scarpe d'oro e record di gol stagione per stagione.</p>
+            </div>
+            <div class="extra-card-footer">
+              <span class="extra-xp-tag">+50 XP</span>
+              <span class="extra-card-cta">GIOCA ORA ➔</span>
+            </div>
+          </button>
+
+          <button class="extra-card mode-derby" data-mode="derby" type="button">
+            <div class="extra-card-top">
+              <span class="extra-card-icon">⚔️</span>
+              <span class="extra-pool-pill">100 Domande</span>
+            </div>
+            <div class="extra-card-info">
+              <b>Derby & Rivalità</b>
+              <p>Madonnina, Capitale, Mole, Lanterna, El Clásico e i doppi ex più discussi.</p>
+            </div>
+            <div class="extra-card-footer">
+              <span class="extra-xp-tag">+50 XP</span>
+              <span class="extra-card-cta">GIOCA ORA ➔</span>
+            </div>
+          </button>
+
+          <button class="extra-card mode-champions" data-mode="champions" type="button">
+            <div class="extra-card-top">
+              <span class="extra-card-icon">🌟</span>
+              <span class="extra-pool-pill">80 Domande</span>
+            </div>
+            <div class="extra-card-info">
+              <b>Notti Champions</b>
+              <p>Finali storiche, rimonte impossibili e trionfi europei dal 1956 a oggi.</p>
+            </div>
+            <div class="extra-card-footer">
+              <span class="extra-xp-tag">+50 XP</span>
+              <span class="extra-card-cta">GIOCA ORA ➔</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           TAB 5: PROFILO GIOCATORE, CLOUD LOGIN & DEPLOY
+           ========================================================= -->
+      <section class="view-panel" id="view-profile" hidden aria-label="Profilo Giocatore">
+        <div class="panel-card profile-hero-card">
+          <div class="profile-avatar-big">
+            <img src="assets/mascot-coach.jpg" alt="Avatar Profilo" class="profile-hero-img" width="76" height="76" />
+            <span class="profile-level-pill" id="profileLevelBadge">LIV. 1</span>
+          </div>
+          <div class="profile-meta">
+            <h2 id="profileName">Mister Fuoriclasse</h2>
+            <p id="profileSub">Attaccante di Razza • Stagione 2026</p>
+            <div class="profile-badges-inline">
+              <span class="mini-tag">🇮🇹 Serie A</span>
+              <span class="mini-tag">⚡ 1.080 Quiz Attivi</span>
+              <span class="mini-tag" id="profileCompletedTag">✅ 0 Tappe</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-stats-grid">
+          <div class="stat-box">
+            <span class="stat-box-icon">⚡</span>
+            <b id="profileTotalXp">0</b>
+            <small>XP Totali</small>
+          </div>
+          <div class="stat-box">
+            <span class="stat-box-icon">🔥</span>
+            <b id="profileStreak">1</b>
+            <small>Giorni Streak</small>
+          </div>
+          <div class="stat-box">
+            <span class="stat-box-icon">💎</span>
+            <b id="profileGems">250</b>
+            <small>Calcio-Coins</small>
+          </div>
+          <div class="stat-box">
+            <span class="stat-box-icon">❤️</span>
+            <b id="profileHearts">5 / 5</b>
+            <small>Cuori Attivi</small>
+          </div>
+        </div>
+
+        <!-- Sezione Sincronizzazione Account / Login & Deploy -->
+        <div class="panel-card mt-16">
+          <h3>🔐 Account Cloud & Guida Deploy</h3>
+          <p class="text-muted">I tuoi progressi sono salvati automaticamente sul dispositivo. Vuoi pubblicare Fuoriclasse sul tuo dominio o collegare il Login Google / Magic Link con Supabase?</p>
+          <div class="auth-demo-buttons">
+            <button class="btn-primary" id="openAuthModalBtn" type="button">🚀 Apri Prospetto Deploy & Login</button>
+            <button class="btn-secondary" id="clearLocalWikiCacheBtn" type="button">🔄 Svuota Cache Wikidata</button>
+            <button class="btn-outline" id="resetProgressBtn" type="button">🗑️ Azzera Progressi</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- COLONNA DESTRA (WIDGET DESKTOP STILE DUOLINGO) -->
+    <aside class="duo-rail-right" aria-label="Statistiche e Obiettivi">
+      <!-- Widget Obiettivo Giornaliero -->
+      <div class="rail-widget">
+        <div class="widget-head">
+          <h4>🎯 Obiettivo del Giorno</h4>
+          <span class="widget-badge" id="railGoalPct">0%</span>
+        </div>
+        <div class="widget-goal-row">
+          <img src="assets/chest-gold.jpg" alt="Baule" class="widget-chest-thumb" width="46" height="46" />
+          <div class="widget-goal-bar-wrap">
+            <div class="duo-progress-bar">
+              <div class="duo-progress-fill" id="railGoalFill" style="width: 0%"></div>
+            </div>
+            <small id="railGoalText">0 / 5 sfide completate oggi</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Widget Ricarica Cuori -->
+      <div class="rail-widget">
+        <div class="widget-head">
+          <h4>❤️ Stato Forma (Vite)</h4>
+          <span class="widget-badge" id="railHeartsCount">5/5</span>
+        </div>
+        <p class="widget-desc">Ogni errore in partita costa 1 cuore. Fai una sessione di allenamento rapido per recuperare tutti i cuori gratis!</p>
+        <button class="btn-secondary btn-sm w-full" id="practiceHeartsBtn" type="button">⚡ Allenati (+1 ❤️ Gratis)</button>
+      </div>
+
+      <!-- Widget Serie Giornaliera (Streak) -->
+      <div class="rail-widget">
+        <div class="widget-head">
+          <h4>🔥 Serie di Vittorie</h4>
+          <span class="widget-badge"><span id="railStreakCount">1</span> gg</span>
+        </div>
+        <div class="streak-week-row" id="railStreakDays">
+          <span class="day-dot active" data-day="1">L</span>
+          <span class="day-dot" data-day="2">M</span>
+          <span class="day-dot" data-day="3">M</span>
+          <span class="day-dot" data-day="4">G</span>
+          <span class="day-dot" data-day="5">V</span>
+          <span class="day-dot" data-day="6">S</span>
+          <span class="day-dot" data-day="0">D</span>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- BOTTOM NAVIGATION BAR (MOBILE-FIRST) -->
+  <nav class="duo-mobile-nav" aria-label="Navigazione mobile">
+    <button class="mobile-nav-btn active" data-tab="path" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">🏟️</span>
+      <span class="nav-btn-text">Percorso</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="league" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">🏆</span>
+      <span class="nav-btn-text">Lega</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="quests" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">🎯</span>
+      <span class="nav-btn-text">Missioni</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="extra" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">⚡</span>
+      <span class="nav-btn-text">Sfide</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="profile" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">👕</span>
+      <span class="nav-btn-text">Profilo</span>
+    </button>
+  </nav>
+
+  <!-- =========================================================
+       MODALE QUIZ FULL-SCREEN STILE DUOLINGO (CON VIEW SEPARATE)
+       ========================================================= -->
+  <div class="duo-quiz-overlay" id="quizOverlay" role="dialog" aria-modal="true" aria-labelledby="quizPrompt" hidden>
+    <canvas id="confettiCanvas" class="confetti-canvas" aria-hidden="true"></canvas>
+
+    <!-- Header Quiz: X Chiudi + Progress Bar + Streak Combo + Cuori -->
+    <div class="quiz-topbar">
+      <button class="quiz-close-btn" id="quizClose" type="button" aria-label="Esci dalla lezione">✕</button>
+      <div class="quiz-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="20">
+        <div class="quiz-progress-fill" id="quizProgressFill" style="width: 20%">
+          <div class="progress-shine"></div>
+        </div>
+      </div>
+      <div class="quiz-combo-pill" id="quizComboPill" hidden>
+        <span>🔥</span> <b id="quizComboNum">2x</b>
+      </div>
+      <div class="quiz-hearts-pill" title="Vite rimaste">
+        <span aria-hidden="true">❤️</span>
+        <b id="quizHeartsNum">5</b>
+      </div>
+    </div>
+
+    <!-- Corpo Centrale della Domanda -->
+    <div class="quiz-body">
+      <!-- VISTA 1: DOMANDA ATTIVA -->
+      <div id="quizQuestionView" class="quiz-question-view">
+        <div class="quiz-meta-row">
+          <div class="quiz-type-badge" id="quizTag">⚡ INDIZIO CARRIERA</div>
+          <div class="quiz-archive-pill" id="quizArchivePill" hidden>ARCHIVIO STORICO</div>
+        </div>
+
+        <!-- Prompt con Mascotte Mister Bomber + Fumetto + Audio -->
+        <div class="quiz-prompt-row">
+          <div class="quiz-mascot-wrap">
+            <img src="assets/mascot-coach.jpg" alt="Mister Bomber" class="quiz-mascot-avatar" id="quizMascotImg" width="72" height="72" />
+            <span class="quiz-mascot-mood" id="quizMascotMood">🎯</span>
+          </div>
+          <div class="speech-bubble">
+            <div class="speech-header">
+              <button class="audio-speak-btn" id="listenButton" type="button" title="Ascolta la domanda">🔊</button>
+              <h2 id="quizPrompt">Quale calciatore ha vestito queste maglie?</h2>
+            </div>
+            <p class="quiz-clue-sub" id="quizSubprompt"></p>
+          </div>
+        </div>
+
+        <!-- Percorso Club (Maglie Pixel/SVG o Tappe Storiche) -->
+        <div class="career-jerseys-stage" id="careerRoute" aria-label="Tappe della carriera"></div>
+
+        <!-- Scelte (4 Card Tattili 3D) -->
+        <div class="quiz-options-grid" id="answers" role="group" aria-label="Opzioni di risposta"></div>
+      </div>
+
+      <!-- VISTA 2: SCHERMATA COMPLETAMENTO LEZIONE -->
+      <div id="quizCompletionView" class="quiz-completion-view" hidden>
+        <div class="completion-card">
+          <div class="completion-trophy-wrap">
+            <img src="assets/trophy-fuoriclasse.jpg" alt="Trofeo Vittoria" class="completion-trophy-img" width="116" height="116" />
+          </div>
+          <span class="eyebrow-pill pill-gold" id="completionBadgeText">PARTITA VINTA!</span>
+          <h2 class="completion-title" id="completionTitle">LEZIONE COMPLETATA!</h2>
+          <p class="completion-sub" id="completionSub">Mister Bomber applaude dalla panchina: prestazione da vero numero 10!</p>
+
+          <div class="completion-stats-grid">
+            <div class="comp-stat-card comp-xp">
+              <span class="comp-stat-label">PUNTI XP</span>
+              <b class="comp-stat-val" id="compXpVal">+90 XP</b>
+            </div>
+            <div class="comp-stat-card comp-acc">
+              <span class="comp-stat-label">PRECISIONE</span>
+              <b class="comp-stat-val" id="compAccVal">100%</b>
+            </div>
+            <div class="comp-stat-card comp-gems">
+              <span class="comp-stat-label">PREMIO</span>
+              <b class="comp-stat-val" id="compGemsVal">+15 💎</b>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet / Feedback Drawer (Verifica -> Corretto / Sbagliato) -->
+    <div class="quiz-bottom-drawer" id="quizBottomDrawer">
+      <div class="drawer-inner">
+        <div class="feedback-message" id="feedback" aria-live="polite"></div>
+        <button class="btn-primary btn-lg continue-btn" id="continueBtn" type="button" disabled>VERIFICA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODALE MAPPA VELOCE UNITÀ (SELETTORE RAPIDO 1-10)
+       ========================================================= -->
+  <div class="duo-modal-backdrop" id="unitJumpModal" role="dialog" aria-modal="true" aria-labelledby="unitJumpTitle" hidden>
+    <div class="duo-modal-card modal-lg">
+      <div class="modal-head">
+        <h2 id="unitJumpTitle">🗺️ Seleziona Unità del Percorso</h2>
+        <button class="modal-close-x" id="unitJumpClose" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <p class="text-muted mb-12">Salta direttamente a qualsiasi Unità tematica per consultare le tappe o affrontare le sfide sbloccate.</p>
+      <div class="unit-jump-grid" id="unitJumpList">
+        <!-- Popolato da app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODALE GUIDA UNITÀ & SCHEDA WIKIDATA LIVE
+       ========================================================= -->
+  <div class="duo-modal-backdrop" id="guidebookModal" role="dialog" aria-modal="true" aria-labelledby="guidebookTitle" hidden>
+    <div class="duo-modal-card">
+      <div class="modal-head">
+        <h2 id="guidebookTitle">📖 Guida dell'Unità</h2>
+        <button class="modal-close-x" id="guidebookClose" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body" id="guidebookBody"></div>
+      <div class="modal-foot">
+        <button class="btn-primary w-full" id="guidebookOkBtn" type="button">HO CAPITO!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODALE CUORI ESAURITI
+       ========================================================= -->
+  <div class="duo-modal-backdrop" id="heartsEmptyModal" role="dialog" aria-modal="true" aria-labelledby="heartsEmptyTitle" hidden>
+    <div class="duo-modal-card text-center">
+      <div class="modal-big-emoji">💔</div>
+      <h2 id="heartsEmptyTitle">Hai esaurito i cuori!</h2>
+      <p>Fai una sessione rapida di allenamento per recuperare subito un cuore, oppure usa 50 Calcio-Coins 💎 per ricaricare tutte le vite.</p>
+      <div class="modal-stack-btns">
+        <button class="btn-primary w-full" id="practiceToRegainHeartBtn" type="button">⚡ Allenati e recupera +1 ❤️</button>
+        <button class="btn-secondary w-full" id="refillHeartsCoinsBtn" type="button">💎 Ricarica 5 Cuori (50 Gemme)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODALE PROSPETTO DEPLOY & LOGIN (ARCHITETTURA PRODUZIONE)
+       ========================================================= -->
+  <div class="duo-modal-backdrop" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle" hidden>
+    <div class="duo-modal-card modal-lg">
+      <div class="modal-head">
+        <h2 id="authModalTitle">🚀 Prospetto Deploy & Login Utenti</h2>
+        <button class="modal-close-x" id="authClose" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body deploy-guide-content">
+        <div class="deploy-section">
+          <span class="eyebrow-pill">1. HAI UN HOSTING WORDPRESS? (ZERO COSTI EXTRA)</span>
+          <h3>Come caricarlo senza toccare WordPress</h3>
+          <p><strong>Fuoriclasse</strong> è una Progressive Web App statica pura (HTML5 + CSS3 + JS + JSON). Non serve né Node.js né PHP:</p>
+          <ul>
+            <li>✅ <strong>Opzione A — Sottocartella sul tuo Hosting WP:</strong> tramite File Manager (cPanel / Plesk / SiteGround) o FTP, crea la cartella <code>public_html/fuoriclasse/</code> e trascina dentro i file del gioco. WordPress resta intatto e il gioco risponde su <code>tuosito.it/fuoriclasse/</code>.</li>
+            <li>✅ <strong>Opzione B — Cloudflare Pages / Netlify (Gratis):</strong> trascina la cartella su <em>app.netlify.com/drop</em> e opzionalmente collega un sottodominio <code>gioco.tuosito.it</code> via record CNAME.</li>
+          </ul>
+        </div>
+
+        <div class="deploy-section">
+          <span class="eyebrow-pill">2. COME AGGIUNGERE LA LOGIN E CLASSIFICA REALE?</span>
+          <h3>Opzioni per Autenticazione e Salvataggio Cloud</h3>
+          <p>Al momento i progressi (XP, Streak, Cuori, Lezioni sbloccate) sono salvati in <code>localStorage</code>. Se vuoi che gli utenti facciano login da telefono e PC mantenendo l'account:</p>
+          <ul>
+            <li>🏆 <strong>Soluzione Consigliata: Supabase (Free Tier 50.000 utenti/mese gratis)</strong>
+              <br/>Basta includere lo script CDN di Supabase e hai pronti:
+              <br/>• <b>Login con Google / Apple / Email Magic Link</b> (senza password da ricordare)
+              <br/>• <b>Tabella PostgreSQL <code>profiles</code></b> per sincronizzare XP, Streak e la Classifica Settimanale in tempo reale.
+            </li>
+            <li>🔥 <strong>Alternativa: Firebase Authentication + Firestore (Google)</strong>
+              <br/>Gratuito con piano Spark, ottimo per login rapida con Google o account ospite convertibile.
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-primary w-full" id="authOkBtn" type="button">PERFETTO, TORNA AL GIOCO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODALE FONTI & LICENZE
+       ========================================================= -->
+  <div class="duo-modal-backdrop" id="sourcesModal" role="dialog" aria-modal="true" aria-labelledby="sourcesTitle" hidden>
+    <div class="duo-modal-card">
+      <div class="modal-head">
+        <h2 id="sourcesTitle">📚 Fonti Dati & Licenze</h2>
+        <button class="modal-close-x" id="sourcesClose" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body" id="sourcesModalBody">
+        <p><strong>Database interno 1.080+ Domande:</strong> Curriculum originale verificato (10 Unità didattiche × 60 domande + 4 Modalità Extra = 1.080 quesiti).</p>
+        <p><strong>Arricchimento Live:</strong> Integrazione opzionale con <b>Wikidata REST API</b> (licenza CC0) per biografie e curiosità storiche con cache locale TTL 14 giorni.</p>
+        <p><strong>Illustrazioni & Kit:</strong> Mascotte 3D "Mister Bomber", Stadio, Trofei e Maglie vettoriali originali creati su misura per Fuoriclasse (nessun logo registrato di terze parti).</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

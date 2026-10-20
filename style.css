@@ -1,0 +1,2183 @@
+/* ==========================================================================
+   FUORICLASSE — DESIGN SYSTEM 3D GAMIFICATO (EDIZIONE ARGON)
+   Estetica Mobile-First & Desktop a 3 Colonne con Illustrazioni 3D
+   ========================================================================== */
+
+:root {
+  /* Palette Ufficiale Gamificata */
+  --duo-green: #58cc02;
+  --duo-green-dark: #46a302;
+  --duo-green-tint: #d7ffb8;
+
+  --duo-blue: #1cb0f6;
+  --duo-blue-dark: #1899d6;
+  --duo-blue-tint: #ddf4ff;
+
+  --duo-yellow: #ffc800;
+  --duo-yellow-dark: #e5a400;
+  --duo-yellow-tint: #fff4cc;
+
+  --duo-red: #ff4b4b;
+  --duo-red-dark: #ea2b2b;
+  --duo-red-tint: #ffdfe0;
+
+  --duo-purple: #ce82ff;
+  --duo-purple-dark: #a560e8;
+
+  --duo-orange: #ff9600;
+  --duo-orange-dark: #cc7800;
+
+  /* Superfici & Testi (Light Mode Default) */
+  --bg-app: #f4f7fa;
+  --bg-card: #ffffff;
+  --bg-soft: #eef3f7;
+  --border-light: #e1e8ed;
+  --border-shadow: #cbd5e1;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+
+  /* Geometria e Spaziature */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --font-main: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-app);
+  background-image: radial-gradient(circle at 50% 0%, rgba(28, 176, 246, 0.06), transparent 60%);
+  color: var(--text-main);
+  line-height: 1.45;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 8px;
+  background: var(--duo-blue);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  z-index: 9999;
+  font-weight: 800;
+}
+.skip-link:focus {
+  left: 12px;
+}
+
+/* ==========================================================================
+   1. TOP GAMIFICATION BAR
+   ========================================================================== */
+.duo-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+  border-bottom: 2px solid var(--border-light);
+  height: 66px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.topbar-inner {
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brand-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--duo-green);
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: 0.5px;
+}
+
+.brand-logo-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.brand-avatar-img {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid var(--duo-green);
+  box-shadow: 0 3px 0 var(--duo-green-dark);
+}
+
+.brand-online-dot {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 11px;
+  height: 11px;
+  background: var(--duo-green);
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+.brand-wordmark {
+  background: linear-gradient(135deg, #2bb600 0%, #0d9488 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+}
+
+.section-badge-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-soft);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 4px;
+  border-radius: 14px;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.15s, background 0.15s;
+}
+.section-badge-btn:hover {
+  border-color: var(--duo-blue);
+  background: var(--duo-blue-tint);
+}
+.section-badge-btn:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+.gamification-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 12px;
+  font-weight: 900;
+  font-size: 15px;
+  border: 2px solid transparent;
+  transition: transform 0.15s;
+}
+.stat-item:hover {
+  transform: translateY(-1px);
+}
+.stat-emoji {
+  font-size: 17px;
+  line-height: 1;
+}
+.stat-streak {
+  color: var(--duo-orange);
+  background: rgba(255, 150, 0, 0.1);
+}
+.stat-gems {
+  color: var(--duo-blue);
+  background: rgba(28, 176, 246, 0.1);
+}
+.stat-hearts {
+  color: var(--duo-red);
+  background: rgba(255, 75, 75, 0.1);
+}
+
+.topbar-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 2px solid var(--border-light);
+  border-bottom-width: 4px;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.12s;
+}
+.tool-btn:hover {
+  background: var(--bg-soft);
+  color: var(--text-main);
+}
+.tool-btn:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+/* ==========================================================================
+   2. SHELL PRINCIPALE A 3 COLONNE (DESKTOP + TABLET + MOBILE)
+   ========================================================================== */
+.duo-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 20px 100px;
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr) 310px;
+  gap: 28px;
+  align-items: start;
+}
+
+/* SIDEBAR SINISTRA */
+.duo-sidebar {
+  position: sticky;
+  top: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--text-muted);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.6px;
+  border: 2px solid transparent;
+  transition: all 0.15s;
+}
+.nav-item:hover {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-color: var(--border-light);
+}
+.nav-item.active {
+  background: var(--duo-blue-tint);
+  color: var(--duo-blue-dark);
+  border-color: #84d8ff;
+  box-shadow: 0 3px 0 #84d8ff;
+}
+.nav-icon {
+  font-size: 22px;
+}
+
+.sidebar-PromoCard {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 5px;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.promo-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.promo-trophy-img {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid var(--duo-yellow);
+}
+
+.promo-badge {
+  display: inline-block;
+  background: var(--duo-yellow-tint);
+  color: #9e6f00;
+  font-weight: 900;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 99px;
+  letter-spacing: 0.5px;
+}
+.sidebar-PromoCard h4 {
+  font-size: 15px;
+  font-weight: 900;
+  margin-top: 2px;
+}
+.sidebar-PromoCard p {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.sidebar-promo-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   3. PULSANTI TATTILI 3D STILE DUOLINGO
+   ========================================================================== */
+.btn-primary, .btn-secondary, .btn-outline, .btn-glass-light {
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: transform 0.08s, filter 0.15s, background-color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  user-select: none;
+}
+
+.btn-primary {
+  background-color: var(--duo-green);
+  color: #ffffff;
+  border: 2px solid var(--duo-green);
+  border-bottom: 5px solid var(--duo-green-dark);
+}
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.btn-primary:active:not(:disabled) {
+  transform: translateY(3px);
+  border-bottom-width: 2px;
+}
+.btn-primary:disabled {
+  background-color: #e2e8f0;
+  border-color: #e2e8f0;
+  border-bottom-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: var(--bg-card);
+  color: var(--duo-blue);
+  border: 2px solid var(--border-light);
+  border-bottom: 4px solid var(--border-shadow);
+}
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--bg-soft);
+  border-color: #cbd5e1;
+}
+.btn-secondary:active:not(:disabled) {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-muted);
+  border: 2px solid var(--border-light);
+  border-bottom: 4px solid var(--border-shadow);
+}
+.btn-outline:hover {
+  color: var(--text-main);
+  background: var(--bg-soft);
+}
+
+.btn-glass-light {
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-bottom: 4px solid rgba(255, 255, 255, 0.25);
+}
+.btn-glass-light:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.btn-sm {
+  padding: 9px 14px;
+  font-size: 12px;
+}
+.btn-lg {
+  padding: 14px 28px;
+  font-size: 15px;
+}
+.w-full {
+  width: 100%;
+}
+.mt-16 {
+  margin-top: 16px;
+}
+.mb-12 {
+  margin-bottom: 12px;
+}
+.text-center {
+  text-align: center;
+}
+.text-muted {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 14px;
+}
+
+/* ==========================================================================
+   4. HERO BANNER STADIO & MASCOTTE 3D "MISTER BOMBER"
+   ========================================================================== */
+.duo-main {
+  min-width: 0;
+}
+
+.path-header-banner {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  padding: 26px 24px;
+  color: #ffffff;
+  box-shadow: 0 10px 0 #0b291e, 0 16px 32px rgba(15, 23, 42, 0.18);
+  margin-bottom: 28px;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  background: #0c2d22;
+}
+
+.hero-stadium-backdrop {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(125deg, rgba(10, 31, 26, 0.92) 0%, rgba(15, 62, 43, 0.80) 55%, rgba(12, 74, 110, 0.78) 100%),
+    url('assets/stadium-hero.jpg');
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+
+.hero-content-grid {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.hero-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.eyebrow-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(88, 204, 2, 0.25);
+  border: 1.5px solid rgba(139, 230, 78, 0.5);
+  color: #d7ffb8;
+  padding: 4px 11px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.eyebrow-pill.pill-glass {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.eyebrow-pill.pill-gold {
+  background: var(--duo-yellow-tint);
+  border-color: var(--duo-yellow);
+  color: #946300;
+}
+
+.path-header-banner h1 {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1.15;
+  margin-bottom: 6px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.path-header-banner p {
+  font-size: 14.5px;
+  opacity: 0.95;
+  max-width: 520px;
+  line-height: 1.45;
+}
+
+.hero-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.btn-hero-play {
+  background: linear-gradient(180deg, #65e00b 0%, #4ec300 100%);
+  border-color: #72f218;
+  border-bottom-color: #368700;
+  box-shadow: 0 4px 14px rgba(88, 204, 2, 0.35);
+}
+
+.hero-mascot-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+}
+
+.hero-mascot-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero-mascot-img {
+  width: 78px;
+  height: 78px;
+  border-radius: 18px;
+  object-fit: cover;
+  border: 3px solid var(--duo-yellow);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+.mascot-role-tag {
+  margin-top: -8px;
+  background: var(--duo-yellow);
+  color: #1e293b;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 99px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+}
+
+.mascot-bubble {
+  background: #ffffff;
+  color: #1e293b;
+  padding: 12px 15px;
+  border-radius: 16px;
+  font-weight: 800;
+  font-size: 13.5px;
+  line-height: 1.4;
+  position: relative;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+  flex: 1;
+}
+
+/* ==========================================================================
+   5. UNITÀ E PERCORSO A SERPENTINA (SNAKE PATH 3D)
+   ========================================================================== */
+.units-snake-container {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.unit-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Card Intestazione Unità */
+.unit-banner-card {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.18), 0 10px 20px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.unit-banner-card::after {
+  content: '⚽';
+  position: absolute;
+  right: -12px;
+  bottom: -18px;
+  font-size: 96px;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.unit-banner-card.theme-green {
+  background: linear-gradient(135deg, #58cc02 0%, #2ea800 100%);
+}
+.unit-banner-card.theme-blue {
+  background: linear-gradient(135deg, #1cb0f6 0%, #0d84c4 100%);
+}
+.unit-banner-card.theme-purple {
+  background: linear-gradient(135deg, #ce82ff 0%, #9b4de0 100%);
+}
+.unit-banner-card.theme-orange {
+  background: linear-gradient(135deg, #ff9600 0%, #d96b00 100%);
+}
+
+.unit-banner-info {
+  max-width: 72%;
+  position: relative;
+  z-index: 1;
+}
+
+.unit-banner-top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.unit-banner-info small {
+  font-weight: 900;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 3px 9px;
+  border-radius: 99px;
+}
+
+.unit-progress-pill {
+  font-size: 11px;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 3px 9px;
+  border-radius: 99px;
+}
+
+.unit-banner-info h3 {
+  font-size: 20px;
+  font-weight: 900;
+  margin: 4px 0 3px;
+}
+.unit-banner-info p {
+  font-size: 13.5px;
+  opacity: 0.94;
+}
+
+.guidebook-btn {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-bottom-width: 4px;
+  color: #ffffff;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 12.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: transform 0.1s, background 0.15s;
+}
+.guidebook-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.guidebook-btn:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+/* Griglia dei Nodi a Serpentina con Traccia Centrale */
+.snake-nodes-track {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  width: 100%;
+  padding: 12px 0 20px;
+}
+
+/* Linea tratteggiata centrale stile campo / percorso */
+.snake-nodes-track::before {
+  content: '';
+  position: absolute;
+  top: 24px;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--border-light) 0px,
+    var(--border-light) 12px,
+    transparent 12px,
+    transparent 22px
+  );
+  border-radius: 99px;
+  z-index: 0;
+}
+
+.node-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.2s;
+}
+
+/* Offset orizzontali per creare l'onda sinusoidale Duolingo */
+.node-row.offset-left-1 { transform: translateX(-42px); }
+.node-row.offset-left-2 { transform: translateX(-70px); }
+.node-row.offset-right-1 { transform: translateX(42px); }
+.node-row.offset-right-2 { transform: translateX(70px); }
+
+/* Corona di Stelle sopra le tappe completate */
+.node-stars-crown {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: var(--duo-yellow);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.18));
+}
+
+/* Bottone Circolare 3D del Nodo */
+.path-node-btn {
+  width: 78px;
+  height: 74px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  color: #ffffff;
+  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.15s;
+  user-select: none;
+}
+
+/* Riflesso superiore lucido 3D */
+.path-node-btn::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 16%;
+  width: 68%;
+  height: 28%;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+}
+
+.path-node-btn .node-icon {
+  position: relative;
+  z-index: 1;
+}
+
+/* Varianti Colore Nodi Attivi / Completati */
+.path-node-btn.completed {
+  background: linear-gradient(180deg, #ffd633 0%, #ffc800 100%);
+  box-shadow: 0 8px 0 var(--duo-yellow-dark), 0 12px 20px rgba(255, 200, 0, 0.28);
+  border: 3px solid #fff3b0;
+}
+
+.path-node-btn.current {
+  background: linear-gradient(180deg, #65e00b 0%, #58cc02 100%);
+  box-shadow: 0 8px 0 var(--duo-green-dark), 0 0 0 10px rgba(88, 204, 2, 0.22);
+  border: 3px solid #d7ffb8;
+  animation: pulseCurrentNode 2s infinite;
+}
+
+.path-node-btn.unlocked {
+  background: linear-gradient(180deg, #34bdf8 0%, #1cb0f6 100%);
+  box-shadow: 0 8px 0 var(--duo-blue-dark), 0 10px 18px rgba(28, 176, 246, 0.24);
+  border: 3px solid #bae6fd;
+}
+
+.path-node-btn.locked {
+  background: #e2e8f0;
+  color: #94a3b8;
+  box-shadow: 0 8px 0 #cbd5e1;
+  border: 3px solid #f1f5f9;
+}
+
+.path-node-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.03);
+}
+
+.path-node-btn:active:not(:disabled) {
+  transform: translateY(5px);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25) !important;
+}
+
+@keyframes pulseCurrentNode {
+  0%, 100% {
+    box-shadow: 0 8px 0 var(--duo-green-dark), 0 0 0 6px rgba(88, 204, 2, 0.22);
+  }
+  50% {
+    box-shadow: 0 8px 0 var(--duo-green-dark), 0 0 0 15px rgba(88, 204, 2, 0.06);
+  }
+}
+
+/* Fumetto flottante "INIZIA ⚡" sopra il nodo corrente */
+.start-bubble-tag {
+  position: absolute;
+  top: -42px;
+  background: #ffffff;
+  color: var(--duo-green-dark);
+  border: 2px solid var(--duo-green);
+  padding: 5px 13px;
+  border-radius: 12px;
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  animation: bounceFloat 1.5s ease-in-out infinite;
+  white-space: nowrap;
+  z-index: 3;
+}
+.start-bubble-tag::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 10px;
+  height: 10px;
+  background: #ffffff;
+  border-right: 2px solid var(--duo-green);
+  border-bottom: 2px solid var(--duo-green);
+}
+
+@keyframes bounceFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Etichetta titolo sotto il nodo */
+.node-caption {
+  margin-top: 9px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--text-main);
+  background: var(--bg-card);
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1.5px solid var(--border-light);
+  box-shadow: 0 2px 0 var(--border-light);
+}
+
+/* Mascotte Coach accanto al nodo attivo */
+.node-mascot-companion {
+  position: absolute;
+  left: calc(100% + 14px);
+  top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.node-companion-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 2.5px solid var(--duo-yellow);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+}
+
+.node-mascot-bubble {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-radius: 12px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--text-main);
+  white-space: nowrap;
+  box-shadow: 0 3px 0 var(--border-light);
+}
+
+/* Baule Premio 3D lungo il percorso */
+.chest-node-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.chest-node-btn:hover {
+  transform: scale(1.08) translateY(-2px);
+}
+.chest-node-img {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--duo-yellow);
+  box-shadow: 0 6px 0 var(--duo-yellow-dark), 0 8px 20px rgba(255, 200, 0, 0.35);
+}
+.chest-node-btn.claimed .chest-node-img {
+  filter: saturate(0.75);
+  border-color: var(--duo-green);
+  box-shadow: 0 4px 0 var(--duo-green-dark);
+}
+.chest-label-pill {
+  font-size: 11px;
+  font-weight: 900;
+  background: var(--duo-yellow-tint);
+  color: #946300;
+  border: 1.5px solid var(--duo-yellow);
+  padding: 2px 9px;
+  border-radius: 99px;
+}
+
+/* ==========================================================================
+   6. COLONNA DESTRA (WIDGETS DESKTOP)
+   ========================================================================== */
+.duo-rail-right {
+  position: sticky;
+  top: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.rail-widget {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 5px;
+  border-radius: var(--radius-lg);
+  padding: 18px;
+}
+
+.widget-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.widget-head h4 {
+  font-size: 15px;
+  font-weight: 900;
+}
+.widget-badge {
+  background: var(--bg-soft);
+  color: var(--text-main);
+  font-weight: 900;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 99px;
+}
+
+.widget-goal-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.widget-chest-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid var(--duo-yellow);
+  flex-shrink: 0;
+}
+.widget-goal-bar-wrap {
+  flex: 1;
+}
+.widget-goal-bar-wrap small {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.duo-progress-bar {
+  width: 100%;
+  height: 14px;
+  background: var(--bg-soft);
+  border-radius: 99px;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+.duo-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--duo-yellow), var(--duo-orange));
+  border-radius: 99px;
+  transition: width 0.35s ease;
+}
+
+.widget-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.streak-week-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+.day-dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bg-soft);
+  color: var(--text-muted);
+  font-weight: 900;
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--border-light);
+}
+.day-dot.active, .day-dot.today {
+  background: var(--duo-orange);
+  color: #ffffff;
+  border-color: var(--duo-orange-dark);
+  box-shadow: 0 2px 0 var(--duo-orange-dark);
+}
+
+/* ==========================================================================
+   7. MODALE QUIZ FULL-SCREEN STILE DUOLINGO (ARENA DI GIOCO)
+   ========================================================================== */
+.duo-quiz-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg-app);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow-y: auto;
+}
+.duo-quiz-overlay[hidden] {
+  display: none !important;
+}
+
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 210;
+}
+
+.quiz-topbar {
+  max-width: 920px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.quiz-close-btn {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 4px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+}
+.quiz-close-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-soft);
+}
+
+.quiz-progress-track {
+  flex: 1;
+  height: 16px;
+  background: var(--border-light);
+  border-radius: 99px;
+  overflow: hidden;
+  position: relative;
+}
+
+.quiz-progress-fill {
+  height: 100%;
+  background: var(--duo-green);
+  border-radius: 99px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.progress-shine {
+  position: absolute;
+  top: 3px;
+  left: 10px;
+  right: 10px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 99px;
+}
+
+.quiz-combo-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 150, 0, 0.15);
+  border: 2px solid var(--duo-orange);
+  color: var(--duo-orange-dark);
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-weight: 900;
+  font-size: 13px;
+  animation: bounceFloat 1s infinite;
+}
+
+.quiz-hearts-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 900;
+  font-size: 17px;
+  color: var(--duo-red);
+  background: rgba(255, 75, 75, 0.1);
+  padding: 5px 12px;
+  border-radius: 12px;
+}
+
+.quiz-body {
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 24px 130px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.quiz-question-view {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.quiz-question-view[hidden],
+.quiz-completion-view[hidden] {
+  display: none !important;
+}
+
+.quiz-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quiz-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--duo-purple-dark);
+  background: rgba(206, 130, 255, 0.14);
+  border: 1.5px solid rgba(206, 130, 255, 0.35);
+  padding: 4px 12px;
+  border-radius: 99px;
+}
+
+.quiz-archive-pill {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--duo-blue-dark);
+  background: var(--duo-blue-tint);
+  border: 1.5px solid #93dbfc;
+  padding: 4px 10px;
+  border-radius: 99px;
+}
+
+.quiz-prompt-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.quiz-mascot-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.quiz-mascot-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  object-fit: cover;
+  border: 3px solid var(--duo-blue);
+  box-shadow: 0 5px 0 var(--duo-blue-dark);
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.quiz-mascot-mood {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.speech-bubble {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 4px;
+  border-radius: 20px;
+  padding: 16px 20px;
+  flex: 1;
+}
+
+.speech-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.audio-speak-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: none;
+  background: var(--duo-blue);
+  color: #ffffff;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--duo-blue-dark);
+  flex-shrink: 0;
+  transition: transform 0.1s;
+}
+.audio-speak-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--duo-blue-dark);
+}
+
+.speech-bubble h2 {
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.28;
+}
+
+.quiz-clue-sub {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  font-weight: 700;
+}
+
+/* Maglie della carriera / Tappe Storiche */
+.career-jerseys-stage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 4px;
+  border-radius: var(--radius-lg);
+  padding: 18px 14px;
+  min-height: 112px;
+}
+
+.club-stop-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-soft);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 4px;
+  border-radius: 16px;
+  padding: 10px 12px;
+  min-width: 88px;
+  text-align: center;
+  transition: transform 0.15s;
+}
+.club-stop-item:hover {
+  transform: translateY(-3px);
+}
+.club-stop-kit svg {
+  width: 46px;
+  height: 46px;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.14));
+}
+.club-stop-name {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--text-main);
+}
+.club-stop-year {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  padding: 1px 7px;
+  border-radius: 99px;
+}
+.route-arrow-icon {
+  color: var(--duo-blue);
+  font-weight: 900;
+  font-size: 16px;
+}
+
+/* Scelte di risposta 3D */
+.quiz-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.answer-card-btn {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom: 5px solid var(--border-shadow);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  transition: transform 0.08s, border-color 0.12s, background-color 0.12s;
+}
+.answer-card-btn:hover:not(:disabled) {
+  background: var(--bg-soft);
+  border-color: #94a3b8;
+}
+.answer-card-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  border-bottom-width: 2px;
+}
+
+.answer-card-btn .key-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 2px solid var(--border-light);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.answer-card-btn.selected {
+  background: var(--duo-blue-tint);
+  border-color: var(--duo-blue);
+  border-bottom-color: var(--duo-blue-dark);
+  color: var(--duo-blue-dark);
+}
+.answer-card-btn.selected .key-badge {
+  border-color: var(--duo-blue);
+  background: var(--duo-blue);
+  color: #ffffff;
+}
+
+.answer-card-btn.correct {
+  background: var(--duo-green-tint);
+  border-color: var(--duo-green);
+  border-bottom-color: var(--duo-green-dark);
+  color: #256b00;
+}
+.answer-card-btn.correct .key-badge {
+  background: var(--duo-green);
+  border-color: var(--duo-green);
+  color: #ffffff;
+}
+
+.answer-card-btn.wrong {
+  background: var(--duo-red-tint);
+  border-color: var(--duo-red);
+  border-bottom-color: var(--duo-red-dark);
+  color: #a81313;
+}
+.answer-card-btn.wrong .key-badge {
+  background: var(--duo-red);
+  border-color: var(--duo-red);
+  color: #ffffff;
+}
+
+/* Vista 2: Schermata Completamento Lezione */
+.quiz-completion-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+.completion-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 6px;
+  border-radius: var(--radius-xl);
+  padding: 28px 24px;
+  text-align: center;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.completion-trophy-wrap {
+  margin-bottom: 14px;
+}
+
+.completion-trophy-img {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--duo-yellow);
+  box-shadow: 0 8px 24px rgba(255, 200, 0, 0.4);
+  animation: bounceFloat 2s ease-in-out infinite;
+}
+
+.completion-title {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--duo-green);
+  margin: 8px 0 6px;
+}
+
+.completion-sub {
+  font-size: 14.5px;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+}
+
+.completion-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.comp-stat-card {
+  border-radius: 16px;
+  padding: 12px 8px;
+  border: 2px solid transparent;
+  border-bottom-width: 4px;
+}
+.comp-stat-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  margin-bottom: 4px;
+}
+.comp-stat-val {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.comp-xp {
+  background: var(--duo-yellow-tint);
+  border-color: var(--duo-yellow);
+  color: #946300;
+}
+.comp-acc {
+  background: var(--duo-green-tint);
+  border-color: var(--duo-green);
+  color: #256b00;
+}
+.comp-gems {
+  background: var(--duo-blue-tint);
+  border-color: var(--duo-blue);
+  color: #0b699e;
+}
+
+/* Bottom Feedback Drawer */
+.quiz-bottom-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border-top: 2px solid var(--border-light);
+  padding: 18px 24px;
+  z-index: 220;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.drawer-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.feedback-message {
+  flex: 1;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.quiz-bottom-drawer.state-correct {
+  background: #d7ffb8;
+  border-top-color: #a5ed6e;
+}
+.quiz-bottom-drawer.state-correct .feedback-message {
+  color: #256b00;
+}
+
+.quiz-bottom-drawer.state-wrong {
+  background: #ffdfe0;
+  border-top-color: #ff9c9f;
+}
+.quiz-bottom-drawer.state-wrong .feedback-message {
+  color: #a81313;
+}
+.quiz-bottom-drawer.state-wrong .continue-btn {
+  background-color: var(--duo-red);
+  border-color: var(--duo-red);
+  border-bottom-color: var(--duo-red-dark);
+}
+
+.continue-btn {
+  min-width: 185px;
+}
+
+/* ==========================================================================
+   8. VISTE SECONDARIE: CLASSIFICA, MISSIONI, MODALITÀ EXTRA, PROFILO
+   ========================================================================== */
+.panel-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 5px;
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  margin-bottom: 18px;
+}
+.panel-card h2 {
+  font-size: 23px;
+  font-weight: 900;
+  margin: 6px 0;
+}
+.panel-card h3 {
+  font-size: 18px;
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+
+.card-header-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.badge-counter-pill {
+  background: var(--duo-yellow-tint);
+  color: #946300;
+  font-weight: 900;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 99px;
+}
+
+/* Classifica e Podio 3D */
+.league-header-card {
+  text-align: center;
+}
+.league-trophy-showcase {
+  margin-bottom: 8px;
+}
+.league-hero-trophy {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--duo-yellow);
+  box-shadow: 0 6px 18px rgba(255, 200, 0, 0.35);
+}
+
+.podium-section {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 22px;
+}
+.podium-step {
+  background: var(--bg-soft);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 5px;
+  border-radius: var(--radius-md);
+  padding: 14px 10px;
+  width: 118px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+.podium-step.step-1 {
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: var(--duo-yellow);
+  border-bottom-color: var(--duo-yellow-dark);
+  transform: translateY(-10px);
+}
+.podium-crown {
+  position: absolute;
+  top: -18px;
+  font-size: 20px;
+}
+.podium-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+}
+.av-gold { background: var(--duo-yellow-dark); }
+.av-blue { background: var(--duo-blue); }
+.av-green { background: var(--duo-green); }
+
+.podium-step b {
+  font-size: 12px;
+  font-weight: 900;
+}
+.podium-xp {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--text-muted);
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 2px solid var(--border-light);
+}
+.rank-row.is-user {
+  background: var(--duo-green-tint);
+  border-color: var(--duo-green);
+}
+.rank-pos {
+  width: 28px;
+  font-weight: 900;
+  color: var(--text-muted);
+}
+.rank-av {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--duo-purple);
+  color: #fff;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+}
+.rank-name {
+  flex: 1;
+  font-weight: 800;
+}
+.rank-xp {
+  font-weight: 900;
+  color: var(--duo-green-dark);
+}
+
+.promotion-divider {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--duo-green-dark);
+  letter-spacing: 0.8px;
+  padding: 6px 0;
+  background: rgba(88, 204, 2, 0.1);
+  border-radius: 99px;
+  margin: 4px 0;
+}
+
+/* Missioni & Trofei */
+.quests-banner-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.quests-banner-chest {
+  width: 82px;
+  height: 82px;
+  border-radius: 20px;
+  object-fit: cover;
+  border: 3px solid var(--duo-yellow);
+  flex-shrink: 0;
+}
+
+.quests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.quest-item-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 5px;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.quest-icon {
+  font-size: 32px;
+  width: 58px;
+  height: 58px;
+  background: var(--bg-soft);
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.quest-body {
+  flex: 1;
+}
+.quest-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.quest-reward {
+  font-weight: 900;
+  font-size: 13px;
+  color: var(--duo-blue);
+  background: var(--duo-blue-tint);
+  padding: 3px 9px;
+  border-radius: 99px;
+}
+.quest-body p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 4px 0 8px;
+}
+.quest-progress-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 4px;
+}
+
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+  gap: 12px;
+}
+.badge-card {
+  border: 2px solid var(--border-light);
+  border-bottom-width: 4px;
+  border-radius: var(--radius-md);
+  padding: 14px 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.45;
+  filter: grayscale(1);
+  transition: transform 0.15s, opacity 0.2s;
+}
+.badge-card.unlocked {
+  opacity: 1;
+  filter: none;
+  background: var(--duo-yellow-tint);
+  border-color: var(--duo-yellow);
+}
+.badge-emoji {
+  font-size: 30px;
+}
+
+/* Modalità Extra Arcade Cards */
+.extra-modes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.extra-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom: 5px solid var(--border-shadow);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: transform 0.12s, border-color 0.15s;
+}
+.extra-card:hover {
+  border-color: var(--duo-blue);
+  transform: translateY(-3px);
+}
+.extra-card:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+.extra-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.extra-card-icon {
+  font-size: 36px;
+  width: 56px;
+  height: 56px;
+  background: var(--bg-soft);
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+}
+.extra-pool-pill {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--duo-blue-dark);
+  background: var(--duo-blue-tint);
+  padding: 4px 10px;
+  border-radius: 99px;
+}
+.extra-card-info b {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text-main);
+  display: block;
+  margin-bottom: 4px;
+}
+.extra-card-info p {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.extra-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1.5px solid var(--border-light);
+}
+.extra-xp-tag {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--duo-green-dark);
+  background: var(--duo-green-tint);
+  padding: 3px 9px;
+  border-radius: 99px;
+}
+.extra-card-cta {
+  font-size: 12.5px;
+  font-weight: 900;
+  color: var(--duo-blue);
+}
+
+/* Profilo Utente */
+.profile-hero-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.profile-avatar-big {
+  position: relative;
+  flex-shrink: 0;
+}
+.profile-hero-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 22px;
+  object-fit: cover;
+  border: 3px solid var(--duo-green);
+  box-shadow: 0 5px 0 var(--duo-green-dark);
+}
+.profile-level-pill {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--duo-green);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.profile-badges-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.mini-tag {
+  background: var(--bg-soft);
+  border: 1.5px solid var(--border-light);
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.stat-box {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 4px;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stat-box-icon {
+  font-size: 22px;
+}
+.stat-box b {
+  font-size: 22px;
+  font-weight: 900;
+}
+.stat-box small {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.auth-demo-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   9. MODALI & SELETTORE RAPIDO UNITÀ
+   ========================================================================== */
+.duo-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(5px);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.duo-modal-backdrop[hidden] {
+  display: none !important;
+}
+
+.duo-modal-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 6px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+}
+.duo-modal-card.modal-lg {
+  max-width: 660px;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.modal-head h2 {
+  font-size: 20px;
+  font-weight: 900;
+}
+.modal-close-x {
+  background: var(--bg-soft);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.modal-body {
+  font-size: 14px;
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.modal-big-emoji {
+  font-size: 56px;
+  margin-bottom: 8px;
+}
+.modal-stack-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+/* Griglia Salto Rapido Unità */
+.unit-jump-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.unit-jump-item {
+  background: var(--bg-soft);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 4px;
+  border-radius: 14px;
+  padding: 12px 14px;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: transform 0.1s, border-color 0.15s;
+}
+.unit-jump-item:hover {
+  border-color: var(--duo-blue);
+  background: var(--duo-blue-tint);
+}
+.unit-jump-item small {
+  font-size: 10.5px;
+  font-weight: 900;
+  color: var(--duo-blue-dark);
+  text-transform: uppercase;
+}
+.unit-jump-item b {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--text-main);
+}
+.unit-jump-item span {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.deploy-section {
+  background: var(--bg-soft);
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+.deploy-section h3 {
+  font-size: 16px;
+  font-weight: 900;
+  margin: 6px 0 8px;
+}
+.deploy-section ul {
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.deploy-section code {
+  background: rgba(28, 176, 246, 0.14);
+  color: var(--duo-blue-dark);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 12.5px;
+}
+
+/* Nascondi la barra mobile su Desktop */
+.duo-mobile-nav {
+  display: none;
+}

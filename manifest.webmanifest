@@ -1,0 +1,27 @@
+{
+  "name": "Fuoriclasse — Il calcio si impara giocando",
+  "short_name": "Fuoriclasse",
+  "description": "Una sfida quotidiana per riconoscere le carriere, le maglie e i record dei campioni del calcio italiano.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#101318",
+  "theme_color": "#101318",
+  "lang": "it",
+  "dir": "ltr",
+  "categories": ["sports", "games", "education"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

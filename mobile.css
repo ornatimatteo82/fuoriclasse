@@ -1,0 +1,216 @@
+/* ==========================================================================
+   FUORICLASSE — RESPONSIVE MOBILE-FIRST (STILE DUOLINGO APP)
+   Gestione Safe Area, barra di navigazione inferiore fissa e touch targets
+   ========================================================================== */
+
+@media (max-width: 960px) {
+  /* Layout a colonna singola su Mobile e Tablet verticali */
+  .duo-sidebar {
+    display: none;
+  }
+  .duo-rail-right {
+    display: none;
+  }
+
+  .duo-topbar {
+    padding: 0 12px;
+    height: 60px;
+  }
+
+  .brand-wordmark {
+    font-size: 17px;
+  }
+
+  .duo-shell {
+    grid-template-columns: 1fr;
+    padding: 14px 14px calc(82px + env(safe-area-inset-bottom));
+  }
+
+  .duo-main {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  /* Barra di navigazione fissa inferiore su Mobile */
+  .duo-mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 90;
+    height: calc(66px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(14px);
+    border-top: 2px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.05);
+  }
+
+  .mobile-nav-btn {
+    background: none;
+    border: none;
+    font-family: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 100%;
+    flex: 1;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: transform 0.1s, color 0.15s;
+    user-select: none;
+  }
+
+  .mobile-nav-btn:active {
+    transform: scale(0.92);
+  }
+
+  .nav-btn-icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .nav-btn-text {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.2px;
+  }
+
+  .mobile-nav-btn.active {
+    color: var(--duo-blue);
+  }
+  .mobile-nav-btn.active .nav-btn-icon {
+    transform: translateY(-2px);
+  }
+
+  /* Topbar compatta su schermi stretti */
+  .section-title {
+    display: none;
+  }
+  .section-badge-btn {
+    padding: 6px 9px;
+  }
+
+  /* Modale Quiz mobile full screen */
+  .quiz-topbar {
+    padding: 12px 14px;
+  }
+  .quiz-body {
+    padding: 8px 14px calc(116px + env(safe-area-inset-bottom));
+  }
+  .quiz-mascot-avatar {
+    width: 60px;
+    height: 60px;
+  }
+  .speech-bubble {
+    padding: 12px 14px;
+  }
+  .speech-bubble h2 {
+    font-size: 16.5px;
+  }
+
+  .quiz-options-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .answer-card-btn {
+    padding: 13px 14px;
+    font-size: 15px;
+  }
+
+  .quiz-bottom-drawer {
+    padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+  }
+  .continue-btn {
+    min-width: 136px;
+    padding: 12px 18px;
+    font-size: 13.5px;
+  }
+}
+
+@media (max-width: 540px) {
+  .brand-wordmark {
+    display: none;
+  }
+
+  .path-header-banner {
+    padding: 18px 16px;
+  }
+  .path-header-banner h1 {
+    font-size: 22px;
+  }
+  .hero-mascot-img {
+    width: 64px;
+    height: 64px;
+  }
+  .mascot-bubble {
+    font-size: 12.5px;
+    padding: 10px 12px;
+  }
+
+  .unit-banner-card {
+    padding: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .unit-banner-info {
+    max-width: 100%;
+  }
+  .guidebook-btn {
+    align-self: flex-start;
+  }
+
+  .node-row.offset-left-1 { transform: translateX(-28px); }
+  .node-row.offset-left-2 { transform: translateX(-46px); }
+  .node-row.offset-right-1 { transform: translateX(28px); }
+  .node-row.offset-right-2 { transform: translateX(46px); }
+
+  .node-mascot-companion {
+    display: none;
+  }
+
+  .path-node-btn {
+    width: 70px;
+    height: 66px;
+    font-size: 26px;
+  }
+
+  .extra-modes-grid,
+  .unit-jump-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .podium-section {
+    gap: 8px;
+  }
+  .podium-step {
+    width: 92px;
+    padding: 10px 6px;
+  }
+  .podium-step b {
+    font-size: 10.5px;
+  }
+}
+
+/* Accessibilità: Riduzione del movimento */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Feedback tastiera accessibile */
+:focus-visible {
+  outline: 3px solid var(--duo-blue) !important;
+  outline-offset: 2px !important;
+}
