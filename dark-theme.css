@@ -141,6 +141,44 @@ body[data-theme="dark"] .podium-step.step-1 {
   background: linear-gradient(180deg, #3b3012 0%, #29200b 100%);
 }
 
+body[data-theme="dark"] .mode-switch-btn {
+  background: var(--bg-card);
+  border-color: var(--border-light);
+  border-bottom-color: #0a1118;
+}
+body[data-theme="dark"] .mode-switch-btn.active[data-mode="gael"] {
+  background: var(--duo-green-tint);
+  border-color: var(--duo-green);
+}
+body[data-theme="dark"] .mode-switch-btn.active[data-mode="quizzone"],
+body[data-theme="dark"] .mode-switch-btn.active[data-mode="quizzocampo"] {
+  background: var(--duo-blue-tint);
+  border-color: var(--duo-blue);
+}
+body[data-theme="dark"] .mode-switch-btn.active[data-mode="pastore"] {
+  background: rgba(255, 200, 0, 0.16);
+  border-color: #ffc800;
+}
+body[data-theme="dark"] .mode-switch-btn.active .mode-switch-icon {
+  background: rgba(15, 25, 34, 0.65);
+}
+
+body[data-theme="dark"] .home-pwa-login-banner {
+  background: linear-gradient(135deg, rgba(28, 176, 246, 0.15) 0%, rgba(88, 204, 2, 0.1) 100%);
+  border-color: #0284c7;
+}
+
+body[data-theme="dark"] .banner-instructions-box {
+  background: rgba(18, 26, 42, 0.85);
+  border-color: #27374d;
+}
+
 body[data-theme="dark"] .comp-xp { color: #fde047; }
 body[data-theme="dark"] .comp-acc { color: #86efac; }
 body[data-theme="dark"] .comp-gems { color: #7dd3fc; }
+
+body[data-theme="dark"] .duo-input {
+  background: var(--bg-soft);
+  border-color: var(--border-light);
+  color: #ffffff;
+}

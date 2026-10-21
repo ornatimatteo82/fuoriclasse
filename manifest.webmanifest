@@ -1,27 +1,29 @@
 {
-  "name": "Fuoriclasse — Il calcio si impara giocando",
+  "id": "fuoriclasse-app",
+  "name": "Fuoriclasse — Quizzone, Gael League & Pastore League",
   "short_name": "Fuoriclasse",
-  "description": "Una sfida quotidiana per riconoscere le carriere, le maglie e i record dei campioni del calcio italiano.",
-  "start_url": "./index.html",
+  "description": "Quizzone (1.500 quiz Serie A & Champions), Gael League (1.500 carriere & club misteriosi PRO) e Pastore League (2.000 marcatori Serie A).",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#101318",
-  "theme_color": "#101318",
+  "background_color": "#0b192c",
+  "theme_color": "#0b192c",
   "lang": "it",
   "dir": "ltr",
   "categories": ["sports", "games", "education"],
   "icons": [
     {
-      "src": "./icon.svg",
+      "src": "./assets/mascot-coach.jpg?v=32",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon.svg?v=32",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
-    },
-    {
-      "src": "./icon.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml"
     }
   ]
 }

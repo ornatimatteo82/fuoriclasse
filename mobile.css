@@ -183,7 +183,8 @@
   }
 
   .extra-modes-grid,
-  .unit-jump-grid {
+  .unit-jump-grid,
+  .game-mode-switcher {
     grid-template-columns: 1fr;
   }
 

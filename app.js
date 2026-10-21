@@ -1,11 +1,10 @@
 /**
  * ============================================================================
- * FUORICLASSE — MOTORE DI GIOCO GAMIFICATO (EDIZIONE ARGON 3D)
+ * FUORICLASSE — MOTORE DI GIOCO DIVISO PER MODALITÀ (GAEL LEAGUE & QUIZZOCAMPO)
  * ============================================================================
- * - Caricamento Curriculum 1.080+ domande da `data/curriculum.json` + Fallback
- * - Percorso a serpentina (Snake Path) con Bauli 3D, Corone Stelle e Mister Bomber
- * - Integrazione Live Wikidata REST API con cache locale (TTL 14 giorni)
- * - Quiz interattivo full-screen con Combo Streak, Confetti Canvas e Audio Synth
+ * - Modalità 1: GAEL LEAGUE (Indovina il calciatore dalle maglie / carriera: Anni '90 & 2000)
+ * - Modalità 2: QUIZZOCAMPO (Il grande quiz del calcio: Serie A, Bomber, Derby, Coppe)
+ * - Percorso a serpentina 3D separato per ciascuna modalità + Arene Rapide
  * ============================================================================
  */
 
@@ -14,15 +13,25 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 const esc = (str = '') => String(str).replace(/[&<>"']/g, (m) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
 }[m]));
+const sanitizeUsername = (raw = '') => String(raw).replace(/[<>"'`&\x00-\x1F\x7F]/g, '').trim().slice(0, 24);
 
-const STORAGE_KEY = 'fuoriclasse_argon_state_v3';
+const STORAGE_KEY = 'fuoriclasse_argon_state_v4';
+const SUPA_CONFIG_KEY = 'fuoriclasse_supabase_config_v1';
+const ONBOARDING_DONE_KEY = 'fuoriclasse_onboarding_done_v1';
 const WIKI_CACHE_PREFIX = 'fuoriclasse_wikidata_v1_';
-const WIKI_TTL_MS = 14 * 24 * 60 * 60 * 1000; // 14 giorni
+const WIKI_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+
+// Configurazione Supabase Ufficiale Pre-collegata
+const DEFAULT_SUPABASE_URL = 'https://zmasnwtbahotcdvqdhfd.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_HseKP-eaKFM6Ebpi1V2jSg_mYZnwWq3';
+let supabaseClient = null;
+let currentCloudUser = null;
 
 // -------------------------------------------------------------
-// 1. STATO GLOBALE GIOCATORE & SESSIONE
+// 1. STATO GLOBALE GIOCATORE & MODALITÀ ATTIVA
 // -------------------------------------------------------------
 const state = {
+  username: 'Mister Fuoriclasse',
   xp: 120,
   streak: 3,
   gems: 250,
@@ -31,17 +40,19 @@ const state = {
   soundEnabled: true,
   theme: 'light',
   activeTab: 'path',
+  activeGameMode: 'quizzocampo', // 'quizzocampo' | 'gael' | 'pastore'
+  lastHeartsRefillDay: new Date().toLocaleDateString('en-CA'),
 
   // Progressi percorso: chiavi 'u1-l1' completate e bauli riscattati
-  completedLessons: ['u1-l1'],
+  completedLessons: ['u1-l1', 'u11-l1'],
   claimedChests: [],
   dailyGoalDone: 1,
   dailyGoalTarget: 5,
   todayCorrect: 2,
 
-  // Stato Quiz attivo
+  // Stato Partita attiva
   quizOpen: false,
-  quizMode: 'path', // 'path' | 'goals' | 'scorers' | 'derby' | 'champions' | 'practice'
+  quizMode: 'path',
   activeUnitIdx: 0,
   activeLessonIdx: 0,
   currentQuestions: [],
@@ -55,6 +66,7 @@ const state = {
 
 let catalog = {
   units: [],
+  gaelModes: { anni90: [], anni2000: [], allstars: [] },
   extraModes: { goals: [], scorers: [], derby: [], champions: [] }
 };
 
@@ -128,21 +140,39 @@ function jerseySVG(kitKey, label = '') {
   }
 
   return `
-    <svg viewBox="0 0 64 64" role="img" aria-label="Maglia ${esc(label)}">
+    <svg viewBox="0 0 64 64" role="img" aria-label="Maglia ${esc(label)}" shape-rendering="crispEdges">
       <path d="M20 10 L26 14 L38 14 L44 10 L56 18 L50 30 L46 27 L46 56 L18 56 L18 27 L14 30 L8 18 Z"
-            fill="${k.bg}" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round"/>
+            fill="${k.bg}" stroke="#0f172a" stroke-width="3" stroke-linejoin="miter"/>
       <clipPath id="clip-${esc(kitKey)}-${esc(initials)}">
         <path d="M20 10 L26 14 L38 14 L44 10 L56 18 L50 30 L46 27 L46 56 L18 56 L18 27 L14 30 L8 18 Z"/>
       </clipPath>
       <g clip-path="url(#clip-${esc(kitKey)}-${esc(initials)})">
         ${pattern}
       </g>
-      <path d="M25 12 Q32 19 39 12" fill="none" stroke="${k.s1}" stroke-width="2.5"/>
-      <rect x="21" y="31" width="22" height="12" rx="4" fill="rgba(15,23,42,0.72)"/>
-      <text x="32" y="40" text-anchor="middle" font-size="8.5" font-weight="900" fill="#ffffff" font-family="Nunito, sans-serif">${esc(initials)}</text>
+      <path d="M25 12 L32 18 L39 12" fill="none" stroke="${k.s1}" stroke-width="3"/>
+      <rect x="20" y="30" width="24" height="13" fill="#0f172a"/>
+      <rect x="21" y="31" width="22" height="11" fill="#1e293b"/>
+      <text x="32" y="39.5" text-anchor="middle" font-size="7" font-weight="900" fill="#ffc800" font-family="'Press Start 2P', monospace">${esc(initials)}</text>
     </svg>
   `;
 }
+
+// -------------------------------------------------------------
+// 2B. ICONE 8/16-BIT PIXEL-ART ANNI '80 (STILE ARCADE / TSUBASA)
+// -------------------------------------------------------------
+const PIXEL_ICONS = {
+  ball: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="5" y="1" width="6" height="14" fill="#ffffff"/><rect x="1" y="5" width="14" height="6" fill="#ffffff"/><rect x="3" y="3" width="10" height="10" fill="#ffffff"/><rect x="5" y="0" width="6" height="1" fill="#0f172a"/><rect x="5" y="15" width="6" height="1" fill="#0f172a"/><rect x="0" y="5" width="1" height="6" fill="#0f172a"/><rect x="15" y="5" width="1" height="6" fill="#0f172a"/><rect x="3" y="1" width="2" height="2" fill="#0f172a"/><rect x="11" y="1" width="2" height="2" fill="#0f172a"/><rect x="1" y="3" width="2" height="2" fill="#0f172a"/><rect x="13" y="3" width="2" height="2" fill="#0f172a"/><rect x="1" y="11" width="2" height="2" fill="#0f172a"/><rect x="13" y="11" width="2" height="2" fill="#0f172a"/><rect x="3" y="13" width="2" height="2" fill="#0f172a"/><rect x="11" y="13" width="2" height="2" fill="#0f172a"/><rect x="6" y="6" width="4" height="4" fill="#0f172a"/><rect x="7" y="2" width="2" height="2" fill="#0f172a"/><rect x="2" y="7" width="2" height="2" fill="#0f172a"/><rect x="12" y="7" width="2" height="2" fill="#0f172a"/><rect x="5" y="12" width="2" height="2" fill="#0f172a"/><rect x="9" y="12" width="2" height="2" fill="#0f172a"/></svg>`,
+  jersey: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="4" y="2" width="8" height="12" fill="#0066cc"/><rect x="1" y="4" width="3" height="5" fill="#0066cc"/><rect x="12" y="4" width="3" height="5" fill="#0066cc"/><rect x="6" y="2" width="4" height="2" fill="#ffc800"/><rect x="7" y="6" width="2" height="5" fill="#ffffff"/><rect x="4" y="1" width="8" height="1" fill="#0f172a"/><rect x="4" y="14" width="8" height="1" fill="#0f172a"/></svg>`,
+  star: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="7" y="1" width="2" height="14" fill="#ffc800"/><rect x="1" y="6" width="14" height="3" fill="#ffc800"/><rect x="4" y="4" width="8" height="7" fill="#ffc800"/><rect x="3" y="11" width="3" height="3" fill="#ffc800"/><rect x="10" y="11" width="3" height="3" fill="#ffc800"/><rect x="6" y="5" width="2" height="2" fill="#fffbeb"/></svg>`,
+  flame: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="7" y="1" width="2" height="3" fill="#ff4b4b"/><rect x="5" y="4" width="6" height="4" fill="#ff4b4b"/><rect x="3" y="7" width="10" height="6" fill="#ff9600"/><rect x="5" y="13" width="6" height="2" fill="#ff4b4b"/><rect x="6" y="8" width="4" height="5" fill="#ffc800"/><rect x="7" y="10" width="2" height="3" fill="#ffffff"/></svg>`,
+  gem: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="4" y="2" width="8" height="3" fill="#38bdf8"/><rect x="2" y="5" width="12" height="4" fill="#0284c7"/><rect x="4" y="9" width="8" height="3" fill="#0369a1"/><rect x="6" y="12" width="4" height="2" fill="#0284c7"/><rect x="7" y="14" width="2" height="1" fill="#0369a1"/><rect x="5" y="3" width="3" height="2" fill="#e0f2fe"/></svg>`,
+  heart: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="2" y="3" width="5" height="2" fill="#ff4b4b"/><rect x="9" y="3" width="5" height="2" fill="#ff4b4b"/><rect x="1" y="5" width="14" height="4" fill="#ff4b4b"/><rect x="3" y="9" width="10" height="2" fill="#ea2b2b"/><rect x="5" y="11" width="6" height="2" fill="#ea2b2b"/><rect x="7" y="13" width="2" height="2" fill="#b91c1c"/><rect x="3" y="4" width="2" height="2" fill="#fecaca"/></svg>`,
+  trophy: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="4" y="2" width="8" height="6" fill="#ffc800"/><rect x="2" y="3" width="2" height="3" fill="#e5a400"/><rect x="12" y="3" width="2" height="3" fill="#e5a400"/><rect x="6" y="8" width="4" height="3" fill="#e5a400"/><rect x="4" y="11" width="8" height="2" fill="#ffc800"/><rect x="3" y="13" width="10" height="2" fill="#78350f"/><rect x="5" y="3" width="2" height="3" fill="#fef08a"/></svg>`,
+  bolt: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="8" y="1" width="4" height="3" fill="#ffc800"/><rect x="6" y="4" width="5" height="3" fill="#ffc800"/><rect x="4" y="7" width="8" height="2" fill="#fef08a"/><rect x="6" y="9" width="5" height="3" fill="#ffc800"/><rect x="4" y="12" width="4" height="3" fill="#e5a400"/></svg>`,
+  shield: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="3" y="2" width="10" height="6" fill="#1cb0f6"/><rect x="4" y="8" width="8" height="3" fill="#0284c7"/><rect x="6" y="11" width="4" height="2" fill="#0369a1"/><rect x="7" y="13" width="2" height="1" fill="#0369a1"/><rect x="7" y="2" width="2" height="11" fill="#ffc800"/></svg>`,
+  crown: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="2" y="4" width="2" height="7" fill="#ffc800"/><rect x="7" y="3" width="2" height="8" fill="#ffc800"/><rect x="12" y="4" width="2" height="7" fill="#ffc800"/><rect x="2" y="7" width="12" height="5" fill="#ffc800"/><rect x="2" y="12" width="12" height="2" fill="#b45309"/><rect x="4" y="9" width="2" height="2" fill="#ef4444"/><rect x="10" y="9" width="2" height="2" fill="#3b82f6"/></svg>`,
+  check: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="11" y="3" width="3" height="3" fill="#ffffff"/><rect x="9" y="5" width="3" height="3" fill="#ffffff"/><rect x="7" y="7" width="3" height="3" fill="#ffffff"/><rect x="5" y="9" width="3" height="3" fill="#ffffff"/><rect x="3" y="7" width="3" height="3" fill="#ffffff"/></svg>`
+};
 
 // -------------------------------------------------------------
 // 3. SALVATAGGIO E RIPRISTINO STATO (LOCALSTORAGE)
@@ -153,12 +183,21 @@ function loadState() {
     if (!raw) return;
     const saved = JSON.parse(raw);
     if (typeof saved === 'object' && saved !== null) {
+      if (typeof saved.username === 'string' && saved.username.trim()) {
+        state.username = saved.username.trim();
+      }
       state.xp = Number.isFinite(saved.xp) ? saved.xp : state.xp;
       state.streak = Number.isFinite(saved.streak) ? saved.streak : state.streak;
       state.gems = Number.isFinite(saved.gems) ? saved.gems : state.gems;
       state.hearts = Number.isFinite(saved.hearts) ? saved.hearts : state.hearts;
       state.soundEnabled = typeof saved.soundEnabled === 'boolean' ? saved.soundEnabled : true;
       state.theme = saved.theme === 'dark' ? 'dark' : 'light';
+      state.activeGameMode = (saved.activeGameMode === 'gael' || saved.activeGameMode === 'pastore')
+        ? saved.activeGameMode
+        : 'quizzocampo';
+      if (typeof saved.lastHeartsRefillDay === 'string') {
+        state.lastHeartsRefillDay = saved.lastHeartsRefillDay;
+      }
       if (Array.isArray(saved.completedLessons) && saved.completedLessons.length) {
         state.completedLessons = saved.completedLessons;
       }
@@ -176,12 +215,15 @@ function loadState() {
 function persistState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      username: state.username,
       xp: state.xp,
       streak: state.streak,
       gems: state.gems,
       hearts: state.hearts,
+      lastHeartsRefillDay: state.lastHeartsRefillDay,
       soundEnabled: state.soundEnabled,
       theme: state.theme,
+      activeGameMode: state.activeGameMode,
       completedLessons: state.completedLessons,
       claimedChests: state.claimedChests,
       dailyGoalDone: state.dailyGoalDone,
@@ -190,24 +232,179 @@ function persistState() {
   } catch (e) {
     console.warn('Impossibile salvare lo stato:', e);
   }
+  syncProfileToSupabase();
 }
 
 // -------------------------------------------------------------
-// 4. CARICAMENTO CURRICULUM JSON (1.080+ DOMANDE)
+// 3B. INTEGRAZIONE CLOUD SUPABASE (AUTH + PROFILES + CLASSIFICA)
+// -------------------------------------------------------------
+function getSupabaseCreds() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SUPA_CONFIG_KEY) || '{}');
+    return {
+      url: (saved.url || DEFAULT_SUPABASE_URL || '').trim(),
+      key: (saved.key || DEFAULT_SUPABASE_ANON_KEY || '').trim()
+    };
+  } catch (e) {
+    return { url: DEFAULT_SUPABASE_URL, key: DEFAULT_SUPABASE_ANON_KEY };
+  }
+}
+
+async function initSupabase() {
+  const { url, key } = getSupabaseCreds();
+  if ($('#supaUrlInput')) $('#supaUrlInput').value = url;
+  if ($('#supaKeyInput')) $('#supaKeyInput').value = key;
+
+  if (!url || !key || !window.supabase) {
+    updateCloudStatusUI(null, false);
+    return;
+  }
+
+  try {
+    supabaseClient = window.supabase.createClient(url, key);
+    const { data } = await supabaseClient.auth.getSession();
+    currentCloudUser = data?.session?.user || null;
+    updateCloudStatusUI(currentCloudUser, true);
+
+    if (currentCloudUser) {
+      await pullProfileFromSupabase();
+    } else if (!localStorage.getItem(ONBOARDING_DONE_KEY)) {
+      // Mostra da subito lo spogliatoio di Login Google + Scelta Username al primo ingresso
+      const authModal = $('#authModal');
+      if (authModal) authModal.hidden = false;
+    }
+
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      currentCloudUser = session?.user || null;
+      updateCloudStatusUI(currentCloudUser, true);
+      updateHomeInstallBannerVisibility();
+
+      if (currentCloudUser) {
+        await pullProfileFromSupabase();
+        renderLeaderboard();
+        // Se l'utente entra con Google e ha ancora il nome di default, apri subito la scelta Nickname!
+        if (event === 'SIGNED_IN' || (!state.username || state.username === 'Mister Fuoriclasse')) {
+          const suggested = (currentCloudUser.user_metadata?.full_name || currentCloudUser.email?.split('@')[0] || '')
+            .replace(/\s+/g, '')
+            .slice(0, 18);
+          if ($('#onboardingUsernameInput') && (!state.username || state.username === 'Mister Fuoriclasse')) {
+            $('#onboardingUsernameInput').value = suggested || 'Bomber' + Math.floor(Math.random() * 90 + 10);
+          }
+          const authModal = $('#authModal');
+          if (authModal && (!state.username || state.username === 'Mister Fuoriclasse')) {
+            authModal.hidden = false;
+            $('#onboardingUsernameInput')?.focus();
+          }
+        }
+      }
+    });
+  } catch (err) {
+    console.warn('Errore inizializzazione Supabase:', err.message);
+    updateCloudStatusUI(null, false);
+  }
+}
+
+function updateCloudStatusUI(user, isConfigured) {
+  const badge = $('#cloudStatusBadge');
+  const text = $('#cloudStatusText');
+  const loggedOutView = $('#authLoggedOutView');
+  const loggedInView = $('#authLoggedInView');
+  const userEmailEl = $('#authCurrentUserEmail');
+
+  if (!isConfigured) {
+    if (badge) badge.textContent = 'Modalità Locale';
+    if (text) text.textContent = 'Salvataggio automatico su dispositivo attivo.';
+    if (loggedOutView) loggedOutView.hidden = false;
+    if (loggedInView) loggedInView.hidden = true;
+    return;
+  }
+
+  if (user) {
+    if (badge) badge.textContent = '🟢 Account Connesso';
+    if (text) text.textContent = `Profilo sincronizzato automaticamente nel cloud (${user.email}).`;
+    if (loggedOutView) loggedOutView.hidden = true;
+    if (loggedInView) loggedInView.hidden = false;
+    if (userEmailEl) userEmailEl.textContent = user.email;
+  } else {
+    if (badge) badge.textContent = 'Ospite Locale';
+    if (text) text.textContent = 'Accedi con Google o Email per sincronizzare i tuoi progressi e comparire nella Classifica Globale.';
+    if (loggedOutView) loggedOutView.hidden = false;
+    if (loggedInView) loggedInView.hidden = true;
+  }
+}
+
+async function pullProfileFromSupabase() {
+  if (!supabaseClient || !currentCloudUser) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', currentCloudUser.id)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (data) {
+      state.username = sanitizeUsername(data.username) || state.username;
+      state.xp = Math.max(0, Math.min(1000000, Math.max(state.xp, Number(data.xp) || 0)));
+      state.streak = Math.max(1, Math.min(3650, Math.max(state.streak, Number(data.streak) || 1)));
+      state.gems = Math.max(0, Math.min(1000000, Math.max(state.gems, Number(data.gems) || 250)));
+      if (Array.isArray(data.completed_lessons)) {
+        state.completedLessons = Array.from(new Set([...state.completedLessons, ...data.completed_lessons]));
+      }
+      if (Array.isArray(data.claimed_chests)) {
+        state.claimedChests = Array.from(new Set([...state.claimedChests, ...data.claimed_chests]));
+      }
+      updateTopStats();
+      renderSnakePath();
+    } else {
+      await syncProfileToSupabase();
+    }
+  } catch (err) {
+    console.warn('Pull profilo Supabase:', err.message);
+  }
+}
+
+async function syncProfileToSupabase() {
+  if (!supabaseClient || !currentCloudUser) return;
+  try {
+    const cleanName = sanitizeUsername(state.username) || 'Mister Fuoriclasse';
+    const avatarLetter = cleanName.charAt(0).toUpperCase() || 'M';
+    await supabaseClient.from('profiles').upsert({
+      id: currentCloudUser.id,
+      username: cleanName,
+      avatar_letter: avatarLetter,
+      xp: Math.max(0, Math.floor(Number(state.xp) || 0)),
+      streak: Math.max(1, Math.floor(Number(state.streak) || 1)),
+      gems: Math.max(0, Math.floor(Number(state.gems) || 0)),
+      hearts: Math.max(0, Math.min(state.maxHearts, Math.floor(Number(state.hearts) || 0))),
+      completed_lessons: state.completedLessons,
+      claimed_chests: state.claimedChests,
+      updated_at: new Date().toISOString()
+    });
+  } catch (err) {
+    console.warn('Sync profilo Supabase:', err.message);
+  }
+}
+
+// -------------------------------------------------------------
+// 4. CARICAMENTO CURRICULUM JSON (5.000 SFIDE: GAEL PRO, QUIZZOCAMPO & MODALITÀ PASTORE)
 // -------------------------------------------------------------
 async function loadCurriculum() {
   try {
-    const res = await fetch('data/curriculum.json');
+    const res = await fetch('data/curriculum.json?v=25');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data && Array.isArray(data.units) && data.units.length > 0) {
       catalog = data;
     }
   } catch (err) {
-    console.warn('Caricamento curriculum.json via fetch non riuscito, attivo fallback locale:', err.message);
+    console.warn('Caricamento curriculum.json non riuscito:', err.message);
   }
 
-  renderSnakePath();
+  checkMidnightHeartsReset();
+  updateHomeInstallBannerVisibility();
+  setGameMode(state.activeGameMode, false);
   renderUnitJumpModal();
   renderLeaderboard();
   renderQuests();
@@ -215,53 +412,258 @@ async function loadCurriculum() {
 }
 
 // -------------------------------------------------------------
-// 5. RENDERING PERCORSO A SERPENTINA (SNAKE PATH 3D)
+// RESET VITE A MEZZANOTTE & PWA INSTALL BANNER
+// -------------------------------------------------------------
+function getLocalDateString() {
+  return new Date().toLocaleDateString('en-CA');
+}
+
+function checkMidnightHeartsReset() {
+  const today = getLocalDateString();
+  if (state.lastHeartsRefillDay && state.lastHeartsRefillDay !== today) {
+    state.hearts = state.maxHearts;
+    state.lastHeartsRefillDay = today;
+    persistState();
+    updateTopStats();
+    if ($('#freemiumHeartsNow')) $('#freemiumHeartsNow').textContent = state.hearts;
+    console.log('🌙 [Midnight Reset] Vite ricaricate al 100% (5/5 ❤️) per il nuovo giorno:', today);
+  } else if (!state.lastHeartsRefillDay) {
+    state.lastHeartsRefillDay = today;
+    persistState();
+  }
+}
+
+function isRunningStandalonePwa() {
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true ||
+    Boolean(document.referrer && document.referrer.includes('android-app://'))
+  );
+}
+
+function updateHomeInstallBannerVisibility() {
+  const banner = $('#homeInstallLoginBanner');
+  if (!banner) return;
+  const isStandalone = isRunningStandalonePwa();
+  const isLoggedIn = Boolean(currentCloudUser);
+
+  // Scompare se uno ha la pwa o è loggato già
+  if (isStandalone || isLoggedIn) {
+    banner.hidden = true;
+    banner.style.display = 'none';
+  } else {
+    banner.hidden = false;
+    banner.style.display = '';
+  }
+}
+window.updateHomeInstallBannerVisibility = updateHomeInstallBannerVisibility;
+
+// -------------------------------------------------------------
+// 5. SWITCHER 3 MODALITÀ DI GIOCO: QUIZZONE, GAEL LEAGUE, PASTORE LEAGUE
+// -------------------------------------------------------------
+window.setGameMode = (mode, scroll = true) => {
+  if (mode === 'quizzone' || mode === 'quiz') mode = 'quizzocampo';
+  if (mode !== 'gael' && mode !== 'pastore' && mode !== 'quizzocampo') {
+    mode = 'quizzocampo';
+  }
+  state.activeGameMode = mode;
+  persistState();
+
+  // Se non siamo sul tab percorso, portiamoci lì quando si clicca una modalità
+  if (state.activeTab !== 'path' && scroll) {
+    switchTab('path', state.activeGameMode);
+  }
+
+  // Aggiorna switcher buttons
+  $$('.mode-switch-btn').forEach(btn => {
+    let btnMode = btn.dataset.mode;
+    if (btnMode === 'quizzone' || btnMode === 'quiz') btnMode = 'quizzocampo';
+    const isActive = btnMode === state.activeGameMode;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', String(isActive));
+  });
+
+  // Aggiorna navigazione laterale e mobile
+  $$('.sidebar-nav .nav-item, .duo-mobile-nav .mobile-nav-btn').forEach(el => {
+    if (el.dataset.tab === 'path' && el.dataset.gamemode) {
+      let elMode = el.dataset.gamemode;
+      if (elMode === 'quizzone' || elMode === 'quiz') elMode = 'quizzocampo';
+      el.classList.toggle('active', state.activeTab === 'path' && elMode === state.activeGameMode);
+    }
+  });
+
+  // Aggiorna Hero Banner e testi in base alla modalità
+  const isGael = state.activeGameMode === 'gael';
+  const isPastore = state.activeGameMode === 'pastore';
+  const isQuiz = state.activeGameMode === 'quizzocampo';
+
+  if ($('#heroModeBadge')) {
+    $('#heroModeBadge').textContent = isPastore
+      ? '🎯 PASTORE LEAGUE 16-BIT'
+      : isGael
+        ? '👕 GAEL LEAGUE 16-BIT'
+        : '⚡ QUIZZONE 16-BIT';
+  }
+  if ($('#heroPoolBadge')) {
+    $('#heroPoolBadge').textContent = isPastore
+      ? '15 UNITÀ • 2.000 TABELLINI SERIE A'
+      : isGael
+        ? '10 UNITÀ • CULT HEROES & LIVELLI PRO'
+        : '15 UNITÀ • DAI RECORD ALL\'ESAME FINALE';
+  }
+  if ($('#heroTitle')) {
+    $('#heroTitle').textContent = isPastore
+      ? 'Pastore League: Chi ha segnato?'
+      : isGael
+        ? 'Gael League: Indovina chi è!'
+        : 'Quizzone: Il Grande Quiz!';
+  }
+  if ($('#heroDescription')) {
+    $('#heroDescription').innerHTML = isPastore
+      ? 'La modalità ufficiale sui <b>Marcatori di Serie A dal 1990 ad oggi</b> con <b>Giuseppe Pastore</b>! Ricordi le doppiette scudetto, i gol vittoria al 94\' e chi NON ha segnato in quel tabellino?'
+      : isGael
+        ? 'Percorso a <b>10 Unità ad alta difficoltà</b>: niente superstar scontate! Si parte dai Fantasisti ribelli e si sale fino a <b>bomber di provincia, meteore dimenticate e livelli PRO con Club Misteriosi ❓ e zero date</b>!'
+        : 'Percorso a <b>15 Unità</b>: dal Calcio Pop fino alle <b>notti magiche azzurre, Champions League, sanzioni e l\'Esame Supremo del Mister</b>!';
+  }
+  if ($('#heroQuickPlayText')) {
+    $('#heroQuickPlayText').textContent = isPastore
+      ? 'GIOCA PASTORE LEAGUE'
+      : isGael
+        ? 'GIOCA GAEL LEAGUE'
+        : 'GIOCA QUIZZONE';
+  }
+  if ($('#mascotGreeting')) {
+    $('#mascotGreeting').textContent = isPastore
+      ? '"Chi ha gonfiato la rete in quel pomeriggio di pioggia? Fai mente locale sui tabellini storici e non sbagliare marcatore!"'
+      : isGael
+        ? '"All\'inizio trovi Baggio e Ronaldo... ma nei livelli PRO ti oscurerò i club e le date: vediamo se sei un vero archivista!"'
+        : '"Più avanzi nel Quizzone più le domande scottano: saprai rispondere anche sull\'Esame Finale del Mister?"';
+  }
+
+  // Mascot avatar e ruolo
+  const mascotImg = document.querySelector('.hero-mascot-img');
+  const roleTag = document.querySelector('.mascot-role-tag');
+  if (mascotImg) {
+    mascotImg.src = isPastore
+      ? 'assets/pastore-mascot.jpg'
+      : isGael
+        ? 'assets/gael-mascot.jpg'
+        : 'assets/mascot-coach.jpg';
+    mascotImg.alt = isPastore
+      ? 'Giuseppe Pastore 16-Bit — L\'Almanacco dei Marcatori'
+      : isGael
+        ? 'Gael — Maestro delle Carriere 16-Bit'
+        : 'Il Mister #10 — Allenatore Giocatore';
+  }
+  if (roleTag) {
+    roleTag.textContent = isPastore
+      ? 'GIUSEPPE PASTORE'
+      : isGael
+        ? 'GAEL • MAESTRO DELLE CARRIERE'
+        : 'IL MISTER #10';
+  }
+
+  if ($('#railActiveModeBadge')) {
+    $('#railActiveModeBadge').textContent = isPastore ? 'PASTORE LEAGUE' : isGael ? 'GAEL LEAGUE' : 'QUIZZONE';
+  }
+  if ($('#currentUnitBadgeText')) {
+    $('#currentUnitBadgeText').textContent = isPastore ? 'PASTORE LEAGUE • 15 UNITÀ' : isGael ? 'GAEL LEAGUE • 10 UNITÀ' : 'QUIZZONE • 15 UNITÀ';
+  }
+
+  const leagueTrophy = $('#leagueHeroTrophy');
+  if (leagueTrophy) {
+    leagueTrophy.src = isPastore
+      ? 'assets/trophy-pastore.jpg'
+      : isGael
+        ? 'assets/trophy-gael.jpg'
+        : 'assets/trophy-quizzone.jpg';
+    leagueTrophy.alt = isPastore
+      ? 'Coppa Pastore League'
+      : isGael
+        ? 'Coppa Gael League'
+        : 'Coppa Quizzone';
+  }
+
+  renderSnakePath();
+  if (scroll) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
+
+// -------------------------------------------------------------
+// 6. RENDERING PERCORSO A SERPENTINA (FILTRATO PER MODALITÀ)
 // -------------------------------------------------------------
 const UNIT_THEMES = ['theme-green', 'theme-blue', 'theme-purple', 'theme-orange'];
 const NODE_OFFSETS = ['', 'offset-right-1', 'offset-right-2', 'offset-right-1', '', 'offset-left-1', 'offset-left-2', 'offset-left-1'];
-const LESSON_ICONS = ['⚽', '⭐', '👟', '🔥', '🛡️', '👑', '🎯', '⚡', '🏆', '🔟', '🌟', '🏅'];
+const LESSON_ICONS = [
+  PIXEL_ICONS.jersey,
+  PIXEL_ICONS.star,
+  PIXEL_ICONS.ball,
+  PIXEL_ICONS.flame,
+  PIXEL_ICONS.shield,
+  PIXEL_ICONS.crown,
+  PIXEL_ICONS.bolt,
+  PIXEL_ICONS.trophy,
+  PIXEL_ICONS.jersey,
+  PIXEL_ICONS.star
+];
 
-function getActiveLessonCoords() {
-  let foundUnit = 0;
-  let foundLesson = 0;
+function getActiveLessonCoords(modeFilter = state.activeGameMode) {
+  let fallbackUnit = 0;
+  let fallbackLesson = 0;
   for (let uIdx = 0; uIdx < catalog.units.length; uIdx++) {
     const u = catalog.units[uIdx];
+    const uMode = u.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
+    if (uMode !== modeFilter) continue;
+
     for (let lIdx = 0; lIdx < u.lessons.length; lIdx++) {
       const key = `u${uIdx + 1}-l${lIdx + 1}`;
       if (!state.completedLessons.includes(key)) {
         return { uIdx, lIdx };
       }
-      foundUnit = uIdx;
-      foundLesson = lIdx;
+      fallbackUnit = uIdx;
+      fallbackLesson = lIdx;
     }
   }
-  return { uIdx: foundUnit, lIdx: foundLesson };
+  return { uIdx: fallbackUnit, lIdx: fallbackLesson };
 }
 
 function renderSnakePath() {
   const container = $('#unitsContainer');
   if (!container) return;
 
-  let globalFoundCurrent = false;
-  let totalLessonsCount = 0;
-  let totalCompletedCount = 0;
+  let modeFoundCurrent = false;
+  let modeLessonsCount = 0;
+  let modeCompletedCount = 0;
 
   catalog.units.forEach((u, uIdx) => {
+    const uMode = u.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
+    if (uMode !== state.activeGameMode) return;
     u.lessons.forEach((_, lIdx) => {
-      totalLessonsCount++;
+      modeLessonsCount++;
       if (state.completedLessons.includes(`u${uIdx + 1}-l${lIdx + 1}`)) {
-        totalCompletedCount++;
+        modeCompletedCount++;
       }
     });
   });
 
   const heroPill = $('#heroProgressPill');
   if (heroPill) {
-    heroPill.textContent = `${totalCompletedCount} / ${totalLessonsCount} TAPPE`;
+    heroPill.textContent = `${modeCompletedCount} / ${modeLessonsCount} TAPPE`;
   }
 
+  let visibleUnitOrder = 0;
   const html = catalog.units.map((unit, uIdx) => {
-    const themeClass = UNIT_THEMES[uIdx % UNIT_THEMES.length];
+    const uMode = unit.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
+    if (uMode !== state.activeGameMode) return '';
+
+    const themeClass = UNIT_THEMES[visibleUnitOrder % UNIT_THEMES.length];
+    visibleUnitOrder++;
+
+    const unitTitle = unit.title || unit.name || `Unità ${uIdx + 1}`;
+    const unitDesc = unit.subtitle || unit.description || '';
+    const unitCode = unit.code || `${uMode === 'pastore' ? 'PASTORE LEAGUE' : uMode === 'gael' ? 'GAEL LEAGUE' : 'QUIZZONE'} • UNITÀ ${visibleUnitOrder}`;
+
     const completedInUnit = unit.lessons.filter((_, lIdx) =>
       state.completedLessons.includes(`u${uIdx + 1}-l${lIdx + 1}`)
     ).length;
@@ -273,20 +675,17 @@ function renderSnakePath() {
       let status = 'locked';
       if (isCompleted) {
         status = 'completed';
-      } else if (!globalFoundCurrent) {
+      } else if (!modeFoundCurrent) {
         status = 'current';
-        globalFoundCurrent = true;
-      } else if (uIdx === 0 && lIdx <= 2) {
-        status = 'unlocked';
-      } else if (lIdx === 0 && uIdx > 0) {
+        modeFoundCurrent = true;
+      } else if (lIdx <= 2) {
         status = 'unlocked';
       }
 
       const offsetClass = NODE_OFFSETS[lIdx % NODE_OFFSETS.length];
-      const icon = isCompleted ? '✓' : LESSON_ICONS[lIdx % LESSON_ICONS.length];
+      const icon = isCompleted ? PIXEL_ICONS.check : LESSON_ICONS[lIdx % LESSON_ICONS.length];
       const isCurrent = status === 'current';
 
-      // Baule premio 3D ogni 4 lezioni
       const chestId = `chest-u${uIdx + 1}-l${lIdx + 1}`;
       const isChestClaimed = state.claimedChests.includes(chestId);
       const showChestAfter = (lIdx + 1) % 4 === 0;
@@ -309,7 +708,7 @@ function renderSnakePath() {
             type="button"
             data-unit="${uIdx}"
             data-lesson="${lIdx}"
-            aria-label="Unità ${uIdx + 1}, Tappa ${lIdx + 1}: ${esc(lesson.title)}"
+            aria-label="${esc(unitCode)}, ${esc(lesson.title)}"
             onclick="handleNodeClick(${uIdx}, ${lIdx}, '${status}')"
           >
             <span class="node-icon">${icon}</span>
@@ -317,8 +716,8 @@ function renderSnakePath() {
           <span class="node-caption">${esc(lesson.title)}</span>
           ${isCurrent ? `
             <div class="node-mascot-companion" aria-hidden="true">
-              <img src="assets/mascot-coach.jpg" alt="" class="node-companion-img" width="52" height="52" />
-              <div class="node-mascot-bubble">Tocca a te! ⚽</div>
+              <img src="${uMode === 'pastore' ? 'assets/pastore-mascot.jpg' : uMode === 'gael' ? 'assets/gael-mascot.jpg' : 'assets/mascot-coach.jpg'}" alt="" class="node-companion-img" width="52" height="52" />
+              <div class="node-mascot-bubble">${uMode === 'pastore' ? 'Chi ha segnato? 🎯' : uMode === 'gael' ? 'Chi è il bomber? 👕' : 'Pronto al quiz? ⚡'}</div>
             </div>
           ` : ''}
         </div>
@@ -331,11 +730,11 @@ function renderSnakePath() {
         <header class="unit-banner-card ${themeClass}">
           <div class="unit-banner-info">
             <div class="unit-banner-top-row">
-              <small>${esc(unit.code || `UNITÀ ${uIdx + 1}`)}</small>
+              <small>${esc(unitCode)}</small>
               <span class="unit-progress-pill">⭐ ${completedInUnit}/${unit.lessons.length}</span>
             </div>
-            <h3>${esc(unit.name)}</h3>
-            <p>${esc(unit.description)}</p>
+            <h3>${esc(unitTitle)}</h3>
+            <p>${esc(unitDesc)}</p>
           </div>
           <button class="guidebook-btn" type="button" onclick="openUnitGuide(${uIdx})">
             <span aria-hidden="true">📖</span>
@@ -354,20 +753,27 @@ function renderSnakePath() {
 }
 
 // -------------------------------------------------------------
-// 6. SELETTORE RAPIDO UNITÀ, BAULI E GUIDA WIKIDATA LIVE
+// 7. MAPPA VELOCE UNITÀ, BAULI E GUIDA WIKIDATA LIVE
 // -------------------------------------------------------------
 function renderUnitJumpModal() {
   const list = $('#unitJumpList');
   if (!list) return;
 
   list.innerHTML = catalog.units.map((unit, uIdx) => {
+    const uMode = unit.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
+    const isCurrentMode = uMode === state.activeGameMode;
+    const unitTitle = unit.title || unit.name || `Unità ${uIdx + 1}`;
+    const modeLabel = uMode === 'pastore' ? 'PASTORE LEAGUE' : uMode === 'gael' ? 'GAEL LEAGUE' : 'QUIZZONE';
+    const modeIcon = uMode === 'pastore' ? '🎯' : uMode === 'gael' ? '👕' : '⚡';
+    const modeUnits = catalog.units.filter(u => (u.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore')) === uMode);
+    const unitOrder = modeUnits.indexOf(unit) + 1;
     const done = unit.lessons.filter((_, lIdx) =>
       state.completedLessons.includes(`u${uIdx + 1}-l${lIdx + 1}`)
     ).length;
     return `
-      <button class="unit-jump-item" type="button" onclick="jumpToUnit(${uIdx})">
-        <small>${esc(unit.code || `UNITÀ ${uIdx + 1}`)}</small>
-        <b>${esc(unit.name)}</b>
+      <button class="unit-jump-item ${isCurrentMode ? 'active-mode-item' : ''}" type="button" onclick="jumpToUnit(${uIdx})">
+        <small>${modeIcon} ${esc(modeLabel)} • U${unitOrder}</small>
+        <b>${esc(unitTitle)}</b>
         <span>Completate: ${done} / ${unit.lessons.length} tappe</span>
       </button>
     `;
@@ -377,15 +783,26 @@ function renderUnitJumpModal() {
 window.jumpToUnit = (uIdx) => {
   const modal = $('#unitJumpModal');
   if (modal) modal.hidden = true;
-  switchTab('path');
+  const unit = catalog.units[uIdx];
+  if (!unit) return;
+
+  const uMode = unit.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
+  setGameMode(uMode, false);
+  switchTab('path', uMode);
+
+  const unitTitle = unit.title || unit.name || '';
   const badgeText = $('#currentUnitBadgeText');
-  if (badgeText && catalog.units[uIdx]) {
-    badgeText.textContent = `UNITÀ ${uIdx + 1} • ${catalog.units[uIdx].name.toUpperCase().slice(0, 16)}`;
+  if (badgeText) {
+    const shortMode = uMode === 'pastore' ? 'PASTORE' : uMode === 'gael' ? 'GAEL' : 'QUIZ';
+    badgeText.textContent = `${shortMode} • ${unitTitle.toUpperCase().slice(0, 18)}`;
   }
-  const target = $(`#unit-sec-${uIdx}`);
-  if (target) {
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+
+  setTimeout(() => {
+    const target = $(`#unit-sec-${uIdx}`);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 60);
 };
 
 window.handleNodeClick = (uIdx, lIdx, status) => {
@@ -393,11 +810,11 @@ window.handleNodeClick = (uIdx, lIdx, status) => {
     playTone('wrong');
     const unit = catalog.units[uIdx];
     const lesson = unit?.lessons?.[lIdx];
-    openModal('🔒 Tappa Bloccata', `
-      <p>Completa prima la tappa precedente sul percorso oppure sblocca subito <b>"${esc(lesson?.title || 'Tappa')}"</b> per una sfida di allenamento!</p>
+    openModal('🔒 Tappa Sbloccabile', `
+      <p>Vuoi affrontare subito <b>"${esc(lesson?.title || 'Tappa')}"</b>?</p>
       <div style="margin-top:14px;">
         <button class="btn-primary w-full" type="button" onclick="document.getElementById('sourcesModal').hidden=true; forceStartNode(${uIdx}, ${lIdx});">
-          ⚡ GIOCA QUESTA TAPPA ORA
+          ⚡ SCENDI IN CAMPO ORA
         </button>
       </div>
     `);
@@ -409,14 +826,15 @@ window.handleNodeClick = (uIdx, lIdx, status) => {
 
 window.forceStartNode = (uIdx, lIdx) => {
   if (state.hearts <= 0) {
-    $('#heartsEmptyModal').hidden = false;
+    openHeartsFreemiumModal();
     return;
   }
 
   state.activeUnitIdx = uIdx;
   state.activeLessonIdx = lIdx;
-  const lesson = catalog.units[uIdx].lessons[lIdx];
-  startQuizSession('path', lesson.players || []);
+  const lesson = catalog.units[uIdx]?.lessons?.[lIdx];
+  const questions = lesson?.questions || lesson?.players || [];
+  startQuizSession('path', questions);
 };
 
 window.claimChestBonus = (chestId, btnEl) => {
@@ -447,27 +865,40 @@ window.openUnitGuide = async (uIdx) => {
   const modal = $('#guidebookModal');
   const title = $('#guidebookTitle');
   const body = $('#guidebookBody');
+  const unitTitle = unit.title || unit.name || `Unità ${uIdx + 1}`;
+  const unitDesc = unit.subtitle || unit.description || '';
 
-  title.textContent = `📖 ${unit.code}: ${unit.name}`;
+  title.textContent = `📖 ${unit.code || 'Guida'}: ${unitTitle}`;
 
-  const samplePlayers = [];
+  const sampleItems = [];
+  const seen = new Set();
   unit.lessons.forEach(l => {
-    (l.players || []).forEach(p => {
-      if (p.name && samplePlayers.length < 6) samplePlayers.push(p);
+    (l.questions || l.players || []).forEach(q => {
+      const key = q.name || q.question;
+      if (key && !seen.has(key) && sampleItems.length < 6) {
+        seen.add(key);
+        sampleItems.push(q);
+      }
     });
   });
 
   body.innerHTML = `
-    <p><strong>Obiettivo didattico:</strong> ${esc(unit.description)}</p>
+    <p><strong>Tema dell'Unità:</strong> ${esc(unitDesc)}</p>
     <div style="background:var(--bg-soft);padding:14px;border-radius:14px;border:1.5px solid var(--border-light);">
-      <h4 style="margin-bottom:8px;">🌟 Protagonisti e Curiosità dell'Unità:</h4>
+      <h4 style="margin-bottom:8px;">🌟 Schede &amp; Curiosità in questa Unità:</h4>
       <ul style="padding-left:18px;display:flex;flex-direction:column;gap:8px;">
-        ${samplePlayers.map(p => `
-          <li>
-            <b>${esc(p.name)}</b> (${esc(p.era || 'Storico')}) — ${esc(p.check || p.hint || '')}
-            ${p.wikidataId ? `<button class="btn-secondary btn-sm" style="margin-left:6px;padding:2px 8px;font-size:10px;" onclick="loadWikidataFact('${esc(p.wikidataId)}', '${esc(p.name)}')">🌐 Wikidata Live</button>` : ''}
-          </li>
-        `).join('')}
+        ${sampleItems.map(item => {
+          if (item.name) {
+            const qid = item.qid || item.wikidataId || '';
+            return `
+              <li>
+                <b>${esc(item.name)}</b> (${esc(item.era || 'Anni \'90/2000')}) — ${esc(item.check || item.hint || '')}
+                ${qid ? `<button class="btn-secondary btn-sm" style="margin-left:6px;padding:2px 8px;font-size:10px;" onclick="loadWikidataFact('${esc(qid)}', '${esc(item.name)}')">🌐 Wikidata Live</button>` : ''}
+              </li>
+            `;
+          }
+          return `<li><b>${esc(item.correct)}</b> — ${esc(item.check || '')}</li>`;
+        }).join('')}
       </ul>
     </div>
     <div id="wikidataLiveBox" style="font-size:13px;color:var(--text-muted);"></div>
@@ -505,12 +936,12 @@ window.loadWikidataFact = async (qid, playerName) => {
       🌐 <b>Wikidata Live (${esc(qid)}):</b> ${esc(desc)}
     </div>`;
   } catch (e) {
-    box.innerHTML = `⚠️ Connessione offline: utilizzo i dati verificati nel database locale di Fuoriclasse.`;
+    box.innerHTML = `⚠️ Connessione offline: utilizzo i dati verificati nel database locale.`;
   }
 };
 
 // -------------------------------------------------------------
-// 7. MOTORE DEL QUIZ INTERATTIVO (CON CONFETTI & COMBO STREAK)
+// 8. MOTORE DI GIOCO INTERATTIVO (GAEL LEAGUE & QUIZZOCAMPO)
 // -------------------------------------------------------------
 function sampleQuestions(pool, count = 5) {
   const arr = [...pool];
@@ -522,23 +953,138 @@ function sampleQuestions(pool, count = 5) {
 }
 
 function parseCleanQuestionText(rawText = '') {
-  // Estrae eventuali tag [Archivio Storico #12] o [Tabellino Storico #4] in un badge pulito
-  const match = rawText.match(/\[([^\]]+)\]\s*$/);
+  const match = rawText.match(/^\[([^\]]+)\]\s*(.*)$/);
   if (match) {
     return {
-      cleanText: rawText.replace(/\s*\[[^\]]+\]\s*$/, '').trim(),
+      cleanText: match[2].trim(),
       archiveBadge: match[1]
     };
   }
   return { cleanText: rawText, archiveBadge: '' };
 }
 
+function getRoundMultiplier(round = 1) {
+  const mults = [1, 1.5, 2, 2.5, 3, 4, 5];
+  return mults[Math.min(mults.length - 1, Math.max(0, (round || 1) - 1))];
+}
+
+function getQuestionsForDifficulty(gameType, diffLevel, count = 5) {
+  const targetDiff = Math.max(1, Number(diffLevel) || 1);
+  const units = catalog?.units || [];
+  let pool = [];
+
+  const actualMode = (gameType === 'quiz' || gameType === 'quizzone') ? 'quizzocampo' : (gameType || 'gael');
+  const modeUnits = units.filter(u => (u.mode || '') === actualMode);
+  const targetUnit = modeUnits[Math.min(modeUnits.length - 1, targetDiff - 1)] || modeUnits[0];
+
+  if (targetUnit && Array.isArray(targetUnit.lessons)) {
+    targetUnit.lessons.forEach(l => {
+      if (Array.isArray(l.questions)) pool.push(...l.questions);
+    });
+  }
+
+  // Deduplica per nome/domanda
+  const uniqueMap = new Map();
+  pool.forEach(q => {
+    const key = q.name || q.question || q.id;
+    if (key && !uniqueMap.has(key)) {
+      uniqueMap.set(key, { ...q, difficultyLevel: targetDiff });
+    }
+  });
+  const uniquePool = Array.from(uniqueMap.values());
+
+  // Escludi quelli già usciti nella run corrente
+  const unseen = uniquePool.filter(q => !state.usedQuestionIds?.has(q.name || q.question || q.id));
+  const chosenSource = unseen.length >= count ? unseen : uniquePool;
+  const picked = sampleQuestions(chosenSource, count);
+
+  picked.forEach(q => {
+    const key = q.name || q.question || q.id;
+    if (key && state.usedQuestionIds) state.usedQuestionIds.add(key);
+  });
+
+  return picked;
+}
+
+const AMAZON_AFFILIATE_TAG = 'matteornati0d-21';
+
+const AMAZON_FOOTBALL_DEALS = [
+  {
+    emoji: '📚',
+    title: "Libri & Biografie Calcio Serie A Anni '90",
+    sub: "I capolavori nostalgici consigliati da Fuoriclasse",
+    url: `https://www.amazon.it/s?k=libri+calcio+serie+a&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
+  },
+  {
+    emoji: '👕',
+    title: "Maglie Vintage & Retro Serie A",
+    sub: "Le divise leggendarie delle Sette Sorelle e club storici",
+    url: `https://www.amazon.it/s?k=maglie+calcio+vintage+serie+a&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
+  },
+  {
+    emoji: '⚽',
+    title: "Subbuteo Champions & Palloni Storici",
+    sub: "Il mito del panno verde da tavolo e palloni Mondiali",
+    url: `https://www.amazon.it/s?k=subbuteo+calcio&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
+  },
+  {
+    emoji: '🎮',
+    title: "EA Sports FC & Videogiochi di Calcio",
+    sub: "Le sfide console e card da collezione per veri bomber",
+    url: `https://www.amazon.it/s?k=ea+sports+fc&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
+  }
+];
+
+function updateAmazonSponsorCard() {
+  const deal = AMAZON_FOOTBALL_DEALS[Math.floor(Math.random() * AMAZON_FOOTBALL_DEALS.length)];
+  const emojiEl = $('#amazonItemEmoji');
+  const titleEl = $('#amazonItemTitle');
+  const subEl = $('#amazonItemSub');
+  const linkEl = $('#amazonShopLink');
+
+  if (emojiEl) emojiEl.textContent = deal.emoji;
+  if (titleEl) titleEl.textContent = deal.title;
+  if (subEl) subEl.textContent = deal.sub;
+  if (linkEl) {
+    linkEl.href = deal.url;
+    linkEl.title = `Scopri ${deal.title} su Amazon`;
+  }
+}
+
+function openHeartsFreemiumModal() {
+  if ($('#freemiumHeartsNow')) $('#freemiumHeartsNow').textContent = state.hearts;
+  if ($('#freemiumGemsNow')) $('#freemiumGemsNow').textContent = state.gems;
+  if ($('#heartsModalEmoji')) $('#heartsModalEmoji').textContent = state.hearts <= 0 ? '💔' : '❤️';
+  if ($('#freemiumActionFeedback')) $('#freemiumActionFeedback').textContent = '';
+  updateAmazonSponsorCard();
+  const modal = $('#heartsEmptyModal');
+  if (modal) modal.hidden = false;
+}
+window.openHeartsFreemiumModal = openHeartsFreemiumModal;
+
 function startQuizSession(mode, questionsList) {
   if (!questionsList || questionsList.length === 0) return;
 
+  // Sistema Freemium: se l'utente ha 0 vite e non sta facendo l'allenamento recupero vite, apri il modale Infermeria Freemium
+  if (mode !== 'practice' && state.hearts <= 0) {
+    openHeartsFreemiumModal();
+    return;
+  }
+
+  const firstQ = questionsList[0] || {};
+  const isGael = Boolean(firstQ.name && Array.isArray(firstQ.clubs));
+
   state.quizMode = mode;
+  state.sessionGameType = isGael ? 'gael' : 'quizzocampo';
+  state.survivalRound = 1;
+  state.currentDiffLevel = Math.min(10, Math.max(1, Number(firstQ.difficultyLevel) || ((state.activeUnitIdx % 10) + 1) || 1));
+  state.pendingXp = 0;
+  state.pendingGems = 0;
+  state.usedQuestionIds = new Set(questionsList.map(q => q.name || q.question || q.id));
+
   state.currentQuestions = questionsList.map(q => ({
     ...q,
+    difficultyLevel: state.currentDiffLevel,
     options: [...(q.options || [])]
   }));
   state.questionIndex = 0;
@@ -558,6 +1104,14 @@ function startQuizSession(mode, questionsList) {
 }
 
 function closeQuizSession() {
+  // Se l'utente chiude mentre è nella schermata di fine round con bottino attivo e vite > 0, incassa automaticamente
+  if (state.sessionFinished && state.hearts > 0 && (state.pendingXp > 0 || state.pendingGems > 0)) {
+    state.xp += state.pendingXp;
+    state.gems += state.pendingGems;
+    state.pendingXp = 0;
+    state.pendingGems = 0;
+    persistState();
+  }
   state.quizOpen = false;
   state.sessionFinished = false;
   stopConfetti();
@@ -579,7 +1133,6 @@ function renderQuizQuestion() {
   state.selectedAnswer = null;
   state.answered = false;
 
-  // Aggiorna progress bar
   const total = state.currentQuestions.length;
   const pct = Math.max(12, Math.round(((state.questionIndex) / total) * 100));
   const fill = $('#quizProgressFill');
@@ -588,7 +1141,6 @@ function renderQuizQuestion() {
   $('#quizHeartsNum').textContent = state.hearts;
   $('#quizMascotMood').textContent = state.comboStreak >= 2 ? '🔥' : '🎯';
 
-  // Reset Bottom Drawer
   const drawer = $('#quizBottomDrawer');
   drawer.className = 'quiz-bottom-drawer';
   $('#feedback').innerHTML = '';
@@ -596,48 +1148,126 @@ function renderQuizQuestion() {
   continueBtn.disabled = true;
   continueBtn.textContent = 'VERIFICA';
 
-  // Determina tipo domanda: Carriera Giocatore vs Modalità Tema
+  // Distinzione tra domanda GAEL LEAGUE (carriera con maglie) e QUIZZOCAMPO (quiz)
   const isPlayer = Boolean(q.name && Array.isArray(q.clubs));
   const tagEl = $('#quizTag');
   const archivePill = $('#quizArchivePill');
   const promptEl = $('#quizPrompt');
   const subEl = $('#quizSubprompt');
 
+  const diffLevel = Number(q.difficultyLevel) || (state.activeUnitIdx + 1) || 1;
+  state.hintRevealed = false;
+
   if (isPlayer) {
-    const parsedHint = parseCleanQuestionText(q.hint || '');
-    tagEl.textContent = `⚽ CARRIERA • ${q.era || 'STORICO'}`;
-    if (parsedHint.archiveBadge) {
-      archivePill.textContent = parsedHint.archiveBadge;
-      archivePill.hidden = false;
+    const isPro = Boolean(q.isPro) || diffLevel >= 7;
+    const showJerseyNum = false; // Maglia #?? sempre nascosta per default in Gael League
+    const hideYears = diffLevel >= 4 || isPro;
+    const maskClubCount = (isPro && diffLevel >= 9) ? 2 : ((isPro || diffLevel >= 7) ? 1 : 0);
+
+    // Determina quali club oscurare (Livelli PRO / Maestro)
+    state.mysteryClubIdx = maskClubCount >= 1 && q.clubs.length >= 3 ? Math.floor(q.clubs.length / 2) : -1;
+    state.mysteryClubIdx2 = maskClubCount >= 2 && q.clubs.length >= 4 ? Math.floor(q.clubs.length / 4) : -1;
+
+    tagEl.textContent = isPro
+      ? `🔥 GAEL LEAGUE PRO • CLUB MISTERIOSI ❓ (LIV. ${diffLevel})`
+      : `👕 GAEL LEAGUE • MAGLIA #?? (LIV. ${diffLevel})`;
+
+    const diffBadges = {
+      1: '★★★☆☆ CULT & FANTASISTI #??',
+      2: '★★★☆☆ IDOLI DELLE CURVE #??',
+      3: '★★★★☆ UOMINI COPPA #??',
+      4: '★★★★☆ BOMBER DI PROVINCIA (NO ANNI)',
+      5: '★★★★★ CULT HEROES (NO ANNI)',
+      6: '★★★★★ METEORE SERIE A (NO ANNI)',
+      7: '🔥 PRO • 1 CLUB MISTERIOSO ❓',
+      8: '🔥 PRO • ATTACCANTI SENZA ANNI ❓',
+      9: '🔥 PRO • DOPPIO CLUB ❓❓',
+      10: '👑 MAESTRO ESTREMO • ESAME SUPREMO ❓❓'
+    };
+    archivePill.textContent = `${diffBadges[diffLevel] || '★★★★☆'} • ${q.era || "ANNI '90 & 2000"}`;
+    archivePill.hidden = false;
+
+    promptEl.textContent = maskClubCount > 0
+      ? `Indovina il calciatore dalla carriera (${maskClubCount === 2 ? '2 Club Misteriosi ❓❓' : '1 Club Misterioso ❓'}):`
+      : hideYears
+        ? 'Indovina il calciatore dalla sola sequenza dei club (senza date):'
+        : 'Indovina il calciatore da dove ha giocato in carriera:';
+
+    if (q.hint) {
+      subEl.innerHTML = `
+        <span class="diff-rule-pill">${maskClubCount > 0 ? `🔥 ${maskClubCount} Club Oscurati + Anni Nascosti` : hideYears ? '🔒 Anni & Numero Nascosti' : !showJerseyNum ? '🔒 Numero Maglia Nascosto' : '⚽ Carriera Completa'}</span>
+        <button type="button" class="hint-toggle-btn" onclick="revealMisterHint()">💡 CHIEDI INDIZIO DEL MISTER</button>
+      `;
     } else {
-      archivePill.hidden = true;
+      subEl.textContent = '';
     }
-    promptEl.textContent = 'Quale calciatore ha vestito queste maglie in carriera?';
-    subEl.textContent = parsedHint.cleanText ? `💡 Indizio del Mister: ${parsedHint.cleanText}` : '';
+  } else if (q.mode === 'pastore') {
+    const isMulti = Boolean(q.multiSelect || Array.isArray(q.correct));
+    const targetCount = Array.isArray(q.correct) ? q.correct.length : 1;
+    tagEl.textContent = isMulti
+      ? `🎯 PASTORE LEAGUE • SELEZIONA ${targetCount} MARCATORI`
+      : `🎯 ${q.tag || 'PASTORE LEAGUE • MARCATORI SERIE A'}`;
+    archivePill.textContent = q.date ? `📅 ${q.date} • ${q.stadium || 'SERIE A'}` : 'ARCHIVIO PASTORE SERIE A';
+    archivePill.hidden = false;
+    promptEl.textContent = q.question || `Chi ha segnato in ${q.match || 'questa partita'}?`;
+    subEl.innerHTML = q.match
+      ? `<span class="diff-rule-pill" style="background:#ffc800;color:#000;font-weight:900;">🏟️ ${esc(q.match)}${isMulti ? ` • Scegli ${targetCount} calciatori` : ''}</span>`
+      : '';
   } else {
     const parsedQ = parseCleanQuestionText(q.question || '');
-    tagEl.textContent = `⚡ ${q.tag || 'SFIDA STORICA'}`;
+    tagEl.textContent = `⚡ ${q.tag || 'QUIZZONE'}`;
     if (parsedQ.archiveBadge) {
       archivePill.textContent = parsedQ.archiveBadge;
       archivePill.hidden = false;
     } else {
-      archivePill.hidden = true;
+      archivePill.textContent = 'QUIZZONE UFFICIALE';
+      archivePill.hidden = false;
     }
     promptEl.textContent = parsedQ.cleanText;
     subEl.textContent = q.subprompt || '';
   }
 
-  // Tappe maglie / Timeline di gara
+  renderCareerRouteBoxes(q, false);
+
+  state.selectedAnswers = new Set();
+  const isMulti = Boolean(q.multiSelect || (Array.isArray(q.correct) && q.correct.length > 1));
+  const answersBox = $('#answers');
+  answersBox.innerHTML = q.options.map((opt, i) => `
+    <button class="answer-card-btn ${isMulti ? 'multi-select-btn' : ''}" type="button" data-opt="${esc(opt)}" onclick="selectAnswer(this)">
+      <span class="key-badge">${isMulti ? '☐' : (i + 1)}</span>
+      <span>${esc(opt)}</span>
+    </button>
+  `).join('');
+}
+
+function renderCareerRouteBoxes(q, revealAll = false) {
   const routeBox = $('#careerRoute');
+  if (!routeBox || !q) return;
+
+  const isPlayer = Boolean(q.name && Array.isArray(q.clubs));
+  const diffLevel = Number(q.difficultyLevel) || (state.activeUnitIdx + 1) || 1;
+  const isPro = Boolean(q.isPro) || diffLevel >= 7;
+  const hideYears = !revealAll && (diffLevel >= 4 || isPro);
+  const mysteryIdx1 = !revealAll ? state.mysteryClubIdx : -1;
+  const mysteryIdx2 = !revealAll ? state.mysteryClubIdx2 : -1;
+
   if (isPlayer) {
-    routeBox.innerHTML = q.clubs.map((c, i) => `
-      ${i > 0 ? '<span class="route-arrow-icon" aria-hidden="true">➔</span>' : ''}
-      <div class="club-stop-item">
-        <span class="club-stop-kit">${jerseySVG(c[2], c[0])}</span>
-        <b class="club-stop-name">${esc(c[1] || c[0])}</b>
-        <span class="club-stop-year">${esc(c[3] || '')}</span>
-      </div>
-    `).join('');
+    routeBox.innerHTML = q.clubs.map((c, i) => {
+      const isMystery = i === mysteryIdx1 || i === mysteryIdx2;
+      const clubName = isMystery ? '❓ CLUB MISTERIOSO' : c[0];
+      const clubCode = isMystery ? '???' : (c[1] || c[0]);
+      const clubKit = isMystery ? 'juve' : c[2];
+      const clubYear = (hideYears || isMystery) ? '????' : (c[3] || '');
+
+      return `
+        ${i > 0 ? '<span class="route-arrow-icon" aria-hidden="true">➔</span>' : ''}
+        <div class="club-stop-item ${isMystery ? 'club-stop-mystery' : ''}">
+          <span class="club-stop-kit">${jerseySVG(clubKit, clubCode)}</span>
+          <b class="club-stop-name">${esc(clubName)}</b>
+          <span class="club-stop-year">${esc(String(clubYear))}</span>
+        </div>
+      `;
+    }).join('');
   } else if (q.route && q.route.length) {
     routeBox.innerHTML = q.route.map((r, i) => `
       ${i > 0 ? '<span class="route-arrow-icon" aria-hidden="true">➔</span>' : ''}
@@ -651,52 +1281,131 @@ function renderQuizQuestion() {
   } else {
     routeBox.innerHTML = '';
   }
-
-  // 4 Opzioni di Risposta
-  const answersBox = $('#answers');
-  answersBox.innerHTML = q.options.map((opt, i) => `
-    <button class="answer-card-btn" type="button" data-opt="${esc(opt)}" onclick="selectAnswer(this)">
-      <span class="key-badge">${i + 1}</span>
-      <span>${esc(opt)}</span>
-    </button>
-  `).join('');
 }
+
+window.revealMisterHint = () => {
+  const q = state.currentQuestions[state.questionIndex];
+  if (!q || state.hintRevealed) return;
+  state.hintRevealed = true;
+  playTone('click');
+
+  const tagEl = $('#quizTag');
+  if (tagEl && q.number) {
+    tagEl.textContent = `👕 GAEL LEAGUE • MAGLIA #${q.number}`;
+  }
+  const subEl = $('#quizSubprompt');
+  if (subEl && q.hint) {
+    subEl.innerHTML = `<span class="mister-hint-revealed">💡 <b>Indizio del Mister:</b> ${esc(q.hint)}</span>`;
+  }
+  renderCareerRouteBoxes(q, true);
+};
 
 window.selectAnswer = (btn) => {
   if (state.answered || state.sessionFinished) return;
-  state.selectedAnswer = btn.dataset.opt;
+  const q = state.currentQuestions[state.questionIndex];
+  const isMulti = Boolean(q?.multiSelect || (Array.isArray(q?.correct) && q.correct.length > 1));
 
-  $$('.answer-card-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
+  if (isMulti) {
+    if (!state.selectedAnswers) state.selectedAnswers = new Set();
+    const opt = btn.dataset.opt;
+    const badge = btn.querySelector('.key-badge');
 
-  const continueBtn = $('#continueBtn');
-  continueBtn.disabled = false;
-  continueBtn.textContent = 'VERIFICA';
-  playTone('click');
+    if (state.selectedAnswers.has(opt)) {
+      state.selectedAnswers.delete(opt);
+      btn.classList.remove('selected');
+      if (badge) badge.textContent = '☐';
+    } else {
+      state.selectedAnswers.add(opt);
+      btn.classList.add('selected');
+      if (badge) badge.textContent = '☑';
+    }
+
+    const targetCount = Array.isArray(q.correct) ? q.correct.length : 1;
+    const selCount = state.selectedAnswers.size;
+    const continueBtn = $('#continueBtn');
+    continueBtn.disabled = selCount === 0;
+    continueBtn.textContent = selCount >= targetCount
+      ? `VERIFICA (${selCount}/${targetCount})`
+      : `SCEGLI ANCORA (${selCount}/${targetCount})`;
+    playTone('click');
+  } else {
+    state.selectedAnswer = btn.dataset.opt;
+    $$('.answer-card-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+
+    const continueBtn = $('#continueBtn');
+    continueBtn.disabled = false;
+    continueBtn.textContent = 'VERIFICA';
+    playTone('click');
+  }
 };
 
 function verifyAnswer() {
   const q = state.currentQuestions[state.questionIndex];
-  const rightAnswer = q.correct || q.name;
+  const isMulti = Boolean(q?.multiSelect || (Array.isArray(q?.correct) && q.correct.length > 1));
   const drawer = $('#quizBottomDrawer');
   const continueBtn = $('#continueBtn');
   const feedback = $('#feedback');
 
   state.answered = true;
-  $$('.answer-card-btn').forEach(b => {
-    b.disabled = true;
-    if (b.dataset.opt === rightAnswer) b.classList.add('correct');
-    else if (b.dataset.opt === state.selectedAnswer) b.classList.add('wrong');
-  });
+  if (q.name && Array.isArray(q.clubs)) {
+    renderCareerRouteBoxes(q, true);
+    const tagEl = $('#quizTag');
+    if (tagEl && q.number) tagEl.textContent = `👕 GAEL LEAGUE • MAGLIA #${q.number}`;
+  }
 
-  const isCorrect = state.selectedAnswer === rightAnswer;
+  let isCorrect = false;
+  let correctDisplay = '';
+
+  if (isMulti) {
+    const required = Array.isArray(q.correct) ? q.correct : [q.correct];
+    correctDisplay = required.join(', ');
+    const userSelected = Array.from(state.selectedAnswers || []);
+
+    const hasAll = required.every(r => userSelected.includes(r));
+    const noExtra = userSelected.every(u => required.includes(u));
+    isCorrect = hasAll && noExtra;
+
+    $$('.answer-card-btn').forEach(b => {
+      b.disabled = true;
+      const opt = b.dataset.opt;
+      const badge = b.querySelector('.key-badge');
+      if (required.includes(opt)) {
+        b.classList.add('correct');
+        if (badge) badge.textContent = '✓';
+      } else if (userSelected.includes(opt)) {
+        b.classList.add('wrong');
+        if (badge) badge.textContent = '✗';
+      }
+    });
+  } else {
+    const rightAnswer = q.correct || q.name;
+    correctDisplay = rightAnswer;
+    isCorrect = state.selectedAnswer === rightAnswer;
+
+    $$('.answer-card-btn').forEach(b => {
+      b.disabled = true;
+      if (b.dataset.opt === rightAnswer) b.classList.add('correct');
+      else if (b.dataset.opt === state.selectedAnswer) b.classList.add('wrong');
+    });
+  }
 
   if (isCorrect) {
     state.sessionCorrect++;
     state.todayCorrect++;
     state.comboStreak++;
-    state.xp += 10;
-    playTone('correct');
+    const mult = getRoundMultiplier(state.survivalRound);
+    const earnedNow = Math.round(10 * mult);
+    state.pendingXp = (state.pendingXp || 0) + earnedNow;
+    const goalVariant = playTone('correct');
+
+    const goalBanners = [
+      '⚽ GOOOOL! BOATO DELLA CURVA!',
+      '🔥 EUROGOL ALL\'INCROCIO DEI PALI!',
+      '⚡ TIRO DELLA TIGRE IN RETE!',
+      '🎺 STADIO IN DELIRIO! RETEEEE!'
+    ];
+    const shoutText = goalBanners[(goalVariant || 0) % goalBanners.length];
 
     $('#quizMascotMood').textContent = '🥳';
     if (state.comboStreak >= 2) {
@@ -706,8 +1415,9 @@ function verifyAnswer() {
 
     drawer.className = 'quiz-bottom-drawer state-correct';
     feedback.innerHTML = `
+      <div class="goal-shout-banner">${shoutText} (+${earnedNow} XP • Bottino: ${state.pendingXp} XP)</div>
       <div style="display:flex;align-items:center;gap:8px;font-size:17px;margin-bottom:3px;">
-        <span>✅</span> <b>GOLAZO! RISPOSTA ESATTA!</b>
+        <span>✅</span> <b>ESATTO! ${isMulti ? 'MARCATORI: ' : ''}${esc(correctDisplay.toUpperCase())}</b>
       </div>
       <p style="font-size:12.5px;font-weight:700;">${esc(q.check || '')}</p>
     `;
@@ -715,23 +1425,30 @@ function verifyAnswer() {
   } else {
     state.comboStreak = 0;
     $('#quizComboPill').hidden = true;
-    $('#quizMascotMood').textContent = '💪';
+    $('#quizMascotMood').textContent = '😱';
 
-    // In modalità allenamento o sfide extra non togliamo cuori, solo sul percorso ufficiale
-    if (state.quizMode === 'path') {
+    if (state.quizMode !== 'practice') {
       state.hearts = Math.max(0, state.hearts - 1);
     }
     $('#quizHeartsNum').textContent = state.hearts;
-    playTone('wrong');
+    const missVariant = playTone('wrong');
+
+    const missBanners = [
+      '😱 OOOOOH! BOATO DELLO STADIO: TRAVERSA PIENA!',
+      '📢 FISCHIO DELL\'ARBITRO! PALLONE IN TRIBUNA!',
+      '💥 PARATA MIRACOLOSA DEL PORTIERE!'
+    ];
+    const missText = missBanners[(missVariant || 0) % missBanners.length];
 
     drawer.className = 'quiz-bottom-drawer state-wrong';
     feedback.innerHTML = `
+      <div class="miss-shout-banner">${missText} ${state.hearts <= 0 ? '• 💔 ULTIMA VITA PERSA!' : `• ❤️ ${state.hearts} VITE RIMASTE`}</div>
       <div style="display:flex;align-items:center;gap:8px;font-size:16px;margin-bottom:3px;">
-        <span>❌</span> <b>SOLUZIONE CORRETTA: ${esc(rightAnswer)}</b>
+        <span>❌</span> <b>RISPOSTA CORRETTA: ${esc(correctDisplay)}</b>
       </div>
       <p style="font-size:12.5px;font-weight:700;">${esc(q.check || '')}</p>
     `;
-    continueBtn.textContent = 'HO CAPITO';
+    continueBtn.textContent = state.hearts <= 0 ? '💔 ESITO PARTITA' : 'HO CAPITO';
   }
 
   updateTopStats();
@@ -740,7 +1457,11 @@ function verifyAnswer() {
 
 function handleContinueClick() {
   if (state.sessionFinished) {
-    closeQuizSession();
+    if (state.hearts > 0 && (state.pendingXp > 0 || state.pendingGems > 0)) {
+      cashOutQuizRun();
+    } else {
+      closeQuizSession();
+    }
     return;
   }
 
@@ -749,10 +1470,8 @@ function handleContinueClick() {
     return;
   }
 
-  // Se vite esaurite durante il percorso principale
-  if (state.quizMode === 'path' && state.hearts <= 0) {
-    closeQuizSession();
-    $('#heartsEmptyModal').hidden = false;
+  if (state.quizMode !== 'practice' && state.hearts <= 0) {
+    failQuizSessionByNoHearts();
     return;
   }
 
@@ -764,21 +1483,88 @@ function handleContinueClick() {
   }
 }
 
+function failQuizSessionByNoHearts() {
+  state.sessionFinished = true;
+  const lostXp = state.pendingXp || 0;
+  const lostGems = state.pendingGems || 0;
+  state.pendingXp = 0;
+  state.pendingGems = 0;
+
+  playTone('wrong');
+
+  const fill = $('#quizProgressFill');
+  if (fill) fill.style.width = '100%';
+
+  if ($('#completionBadgeText')) {
+    $('#completionBadgeText').textContent = `💔 VITE ESAURITE AL ROUND ${state.survivalRound} (LIV. ${state.currentDiffLevel})`;
+  }
+  if ($('#completionTitle')) {
+    $('#completionTitle').textContent = 'HAI ESAURITO LE VITE!';
+    $('#completionTitle').style.color = 'var(--duo-red)';
+  }
+  if ($('#completionSub')) {
+    $('#completionSub').innerHTML = `Non hai incassato in tempo e il bottino accumulato (<b>${lostXp} XP</b> e <b>${lostGems} 💎</b>) è sfumato! Ricarica subito le 5 vite per riprovare la scalata.`;
+  }
+
+  $('#compXpVal').textContent = '0 XP';
+  $('#compAccVal').textContent = '💔 0 Vite';
+  $('#compGemsVal').textContent = '0 💎';
+
+  const nextBtn = $('#btnNextDifficulty');
+  if (nextBtn) nextBtn.hidden = true;
+
+  const cashBtn = $('#btnCashOutBank');
+  if (cashBtn) {
+    cashBtn.textContent = '🏥 RICARICA VITE (GEMME / ALLENAMENTO / SPOT)';
+    cashBtn.onclick = () => {
+      closeQuizSession();
+      openHeartsFreemiumModal();
+    };
+  }
+
+  $('#quizQuestionView').hidden = true;
+  $('#quizCompletionView').hidden = false;
+
+  const drawer = $('#quizBottomDrawer');
+  drawer.className = 'quiz-bottom-drawer state-wrong';
+  $('#feedback').innerHTML = '<b>💔 Triplice fischio amaro! Vai in Infermeria per ricaricare le vite.</b>';
+  const continueBtn = $('#continueBtn');
+  continueBtn.disabled = false;
+  continueBtn.textContent = '🏥 RICARICA VITE ➔';
+}
+
 function completeQuizSession() {
   state.sessionFinished = true;
   state.dailyGoalDone++;
-  const earnedXp = 40 + (state.sessionCorrect * 10);
-  state.xp += 40;
-  state.gems += 15;
 
-  // Se era una sessione di recupero cuori, ricarica +1 cuore
+  const mult = getRoundMultiplier(state.survivalRound);
+  const roundBonusXp = Math.round(40 * mult);
+  const roundBonusGems = Math.round(15 * mult);
+  state.pendingXp = (state.pendingXp || 0) + roundBonusXp;
+  state.pendingGems = (state.pendingGems || 0) + roundBonusGems;
+
   if (state.quizMode === 'practice' && state.hearts < state.maxHearts) {
     state.hearts = Math.min(state.maxHearts, state.hearts + 1);
   }
 
   playTone('cheer');
 
-  // Se percorso principale: sblocca tappa
+  const isPastoreMode = state.sessionGameType === 'pastore' || state.activeGameMode === 'pastore';
+  const isGaelMode = state.sessionGameType === 'gael' || state.activeGameMode === 'gael';
+  const compTrophy = $('#completionTrophyImg');
+  if (compTrophy) {
+    compTrophy.src = isPastoreMode
+      ? 'assets/trophy-pastore.jpg'
+      : isGaelMode
+        ? 'assets/trophy-gael.jpg'
+        : 'assets/trophy-quizzone.jpg';
+    compTrophy.alt = isPastoreMode
+      ? 'Coppa Pastore League'
+      : isGaelMode
+        ? 'Coppa Gael League'
+        : 'Coppa Quizzone';
+  }
+
   if (state.quizMode === 'path') {
     const key = `u${state.activeUnitIdx + 1}-l${state.activeLessonIdx + 1}`;
     if (!state.completedLessons.includes(key)) {
@@ -792,27 +1578,141 @@ function completeQuizSession() {
   const fill = $('#quizProgressFill');
   if (fill) fill.style.width = '100%';
 
-  const pct = Math.round((state.sessionCorrect / state.currentQuestions.length) * 100);
+  const nextDiff = Math.min(10, (state.currentDiffLevel || 1) + 1);
+  const nextMult = getRoundMultiplier((state.survivalRound || 1) + 1);
 
-  $('#compXpVal').textContent = `+${earnedXp} XP`;
-  $('#compAccVal').textContent = `${pct}%`;
-  $('#compGemsVal').textContent = '+15 💎';
+  const diffLabels = {
+    1: 'Esordienti (Carriera Completa)',
+    2: 'Big Anni \'90 (Senza Indizio Automatico)',
+    3: 'Campioni 2000 (Opzioni Simili)',
+    4: 'Doppi Ex (Maglia #?? Nascosta)',
+    5: 'Fantasisti (Maglia #?? Nascosta)',
+    6: 'Idoli di Piazza (Maglia #?? Nascosta)',
+    7: 'Uomini Coppa (Anni Nascosti 🔒)',
+    8: 'Re di Provincia (Anni Nascosti 🔒)',
+    9: 'Cult Heroes (1 Club Misterioso ❓)',
+    10: 'Meteore Estreme (1 Club Misterioso ❓)'
+  };
+
+  if ($('#completionBadgeText')) {
+    $('#completionBadgeText').textContent = `ROUND ${state.survivalRound} SUPERATO • DIFFICOLTÀ LIV. ${state.currentDiffLevel}/10`;
+  }
+  if ($('#completionTitle')) {
+    $('#completionTitle').textContent = '💰 INCASSI O VAI AVANTI?';
+    $('#completionTitle').style.color = 'var(--duo-green)';
+  }
+  if ($('#completionSub')) {
+    $('#completionSub').innerHTML = `Hai nel piatto <b>+${state.pendingXp} XP</b> e <b>+${state.pendingGems} 💎</b> con <b>❤️ ${state.hearts} vite</b> rimaste! Vuoi <b>incassare il bottino</b> o sfidare altre 5 domande alla <b>Difficoltà Successiva (Liv. ${nextDiff}/10 • Bonus x${nextMult})</b> finché non esaurisci le vite?`;
+  }
+
+  $('#compXpVal').textContent = `+${state.pendingXp} XP`;
+  $('#compAccVal').textContent = `❤️ ${state.hearts}/${state.maxHearts}`;
+  $('#compGemsVal').textContent = `+${state.pendingGems} 💎`;
+
+  const nextBtn = $('#btnNextDifficulty');
+  if (nextBtn) {
+    nextBtn.hidden = false;
+    const titleEl = $('#nextDiffBtnTitle');
+    const subEl = $('#nextDiffBtnSub');
+    if (titleEl) {
+      titleEl.textContent = `🔥 VAI ALLA DIFFICOLTÀ SUCCESSIVA (LIV. ${nextDiff}/10 • x${nextMult})`;
+    }
+    if (subEl) {
+      subEl.textContent = `Prossimo step: ${diffLabels[nextDiff] || 'Livello Maestro'} • Rischia il bottino con ❤️ ${state.hearts} vite!`;
+    }
+  }
+
+  const cashBtn = $('#btnCashOutBank');
+  if (cashBtn) {
+    cashBtn.textContent = `💰 INCASSA ORA (+${state.pendingXp} XP & +${state.pendingGems} 💎)`;
+    cashBtn.onclick = () => window.cashOutQuizRun();
+  }
 
   $('#quizQuestionView').hidden = true;
   $('#quizCompletionView').hidden = false;
 
   const drawer = $('#quizBottomDrawer');
   drawer.className = 'quiz-bottom-drawer state-correct';
-  $('#feedback').innerHTML = '<b>🏆 Triplice fischio! Ottima prestazione in campo.</b>';
+  $('#feedback').innerHTML = `<b>🏆 Round ${state.survivalRound} completato! Scegli: Incassa (+${state.pendingXp} XP) o Rilancia a Difficoltà Liv. ${nextDiff}!</b>`;
   const continueBtn = $('#continueBtn');
   continueBtn.disabled = false;
-  continueBtn.textContent = 'TORNA AL CAMPO ➔';
+  continueBtn.textContent = `💰 INCASSA (+${state.pendingXp} XP) ➔`;
 
   launchConfetti();
 }
 
+window.cashOutQuizRun = () => {
+  const bankedXp = state.pendingXp || 0;
+  const bankedGems = state.pendingGems || 0;
+  state.xp += bankedXp;
+  state.gems += bankedGems;
+  state.pendingXp = 0;
+  state.pendingGems = 0;
+
+  playTone('cheer');
+
+  const isPastoreMode = state.sessionGameType === 'pastore' || state.activeGameMode === 'pastore';
+  const isGaelMode = state.sessionGameType === 'gael' || state.activeGameMode === 'gael';
+  const compTrophy = $('#completionTrophyImg');
+  if (compTrophy) {
+    compTrophy.src = isPastoreMode
+      ? 'assets/trophy-pastore.jpg'
+      : isGaelMode
+        ? 'assets/trophy-gael.jpg'
+        : 'assets/trophy-quizzone.jpg';
+    compTrophy.alt = isPastoreMode
+      ? 'Coppa Pastore League'
+      : isGaelMode
+        ? 'Coppa Gael League'
+        : 'Coppa Quizzone';
+  }
+  persistState();
+  updateTopStats();
+  closeQuizSession();
+};
+
+window.advanceToNextDifficultyRound = () => {
+  if (state.hearts <= 0) {
+    failQuizSessionByNoHearts();
+    return;
+  }
+
+  playTone('click');
+  stopConfetti();
+
+  state.survivalRound = (state.survivalRound || 1) + 1;
+  state.currentDiffLevel = Math.min(10, (state.currentDiffLevel || 1) + 1);
+
+  // Avanza anche il puntatore della mappa se siamo sul percorso
+  if (state.quizMode === 'path') {
+    const actualMode = (state.sessionGameType === 'quiz' || state.sessionGameType === 'quizzone') ? 'quizzocampo' : (state.sessionGameType || 'gael');
+    const modeUnits = catalog?.units?.filter(u => (u.mode || '') === actualMode) || [];
+    const targetUnit = modeUnits[Math.min(modeUnits.length - 1, state.currentDiffLevel - 1)];
+    if (targetUnit) {
+      state.activeUnitIdx = catalog.units.indexOf(targetUnit);
+    }
+  }
+
+  const nextQuestions = getQuestionsForDifficulty(state.sessionGameType || 'gael', state.currentDiffLevel, 5);
+  state.currentQuestions = nextQuestions.map(q => ({
+    ...q,
+    difficultyLevel: state.currentDiffLevel,
+    options: [...(q.options || [])]
+  }));
+
+  state.questionIndex = 0;
+  state.selectedAnswer = null;
+  state.answered = false;
+  state.sessionFinished = false;
+  state.sessionCorrect = 0;
+
+  $('#quizCompletionView').hidden = true;
+  $('#quizQuestionView').hidden = false;
+  renderQuizQuestion();
+};
+
 // -------------------------------------------------------------
-// 8. MOTORE CONFETTI CANVAS (CELEBRAZIONE VITTORIA)
+// 9. MOTORE CONFETTI CANVAS
 // -------------------------------------------------------------
 let confettiAnimId = null;
 
@@ -874,56 +1774,136 @@ function stopConfetti() {
 }
 
 // -------------------------------------------------------------
-// 9. CLASSIFICA E LEGHE SETTIMANALI (DINAMICA CON ZONA PROMOZIONE)
+// 10. CLASSIFICA UFFICIALE (SOLO GIOCATORI REALI CLOUD SUPABASE)
 // -------------------------------------------------------------
-function renderLeaderboard() {
+async function renderLeaderboard() {
   const list = $('#leaderboardList');
+  const podiumEl = $('#leaguePodium');
   if (!list) return;
 
-  const competitors = [
-    { name: 'Campione82', xp: 620, av: 'C' },
-    { name: 'BomberVieri', xp: 510, av: 'V' },
-    { name: 'IlDivinCodino', xp: 440, av: 'B' },
-    { name: 'GigiParate', xp: 380, av: 'G' },
-    { name: 'DiavoloRossonero', xp: 350, av: 'D' },
-    { name: 'Leo10', xp: 320, av: 'L' },
-    { name: 'Azzurro2006', xp: 210, av: 'A' },
-    { name: 'Scudetto90', xp: 170, av: 'S' },
-    { name: 'TifosoDoc', xp: 110, av: 'T' }
-  ];
+  let competitors = [];
 
+  // Se Supabase è attivo, carica ESCLUSIVAMENTE i giocatori reali registrati nel Cloud
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('id, username, avatar_letter, xp')
+        .order('xp', { ascending: false })
+        .limit(50);
+
+      if (!error && Array.isArray(data)) {
+        competitors = data
+          .filter(r => !currentCloudUser || r.id !== currentCloudUser.id)
+          .map(r => ({
+            name: r.username || 'Giocatore',
+            xp: Number(r.xp) || 0,
+            av: (r.avatar_letter || r.username || 'G').trim().charAt(0).toUpperCase()
+          }));
+      }
+    } catch (e) {
+      console.warn('Errore lettura profili Supabase:', e);
+    }
+  }
+
+  const userAvatar = (state.username || 'M').trim().charAt(0).toUpperCase();
   const full = [
     ...competitors,
-    { name: 'Tu (Mister Fuoriclasse)', xp: state.xp, av: 'M', isUser: true }
+    { name: `${state.username} (Tu)`, xp: state.xp, av: userAvatar, isUser: true }
   ].sort((a, b) => b.xp - a.xp);
 
+  // Rendering dinamico del Podio (#leaguePodium) SOLO con giocatori reali
+  if (podiumEl) {
+    if (full.length === 1) {
+      const p1 = full[0];
+      podiumEl.innerHTML = `
+        <div class="podium-step step-1" style="transform:none;">
+          <span class="podium-crown">👑</span>
+          <span class="podium-medal">🥇</span>
+          <div class="podium-avatar av-gold">${esc(p1.av)}</div>
+          <b>${esc(p1.name)}</b>
+          <span class="podium-xp">${p1.xp} XP</span>
+        </div>
+      `;
+    } else if (full.length === 2) {
+      const p1 = full[0];
+      const p2 = full[1];
+      podiumEl.innerHTML = `
+        <div class="podium-step step-2">
+          <span class="podium-medal">🥈</span>
+          <div class="podium-avatar av-blue">${esc(p2.av)}</div>
+          <b>${esc(p2.name)}</b>
+          <span class="podium-xp">${p2.xp} XP</span>
+        </div>
+        <div class="podium-step step-1">
+          <span class="podium-crown">👑</span>
+          <span class="podium-medal">🥇</span>
+          <div class="podium-avatar av-gold">${esc(p1.av)}</div>
+          <b>${esc(p1.name)}</b>
+          <span class="podium-xp">${p1.xp} XP</span>
+        </div>
+      `;
+    } else {
+      const p1 = full[0];
+      const p2 = full[1];
+      const p3 = full[2];
+      podiumEl.innerHTML = `
+        <div class="podium-step step-2">
+          <span class="podium-medal">🥈</span>
+          <div class="podium-avatar av-blue">${esc(p2.av)}</div>
+          <b>${esc(p2.name)}</b>
+          <span class="podium-xp">${p2.xp} XP</span>
+        </div>
+        <div class="podium-step step-1">
+          <span class="podium-crown">👑</span>
+          <span class="podium-medal">🥇</span>
+          <div class="podium-avatar av-gold">${esc(p1.av)}</div>
+          <b>${esc(p1.name)}</b>
+          <span class="podium-xp">${p1.xp} XP</span>
+        </div>
+        <div class="podium-step step-3">
+          <span class="podium-medal">🥉</span>
+          <div class="podium-avatar av-green">${esc(p3.av)}</div>
+          <b>${esc(p3.name)}</b>
+          <span class="podium-xp">${p3.xp} XP</span>
+        </div>
+      `;
+    }
+  }
+
+  // Rendering righe classifica (#leaderboardList)
   const rowsHtml = [];
   full.forEach((c, i) => {
     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
     rowsHtml.push(`
       <div class="rank-row ${c.isUser ? 'is-user' : ''}">
         <span class="rank-pos">${medal}</span>
-        <span class="rank-av">${c.av}</span>
+        <span class="rank-av">${esc(c.av)}</span>
         <span class="rank-name">${esc(c.name)}</span>
-        <span class="rank-xp">${c.xp} XP</span>
+        <span class="rank-xp">${Number(c.xp) || 0} XP</span>
       </div>
     `);
-    if (i === 4) {
+    if (i === 2 && full.length > 3) {
       rowsHtml.push(`<div class="promotion-divider">▲ ZONA PROMOZIONE LEGA FUORICLASSE ▲</div>`);
     }
   });
 
+  if (full.length === 1) {
+    rowsHtml.push(`
+      <div style="text-align:center;padding:16px 12px;font-size:13px;color:var(--text-muted);line-height:1.4;">
+        ⚽ <b>Sei al 1° posto!</b> Condividi Fuoriclasse con gli amici per sfidarli in classifica generale.
+      </div>
+    `);
+  }
+
   list.innerHTML = rowsHtml.join('');
 }
 
-// -------------------------------------------------------------
-// 10. MISSIONI GIORNALIERE E BACHECA TROFEI DINAMICA
-// -------------------------------------------------------------
 function renderQuests() {
   const m1 = Math.min(5, state.todayCorrect);
   const m1Pct = Math.round((m1 / 5) * 100);
   if ($('#quest1Fill')) $('#quest1Fill').style.width = `${m1Pct}%`;
-  if ($('#quest1Label')) $('#quest1Label').textContent = `${m1} / 5 campioni indovinati`;
+  if ($('#quest1Label')) $('#quest1Label').textContent = `${m1} / 5 risposte esatte`;
 
   const m2 = Math.min(50, state.xp);
   const m2Pct = Math.round((m2 / 50) * 100);
@@ -933,16 +1913,14 @@ function renderQuests() {
   const m3 = Math.min(3, state.completedLessons.length);
   const m3Pct = Math.round((m3 / 3) * 100);
   if ($('#quest3Fill')) $('#quest3Fill').style.width = `${m3Pct}%`;
-  if ($('#quest3Label')) $('#quest3Label').textContent = `${m3} / 3 lezioni completate`;
+  if ($('#quest3Label')) $('#quest3Label').textContent = `${m3} / 3 tappe completate`;
 
-  // Rail Goal
   if ($('#railGoalFill')) $('#railGoalFill').style.width = `${m1Pct}%`;
   if ($('#railGoalText')) $('#railGoalText').textContent = `${m1} / 5 sfide completate oggi`;
   if ($('#railGoalPct')) $('#railGoalPct').textContent = `${m1Pct}%`;
 
-  // Aggiorna Bacheca Trofei
   let unlockedCount = 2;
-  const u1Done = Array.from({ length: 12 }, (_, i) => `u1-l${i + 1}`).every(k => state.completedLessons.includes(k));
+  const u1Done = Array.from({ length: 10 }, (_, i) => `u1-l${i + 1}`).every(k => state.completedLessons.includes(k));
   if (u1Done) {
     $('#badge-bandiera')?.classList.add('unlocked');
     unlockedCount++;
@@ -964,9 +1942,6 @@ function renderQuests() {
   }
 }
 
-// -------------------------------------------------------------
-// 11. AGGIORNAMENTO STATISTICHE TOPBAR E PROFILO
-// -------------------------------------------------------------
 function updateTopStats() {
   if ($('#streakCount')) $('#streakCount').textContent = state.streak;
   if ($('#gemsCount')) $('#gemsCount').textContent = state.gems;
@@ -974,6 +1949,21 @@ function updateTopStats() {
   if ($('#railStreakCount')) $('#railStreakCount').textContent = state.streak;
   if ($('#railHeartsCount')) $('#railHeartsCount').textContent = `${state.hearts}/${state.maxHearts}`;
 
+  if ($('#profileName')) $('#profileName').textContent = state.username || 'Mister Fuoriclasse';
+  if ($('#profileNicknameInput') && document.activeElement !== $('#profileNicknameInput')) {
+    $('#profileNicknameInput').value = state.username || 'Mister Fuoriclasse';
+  }
+  if ($('#onboardingUsernameInput') && document.activeElement !== $('#onboardingUsernameInput')) {
+    $('#onboardingUsernameInput').value = state.username === 'Mister Fuoriclasse' ? '' : state.username;
+  }
+  if ($('#topUserNameText')) {
+    $('#topUserNameText').textContent = state.username && state.username !== 'Mister Fuoriclasse'
+      ? state.username.toUpperCase()
+      : (currentCloudUser ? 'PROFILO' : 'ACCEDI');
+  }
+  if ($('#topUserIcon')) {
+    $('#topUserIcon').textContent = currentCloudUser ? '🟢' : '👤';
+  }
   if ($('#profileTotalXp')) $('#profileTotalXp').textContent = state.xp;
   if ($('#profileStreak')) $('#profileStreak').textContent = state.streak;
   if ($('#profileGems')) $('#profileGems').textContent = state.gems;
@@ -991,33 +1981,266 @@ function updateTopStats() {
 }
 
 // -------------------------------------------------------------
-// 12. CAMBIO SCHEDA / TAB SWITCHER
+// 11. CAMBIO SCHEDA / TAB SWITCHER
 // -------------------------------------------------------------
-function switchTab(tabId) {
+function switchTab(tabId, forcedGameMode = null) {
   state.activeTab = tabId;
+  if (forcedGameMode) {
+    state.activeGameMode = forcedGameMode;
+  }
 
   $$('.view-panel').forEach(p => p.hidden = true);
   const target = $(`#view-${tabId}`);
   if (target) target.hidden = false;
 
   $$('.sidebar-nav .nav-item').forEach(link => {
-    link.classList.toggle('active', link.dataset.tab === tabId);
+    if (link.dataset.tab === 'path' && link.dataset.gamemode) {
+      link.classList.toggle('active', tabId === 'path' && link.dataset.gamemode === state.activeGameMode);
+    } else {
+      link.classList.toggle('active', link.dataset.tab === tabId);
+    }
   });
 
   $$('.duo-mobile-nav .mobile-nav-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === tabId);
+    if (btn.dataset.tab === 'path' && btn.dataset.gamemode) {
+      btn.classList.toggle('active', tabId === 'path' && btn.dataset.gamemode === state.activeGameMode);
+    } else {
+      btn.classList.toggle('active', btn.dataset.tab === tabId);
+    }
   });
+
+  if (tabId === 'path') {
+    setGameMode(state.activeGameMode, false);
+  }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // -------------------------------------------------------------
-// 13. EFFETTI AUDIO WEB AUDIO API (CHIME STILE DUOLINGO)
+// 12. MOTORE AUDIO PRO STADIO & 16-BIT ARCADE (DISATTIVABILE)
+// - Sintesi Pink-Noise 1/f con filtri formanti vocali (vero boato "GOOOOL!" e vero coro delusione "OOOOOH!")
+// - Riverbero Stadio stereo + Fischietto Arbitro con trillo reale (pea-whistle FM) + Ottoni/Chiptune filtrati caldi
 // -------------------------------------------------------------
 let audioCtx = null;
+let stadiumReverbNode = null;
+let pinkNoiseBuffer = null;
+
+function getPinkNoiseBuffer(ctx, durationSec = 2.0) {
+  const sampleRate = ctx.sampleRate;
+  const bufferSize = Math.floor(sampleRate * durationSec);
+  const buffer = ctx.createBuffer(2, bufferSize, sampleRate);
+
+  for (let ch = 0; ch < 2; ch++) {
+    const out = buffer.getChannelData(ch);
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + white * 0.0555179;
+      b1 = 0.99332 * b1 + white * 0.0750759;
+      b2 = 0.96900 * b2 + white * 0.1538520;
+      b3 = 0.86650 * b3 + white * 0.3104856;
+      b4 = 0.55000 * b4 + white * 0.5329522;
+      b5 = -0.7616 * b5 - white * 0.0168980;
+      out[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.042;
+      b6 = white * 0.115926;
+    }
+  }
+  return buffer;
+}
+
+function getStadiumReverb(ctx) {
+  if (stadiumReverbNode) return stadiumReverbNode;
+  const length = Math.floor(ctx.sampleRate * 1.15);
+  const impulse = ctx.createBuffer(2, length, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = impulse.getChannelData(ch);
+    for (let i = 0; i < length; i++) {
+      const decay = Math.pow(1 - i / length, 2.6);
+      data[i] = (Math.random() * 2 - 1) * decay * 0.35;
+    }
+  }
+  const convolver = ctx.createConvolver();
+  convolver.buffer = impulse;
+  convolver.connect(ctx.destination);
+  stadiumReverbNode = convolver;
+  return convolver;
+}
+
+// Boato della Curva con formanti vocali ("GOOOOOOL!") + rombo basso dello stadio
+function playStadiumGoalRoar(ctx, durationSec = 1.25, intensity = 0.34) {
+  const now = ctx.currentTime;
+  if (!pinkNoiseBuffer) pinkNoiseBuffer = getPinkNoiseBuffer(ctx, 2.2);
+  const reverb = getStadiumReverb(ctx);
+
+  // 3 formanti corali (simulano migliaia di voci su vocali A / O)
+  const formants = [
+    { fStart: 420, fEnd: 620, q: 2.2, weight: 0.45 },
+    { fStart: 820, fEnd: 1180, q: 2.5, weight: 0.38 },
+    { fStart: 1450, fEnd: 1850, q: 3.0, weight: 0.22 }
+  ];
+
+  formants.forEach(fm => {
+    const src = ctx.createBufferSource();
+    src.buffer = pinkNoiseBuffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.setValueAtTime(fm.q, now);
+    filter.frequency.setValueAtTime(fm.fStart, now);
+    filter.frequency.exponentialRampToValueAtTime(fm.fEnd, now + durationSec * 0.45);
+    filter.frequency.exponentialRampToValueAtTime(fm.fStart * 1.15, now + durationSec);
+
+    const gain = ctx.createGain();
+    const peak = intensity * fm.weight;
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(peak, now + 0.16);
+    gain.gain.setValueAtTime(peak * 0.92, now + durationSec * 0.55);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    gain.connect(reverb);
+
+    src.start(now);
+    src.stop(now + durationSec);
+  });
+
+  // Caldo rombo acustico da stadio (lowpass 165Hz)
+  const subNoise = ctx.createBufferSource();
+  subNoise.buffer = pinkNoiseBuffer;
+  const lowFilter = ctx.createBiquadFilter();
+  lowFilter.type = 'lowpass';
+  lowFilter.frequency.setValueAtTime(165, now);
+  const lowGain = ctx.createGain();
+  lowGain.gain.setValueAtTime(0.001, now);
+  lowGain.gain.linearRampToValueAtTime(intensity * 0.45, now + 0.18);
+  lowGain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+  subNoise.connect(lowFilter);
+  lowFilter.connect(lowGain);
+  lowGain.connect(ctx.destination);
+  subNoise.start(now);
+  subNoise.stop(now + durationSec);
+}
+
+// Boato di delusione dello stadio ("OOOOOOH!") con transizione formante vocale F1/F2 discendente
+function playStadiumMissGroan(ctx, durationSec = 1.05, intensity = 0.36) {
+  const now = ctx.currentTime;
+  if (!pinkNoiseBuffer) pinkNoiseBuffer = getPinkNoiseBuffer(ctx, 2.2);
+  const reverb = getStadiumReverb(ctx);
+
+  // Transizione vocale umana da "AAAH!" a "OOOOOH!" (F1: 680->340Hz, F2: 1180->640Hz)
+  const vocalFormants = [
+    { f1: 680, f2: 330, q: 3.6, w: 0.58 },
+    { f1: 1180, f2: 640, q: 4.0, w: 0.36 },
+    { f1: 210, f2: 115, q: 1.8, w: 0.42 }
+  ];
+
+  vocalFormants.forEach(vf => {
+    const src = ctx.createBufferSource();
+    src.buffer = pinkNoiseBuffer;
+
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.Q.setValueAtTime(vf.q, now);
+    bp.frequency.setValueAtTime(vf.f1, now);
+    bp.frequency.exponentialRampToValueAtTime(vf.f2, now + durationSec * 0.72);
+
+    const g = ctx.createGain();
+    const peak = intensity * vf.w;
+    g.gain.setValueAtTime(0.001, now);
+    g.gain.linearRampToValueAtTime(peak, now + 0.12);
+    g.gain.setValueAtTime(peak * 0.85, now + 0.38);
+    g.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+
+    src.connect(bp);
+    bp.connect(g);
+    g.connect(ctx.destination);
+    g.connect(reverb);
+
+    src.start(now);
+    src.stop(now + durationSec);
+  });
+}
+
+// Fischietto reale dell'arbitro con pallina vibrante (FM + AM pea trill a 28Hz)
+function playRefereeWhistle(ctx, startTime, duration = 0.22, baseFreq = 2820, volume = 0.085) {
+  const osc1 = ctx.createOscillator();
+  const osc2 = ctx.createOscillator();
+  const lfo = ctx.createOscillator();
+  const lfoGain = ctx.createGain();
+  const lp = ctx.createBiquadFilter();
+  const gain = ctx.createGain();
+
+  osc1.type = 'sine';
+  osc2.type = 'triangle';
+  osc1.frequency.setValueAtTime(baseFreq, startTime);
+  osc2.frequency.setValueAtTime(baseFreq * 1.018, startTime); // Leggero battimento dual-chamber
+
+  // Trillo della pallina del fischietto (28 Hz)
+  lfo.type = 'sine';
+  lfo.frequency.setValueAtTime(28, startTime);
+  lfoGain.gain.setValueAtTime(55, startTime);
+  lfo.connect(lfoGain);
+  lfoGain.connect(osc1.frequency);
+  lfoGain.connect(osc2.frequency);
+
+  lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(3600, startTime);
+
+  gain.gain.setValueAtTime(0.001, startTime);
+  gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
+  gain.gain.setValueAtTime(volume * 0.9, startTime + duration - 0.04);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+  osc1.connect(lp);
+  osc2.connect(lp);
+  lp.connect(gain);
+  gain.connect(ctx.destination);
+  gain.connect(getStadiumReverb(ctx));
+
+  osc1.start(startTime);
+  osc2.start(startTime);
+  lfo.start(startTime);
+  osc1.stop(startTime + duration);
+  osc2.stop(startTime + duration);
+  lfo.stop(startTime + duration);
+}
+
+// Nota musicale calda filtrata (stile SNES / Ottoni da stadio senza asprezza)
+function playWarmNote(ctx, freq, startTime, duration, waveType = 'sawtooth', vol = 0.1, cutoff = 1850) {
+  const osc1 = ctx.createOscillator();
+  const osc2 = ctx.createOscillator();
+  const filter = ctx.createBiquadFilter();
+  const gain = ctx.createGain();
+
+  osc1.type = waveType;
+  osc2.type = waveType === 'sawtooth' ? 'triangle' : 'sine';
+  osc1.frequency.setValueAtTime(freq, startTime);
+  osc2.frequency.setValueAtTime(freq * 1.003, startTime); // Chorus caldo
+
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(cutoff, startTime);
+  filter.frequency.exponentialRampToValueAtTime(cutoff * 0.65, startTime + duration);
+
+  gain.gain.setValueAtTime(0.001, startTime);
+  gain.gain.linearRampToValueAtTime(vol, startTime + 0.018);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+  osc1.connect(filter);
+  osc2.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  gain.connect(getStadiumReverb(ctx));
+
+  osc1.start(startTime);
+  osc2.start(startTime);
+  osc1.stop(startTime + duration);
+  osc2.stop(startTime + duration);
+}
 
 function playTone(type) {
-  if (!state.soundEnabled) return;
+  if (!state.soundEnabled) return 0;
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -1025,79 +2248,128 @@ function playTone(type) {
     const now = audioCtx.currentTime;
 
     if (type === 'correct') {
-      const osc1 = audioCtx.createOscillator();
-      const osc2 = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+      const variant = Math.floor(Math.random() * 4);
 
-      osc1.type = 'triangle';
-      osc2.type = 'sine';
+      if (variant === 0) {
+        // GOAL 1: Fischio dell'arbitro + Boato "GOOOOL!" della Curva + Accordo trionfale caldo
+        playRefereeWhistle(audioCtx, now, 0.20, 2840, 0.08);
+        playStadiumGoalRoar(audioCtx, 1.35, 0.36);
+        const chord = [523.25, 659.25, 783.99, 1046.5];
+        chord.forEach((f, i) => {
+          playWarmNote(audioCtx, f, now + 0.08 + i * 0.07, 0.48, 'triangle', 0.11, 2200);
+        });
+        // Basso fondamentale caldo
+        playWarmNote(audioCtx, 261.63, now + 0.08, 0.55, 'sine', 0.15, 800);
+      } else if (variant === 1) {
+        // GOAL 2: Fanfara 16-Bit SNES stile Captain Tsubasa + Boato Stadio
+        playStadiumGoalRoar(audioCtx, 1.25, 0.30);
+        const melody = [
+          { f: 587.33, t: 0.00, d: 0.09 },
+          { f: 587.33, t: 0.09, d: 0.09 },
+          { f: 587.33, t: 0.18, d: 0.09 },
+          { f: 880.00, t: 0.27, d: 0.22 },
+          { f: 783.99, t: 0.49, d: 0.14 },
+          { f: 1174.66, t: 0.63, d: 0.45 }
+        ];
+        melody.forEach(n => {
+          playWarmNote(audioCtx, n.f, now + n.t, n.d, 'square', 0.085, 2100);
+          playWarmNote(audioCtx, n.f * 0.5, now + n.t, n.d, 'triangle', 0.09, 1200);
+        });
+      } else if (variant === 2) {
+        // GOAL 3: Fruscio della rete + Trombe da Stadio ("Olé!") + Boato Curva
+        playStadiumGoalRoar(audioCtx, 1.4, 0.38);
+        const horns = [
+          { f: 392.00, t: 0.02, d: 0.14 },
+          { f: 523.25, t: 0.16, d: 0.14 },
+          { f: 659.25, t: 0.30, d: 0.16 },
+          { f: 783.99, t: 0.46, d: 0.50 }
+        ];
+        horns.forEach(h => {
+          playWarmNote(audioCtx, h.f, now + h.t, h.d, 'sawtooth', 0.095, 1650);
+          playWarmNote(audioCtx, h.f * 0.75, now + h.t, h.d, 'triangle', 0.06, 1400);
+        });
+      } else {
+        // GOAL 4: Tiro della Tigre (Impatto pallone + Boato esplosivo + Arpeggio vittoria)
+        playStadiumGoalRoar(audioCtx, 1.3, 0.35);
+        // Colpo del pallone nel sette (sub-kick)
+        const kick = audioCtx.createOscillator();
+        const kGain = audioCtx.createGain();
+        kick.type = 'sine';
+        kick.frequency.setValueAtTime(150, now);
+        kick.frequency.exponentialRampToValueAtTime(42, now + 0.14);
+        kGain.gain.setValueAtTime(0.28, now);
+        kGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        kick.connect(kGain);
+        kGain.connect(audioCtx.destination);
+        kick.start(now);
+        kick.stop(now + 0.16);
 
-      osc1.frequency.setValueAtTime(587.33, now);
-      osc1.frequency.setValueAtTime(880, now + 0.11);
-
-      osc2.frequency.setValueAtTime(293.66, now);
-      osc2.frequency.setValueAtTime(440, now + 0.11);
-
-      gain.gain.setValueAtTime(0.18, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
-
-      osc1.connect(gain);
-      osc2.connect(gain);
-      gain.connect(audioCtx.destination);
-
-      osc1.start(now);
-      osc2.start(now);
-      osc1.stop(now + 0.34);
-      osc2.stop(now + 0.34);
+        [440, 554.37, 659.25, 880, 1108.73].forEach((f, idx) => {
+          playWarmNote(audioCtx, f, now + 0.06 + idx * 0.06, 0.38, 'triangle', 0.10, 2400);
+        });
+      }
+      return variant;
     } else if (type === 'wrong') {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+      const variant = Math.floor(Math.random() * 3);
 
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(160, now);
-      osc.frequency.linearRampToValueAtTime(110, now + 0.26);
+      if (variant === 0) {
+        // ERRORE 1: Colpo sulla Traversa ("DOOONG!") + Boato di delusione dello stadio ("OOOOOH!")
+        playStadiumMissGroan(audioCtx, 1.15, 0.38);
 
-      gain.gain.setValueAtTime(0.16, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        // Impatto del pallone sul legno/metallo della traversa
+        const thud = audioCtx.createOscillator();
+        const tGain = audioCtx.createGain();
+        thud.type = 'sine';
+        thud.frequency.setValueAtTime(135, now);
+        thud.frequency.exponentialRampToValueAtTime(45, now + 0.12);
+        tGain.gain.setValueAtTime(0.30, now);
+        tGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        thud.connect(tGain);
+        tGain.connect(audioCtx.destination);
+        thud.start(now);
+        thud.stop(now + 0.14);
 
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-
-      osc.start(now);
-      osc.stop(now + 0.28);
+        // Risonanza tubolare metallica del palo (armonica morbida, non gracchiante)
+        [515, 778].forEach((f, i) => {
+          playWarmNote(audioCtx, f, now, 0.32 - i * 0.08, 'sine', 0.11, 1400);
+        });
+      } else if (variant === 1) {
+        // ERRORE 2: Doppio fischio fallo dell'arbitro ("Fiii-Fiiiii!") + Boato "OOOOOH!" della curva
+        playRefereeWhistle(audioCtx, now, 0.12, 2760, 0.075);
+        playRefereeWhistle(audioCtx, now + 0.15, 0.26, 2680, 0.085);
+        playStadiumMissGroan(audioCtx, 1.10, 0.35);
+        playWarmNote(audioCtx, 146.83, now + 0.15, 0.45, 'triangle', 0.14, 600);
+      } else {
+        // ERRORE 3: Cadenza minore 16-bit morbida + Sospiro di delusione dello stadio
+        playStadiumMissGroan(audioCtx, 1.05, 0.34);
+        const sadNotes = [
+          { f: 349.23, t: 0.00, d: 0.14 },
+          { f: 311.13, t: 0.12, d: 0.14 },
+          { f: 261.63, t: 0.24, d: 0.36 }
+        ];
+        sadNotes.forEach(n => {
+          playWarmNote(audioCtx, n.f, now + n.t, n.d, 'triangle', 0.12, 1100);
+          playWarmNote(audioCtx, n.f * 0.5, now + n.t, n.d, 'sine', 0.10, 600);
+        });
+      }
+      return variant;
     } else if (type === 'click') {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(420, now);
-      gain.gain.setValueAtTime(0.07, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
-
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-
-      osc.start(now);
-      osc.stop(now + 0.045);
+      playWarmNote(audioCtx, 660, now, 0.045, 'triangle', 0.055, 1800);
     } else if (type === 'cheer') {
+      playRefereeWhistle(audioCtx, now, 0.11, 2850, 0.07);
+      playRefereeWhistle(audioCtx, now + 0.14, 0.11, 2850, 0.07);
+      playRefereeWhistle(audioCtx, now + 0.28, 0.28, 2920, 0.085);
+      playStadiumGoalRoar(audioCtx, 1.5, 0.38);
       [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
-        gain.gain.setValueAtTime(0.15, now + idx * 0.08);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(now + idx * 0.08);
-        osc.stop(now + idx * 0.08 + 0.3);
+        playWarmNote(audioCtx, freq, now + 0.15 + idx * 0.09, 0.45, 'triangle', 0.11, 2200);
       });
     }
   } catch (e) {}
+  return 0;
 }
 
 // -------------------------------------------------------------
-// 14. SINTESI VOCALE DOMANDE
+// 13. SINTESI VOCALE DOMANDE
 // -------------------------------------------------------------
 function speakCurrentQuestion() {
   if (!('speechSynthesis' in window)) return;
@@ -1107,8 +2379,8 @@ function speakCurrentQuestion() {
   window.speechSynthesis.cancel();
   const parsed = parseCleanQuestionText(q.question || '');
   const text = q.name
-    ? `Quale calciatore ha vestito queste maglie? Opzioni: ${q.options.join(', ')}`
-    : `${parsed.cleanText}. Opzioni: ${q.options.join(', ')}`;
+    ? `Gael League: indovina il giocatore che ha militato in ${(q.clubs || []).map(c => c[0]).join(', ')}. Opzioni: ${q.options.join(', ')}`
+    : `Quizzocampo: ${parsed.cleanText}. Opzioni: ${q.options.join(', ')}`;
 
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'it-IT';
@@ -1117,7 +2389,7 @@ function speakCurrentQuestion() {
 }
 
 // -------------------------------------------------------------
-// 15. GESTIONE MODALI E EVENT LISTENERS
+// 14. GESTIONE MODALI E EVENT LISTENERS
 // -------------------------------------------------------------
 function openModal(title, htmlContent) {
   const modal = $('#sourcesModal');
@@ -1136,27 +2408,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadCurriculum();
 
+  // Mode Switcher Buttons (Gael League vs Quizzocampo)
+  $$('.mode-switch-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      playTone('click');
+      setGameMode(btn.dataset.mode, true);
+    });
+  });
+
   // Tab switchers (Desktop e Mobile)
   $$('.sidebar-nav .nav-item, .duo-mobile-nav .mobile-nav-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
-      switchTab(btn.dataset.tab);
+      switchTab(btn.dataset.tab, btn.dataset.gamemode || null);
     });
   });
 
   // Brand Home Link
   $('#brandHomeLink')?.addEventListener('click', (e) => {
     e.preventDefault();
-    switchTab('path');
+    switchTab('path', 'gael');
   });
 
-  // Hero Quick Play ("SCENDI IN CAMPO ⚡")
+  // Hero Quick Play
   $('#heroQuickPlayBtn')?.addEventListener('click', () => {
-    const { uIdx, lIdx } = getActiveLessonCoords();
+    const { uIdx, lIdx } = getActiveLessonCoords(state.activeGameMode);
     forceStartNode(uIdx, lIdx);
   });
 
-  // Selettore Rapido Unità (Topbar + Hero)
+  // Selettore Rapido Unità
   $('#sectionDropdownBtn')?.addEventListener('click', () => {
     renderUnitJumpModal();
     $('#unitJumpModal').hidden = false;
@@ -1169,13 +2449,21 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#unitJumpModal').hidden = true;
   });
 
-  // Toggle Audio
+  // Toggle Audio (Goal & Boato Disattivabili)
   const audioBtn = $('#audioToggle');
   if (audioBtn) {
+    const syncAudioBtnUI = () => {
+      $('#audioIcon').textContent = state.soundEnabled ? '🔊' : '🔇';
+      if ($('#audioLabelText')) {
+        $('#audioLabelText').textContent = state.soundEnabled ? 'SUONI ON' : 'MUTO';
+      }
+      audioBtn.setAttribute('aria-pressed', String(state.soundEnabled));
+    };
+    syncAudioBtnUI();
     audioBtn.addEventListener('click', () => {
       state.soundEnabled = !state.soundEnabled;
-      $('#audioIcon').textContent = state.soundEnabled ? '♫' : '🔇';
-      audioBtn.setAttribute('aria-pressed', String(state.soundEnabled));
+      syncAudioBtnUI();
+      if (state.soundEnabled) playTone('click');
       persistState();
     });
   }
@@ -1215,44 +2503,287 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#guidebookClose')?.addEventListener('click', () => $('#guidebookModal').hidden = true);
   $('#guidebookOkBtn')?.addEventListener('click', () => $('#guidebookModal').hidden = true);
   $('#sourcesClose')?.addEventListener('click', () => $('#sourcesModal').hidden = true);
-  $('#authClose')?.addEventListener('click', () => $('#authModal').hidden = true);
-  $('#authOkBtn')?.addEventListener('click', () => $('#authModal').hidden = true);
+  $('#authClose')?.addEventListener('click', () => {
+    localStorage.setItem(ONBOARDING_DONE_KEY, '1');
+    $('#authModal').hidden = true;
+  });
+  $('#authOkBtn')?.addEventListener('click', () => {
+    localStorage.setItem(ONBOARDING_DONE_KEY, '1');
+    $('#authModal').hidden = true;
+  });
 
-  // Pulsanti Modale Auth / Deploy & Fonti
+  $('#topUserLoginBtn')?.addEventListener('click', () => $('#authModal').hidden = false);
   $('#openAuthModalBtn')?.addEventListener('click', () => $('#authModal').hidden = false);
   $('#sidebarDeployBtn')?.addEventListener('click', () => $('#authModal').hidden = false);
   $('#sidebarSourcesBtn')?.addEventListener('click', () => $('#sourcesModal').hidden = false);
 
-  // Modal Cuori Finiti: Allenati o Ricarica
-  $('#practiceToRegainHeartBtn')?.addEventListener('click', () => {
-    $('#heartsEmptyModal').hidden = true;
-    const practiceQuestions = sampleQuestions(catalog.extraModes.goals || [], 5);
-    startQuizSession('practice', practiceQuestions);
-  });
-
-  $('#refillHeartsCoinsBtn')?.addEventListener('click', () => {
-    if (state.gems >= 50) {
-      state.gems -= 50;
-      state.hearts = state.maxHearts;
-      $('#heartsEmptyModal').hidden = true;
-      playTone('cheer');
-      updateTopStats();
-      persistState();
-    } else {
-      openModal('💎 Calcio-Coins Insufficienti', '<p>Ti servono almeno <b>50 Calcio-Coins 💎</b> per ricaricare tutti i cuori, oppure fai un allenamento gratuito!</p>');
+  // Azioni Banner Home Installazione PWA & Accesso Google
+  $('#btnBannerLoginGoogle')?.addEventListener('click', async () => {
+    if (!supabaseClient) {
+      $('#authModal').hidden = false;
+      return;
+    }
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: getAppRedirectUrl() }
+    });
+    if (error) {
+      openModal('Errore Google Login', `<p>${esc(error.message)}</p>`);
     }
   });
 
-  $('#practiceHeartsBtn')?.addEventListener('click', () => {
-    const practiceQuestions = sampleQuestions(catalog.extraModes.goals || [], 5);
-    startQuizSession('practice', practiceQuestions);
+  $('#btnBannerInstallPwa')?.addEventListener('click', async () => {
+    if (window.deferredPrompt) {
+      window.deferredPrompt.prompt();
+      const choice = await window.deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        window.deferredPrompt = null;
+        updateHomeInstallBannerVisibility();
+      }
+    } else {
+      openModal('📲 Installazione Fuoriclasse PWA', `
+        <div style="line-height:1.6;font-size:14px;">
+          <p><b>🍏 Su iPhone / iPad (Safari):</b><br>
+          1. Tocca l'icona <b>Condividi ⎘</b> in basso al centro.<br>
+          2. Scorri in basso e tocca <b>"Aggiungi alla schermata Home" ➕</b>.<br>
+          3. Tocca <b>Aggiungi</b> in alto a destra!</p>
+          <hr style="margin:12px 0;border:0;border-top:1px solid var(--border-light);">
+          <p><b>🤖 Su Android / Chrome / PC:</b><br>
+          1. Tocca i tre puntini <b>⋮</b> in alto a destra.<br>
+          2. Seleziona <b>"Installa app"</b> oppure <b>"Aggiungi a schermata Home"</b>.<br>
+          3. Troverai Fuoriclasse tra le tue app a schermo intero!</p>
+        </div>
+      `);
+    }
   });
 
-  // Modalità Extra (Estrazione casuale di 5 sfide dal pool di 150/100/80 domande)
-  $$('.extra-card').forEach(card => {
+  $('#btnBannerDismiss')?.addEventListener('click', () => {
+    const banner = $('#homeInstallLoginBanner');
+    if (banner) {
+      banner.hidden = true;
+      banner.style.display = 'none';
+    }
+  });
+
+  // Reset vite a mezzanotte quando l'utente riapre la scheda/app
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      checkMidnightHeartsReset();
+      updateHomeInstallBannerVisibility();
+    }
+  });
+
+  // Salvataggio Nickname Giocatore (dalla scheda Profilo)
+  $('#saveNicknameBtn')?.addEventListener('click', () => {
+    const val = sanitizeUsername($('#profileNicknameInput')?.value || '');
+    if (val) {
+      state.username = val;
+      localStorage.setItem(ONBOARDING_DONE_KEY, '1');
+      persistState();
+      updateTopStats();
+      renderLeaderboard();
+      playTone('correct');
+      openModal('✅ Nickname Aggiornato', `<p>Il tuo nome in classifica è ora <b>${esc(state.username)}</b>!</p>`);
+    }
+  });
+
+  // Inizializza Cloud e bottoni Auth
+  initSupabase();
+
+  const getAppRedirectUrl = () => {
+    if (window.location.hostname.includes('fuoriclasse.cloud')) {
+      return `${window.location.origin}/`;
+    }
+    if (window.location.hostname.includes('matteornati.com')) {
+      return 'https://www.matteornati.com/Fuoriclasse/index.html';
+    }
+    return window.location.origin + window.location.pathname;
+  };
+
+  // UNICO ACCESSO UFFICIALE: LOGIN CON GOOGLE
+  $('#btnSupabaseGoogle')?.addEventListener('click', async () => {
+    const msgEl = $('#authFeedbackMsg');
+    if (!supabaseClient) return;
+    if (msgEl) msgEl.textContent = '⏳ Connessione a Google in corso...';
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: getAppRedirectUrl() }
+    });
+    if (error && msgEl) msgEl.textContent = `❌ Errore Google: ${error.message}`;
+  });
+
+  // Salvataggio Nickname Scelto dall'Utente
+  $('#saveOnboardingUsernameBtn')?.addEventListener('click', async () => {
+    const raw = ($('#onboardingUsernameInput')?.value || '').trim();
+    const clean = sanitizeUsername(raw);
+    const fb = $('#usernameFeedbackMsg');
+    if (!clean) {
+      if (fb) {
+        fb.style.color = '#ef4444';
+        fb.textContent = '⚠️ Inserisci un soprannome valido (1-24 caratteri).';
+      }
+      return;
+    }
+    state.username = clean;
+    state.avatarLetter = clean.charAt(0).toUpperCase();
+    persistState();
+    updateTopStats();
+    await syncProfileToSupabase();
+    await renderLeaderboard();
+    if (fb) {
+      fb.style.color = '#10b981';
+      fb.textContent = `✅ Perfetto ${clean}! Nickname registrato in classifica.`;
+    }
+    setTimeout(() => {
+      $('#authModal').hidden = true;
+    }, 1200);
+  });
+
+  $('#btnForceCloudPush')?.addEventListener('click', async () => {
+    await syncProfileToSupabase();
+    const msgEl = $('#authFeedbackMsg');
+    if (msgEl) msgEl.textContent = '☁️ Progressi salvati nel Cloud Supabase!';
+  });
+
+  $('#syncCloudNowBtn')?.addEventListener('click', async () => {
+    if (!supabaseClient || !currentCloudUser) {
+      $('#authModal').hidden = false;
+      return;
+    }
+    await syncProfileToSupabase();
+    await renderLeaderboard();
+    openModal('☁️ Sincronizzazione Completata', '<p>I tuoi XP, Cuori, Gemme e Tappe di Gael League e Quizzocampo sono stati salvati su Supabase!</p>');
+  });
+
+  $('#btnSupabaseLogout')?.addEventListener('click', async () => {
+    if (supabaseClient) await supabaseClient.auth.signOut();
+    currentCloudUser = null;
+    updateCloudStatusUI(null, Boolean(supabaseClient));
+    const msgEl = $('#authFeedbackMsg');
+    if (msgEl) msgEl.textContent = '👋 Disconnesso dall\'account Cloud.';
+  });
+
+  // Modal Infermeria & Ricarica Vite (Architettura Freemium: Ripasso, Gemme, Spot Sponsor, Timer 15m, PRO)
+  $('#topHeartsPillBtn')?.addEventListener('click', () => openHeartsFreemiumModal());
+  $('#heartsModalClose')?.addEventListener('click', () => {
+    $('#heartsEmptyModal').hidden = true;
+  });
+
+  $('#practiceToRegainHeartBtn')?.addEventListener('click', () => {
+    $('#heartsEmptyModal').hidden = true;
+    const pool = state.activeGameMode === 'gael'
+      ? (catalog.gaelModes?.allstars || [])
+      : (catalog.extraModes?.goals || []);
+    startQuizSession('practice', sampleQuestions(pool, 5));
+  });
+
+  $('#refillHeartsCoinsBtn')?.addEventListener('click', () => {
+    const fb = $('#freemiumActionFeedback');
+    if (state.hearts >= state.maxHearts) {
+      if (fb) fb.textContent = '✅ Hai già il massimo delle vite (5/5 ❤️)!';
+      return;
+    }
+    if (state.gems >= 50) {
+      state.gems -= 50;
+      state.hearts = state.maxHearts;
+      playTone('cheer');
+      updateTopStats();
+      persistState();
+      if ($('#freemiumHeartsNow')) $('#freemiumHeartsNow').textContent = state.hearts;
+      if ($('#freemiumGemsNow')) $('#freemiumGemsNow').textContent = state.gems;
+      if (fb) fb.textContent = '🎉 5/5 Vite ricaricate con 50 Gemme!';
+      setTimeout(() => { $('#heartsEmptyModal').hidden = true; }, 800);
+    } else {
+      if (fb) fb.textContent = '⚠️ Ti servono 50 💎! Usa l\'Allenamento gratuito o lo Spot Sponsor.';
+    }
+  });
+
+  $('#watchAdForHeartBtn')?.addEventListener('click', () => {
+    const btn = $('#watchAdForHeartBtn');
+    const fb = $('#freemiumActionFeedback');
+    if (state.hearts >= state.maxHearts) {
+      if (fb) fb.textContent = '✅ Hai già 5/5 ❤️!';
+      return;
+    }
+    if (btn.disabled) return;
+    btn.disabled = true;
+    let sec = 5;
+    btn.textContent = `⏳ Sponsor Amazon... (${sec}s)`;
+    const timer = setInterval(() => {
+      sec--;
+      if (sec > 0) {
+        btn.textContent = `⏳ Sponsor Amazon... (${sec}s)`;
+      } else {
+        clearInterval(timer);
+        state.hearts = Math.min(state.maxHearts, state.hearts + 1);
+        playTone('correct');
+        updateTopStats();
+        persistState();
+        btn.disabled = false;
+        btn.textContent = '❤️ Guarda 5s (+1 Vita)';
+        if ($('#freemiumHeartsNow')) $('#freemiumHeartsNow').textContent = state.hearts;
+        if (fb) fb.textContent = '🎉 +1 ❤️ Vita ricaricata con lo Sponsor Amazon!';
+      }
+    }, 1000);
+  });
+
+  // Timer automatico rigenerazione gratuita (+1 ❤️ ogni 15 minuti) & Reset Vite a Mezzanotte
+  let regenSecondsLeft = 15 * 60;
+  setInterval(() => {
+    checkMidnightHeartsReset();
+    const timerEl = $('#heartsRegenTimerText');
+    if (state.hearts >= state.maxHearts) {
+      regenSecondsLeft = 15 * 60;
+      if (timerEl) timerEl.textContent = '✅ Batterie al 100%: hai tutte le 5/5 ❤️ vite disponibili!';
+      return;
+    }
+    regenSecondsLeft--;
+    if (regenSecondsLeft <= 0) {
+      state.hearts = Math.min(state.maxHearts, state.hearts + 1);
+      regenSecondsLeft = 15 * 60;
+      updateTopStats();
+      persistState();
+      if ($('#freemiumHeartsNow')) $('#freemiumHeartsNow').textContent = state.hearts;
+    }
+    const mm = String(Math.floor(regenSecondsLeft / 60)).padStart(2, '0');
+    const ss = String(regenSecondsLeft % 60).padStart(2, '0');
+    if (timerEl) {
+      timerEl.textContent = `⏱️ Prossima vita gratis (+1 ❤️) tra ${mm}:${ss}`;
+    }
+  }, 1000);
+
+  $('#practiceHeartsBtn')?.addEventListener('click', () => {
+    openHeartsFreemiumModal();
+  });
+
+  // Arene Rapide GAEL LEAGUE (anni90, anni2000, allstars, pro)
+  $$('.extra-card[data-gaelmode]').forEach(card => {
+    card.addEventListener('click', () => {
+      const gMode = card.dataset.gaelmode;
+      const pool = catalog.gaelModes?.[gMode] || [];
+      const questions = sampleQuestions(pool, 5);
+      if (questions.length) {
+        startQuizSession(`gael-${gMode}`, questions);
+      }
+    });
+  });
+
+  // Modalità PASTORE (Marcatori Serie A dal 1990 a oggi)
+  $$('.extra-card[data-pastoremode]').forEach(card => {
+    card.addEventListener('click', () => {
+      const pool = catalog.pastoreMode || [];
+      const questions = sampleQuestions(pool, 5);
+      if (questions.length) {
+        startQuizSession('pastore', questions);
+      }
+    });
+  });
+
+  // Arene Rapide QUIZZOCAMPO (goals, scorers, derby, champions)
+  $$('.extra-card[data-mode]').forEach(card => {
     card.addEventListener('click', () => {
       const mode = card.dataset.mode;
-      const pool = catalog.extraModes[mode] || [];
+      const pool = catalog.extraModes?.[mode] || [];
       const questions = sampleQuestions(pool, 5);
       if (questions.length) {
         startQuizSession(mode, questions);
@@ -1269,7 +2800,7 @@ document.addEventListener('DOMContentLoaded', () => {
         count++;
       }
     });
-    openModal('🔄 Cache Wikidata Ripulita', `<p>Sono state rimosse <b>${count}</b> voci dalla cache locale. Alla prossima apertura delle Guide Unità verranno scaricati i dati aggiornati.</p>`);
+    openModal('🔄 Cache Wikidata Ripulita', `<p>Sono state rimosse <b>${count}</b> voci dalla cache locale.</p>`);
   });
 
   // Reset Progressi
@@ -1279,7 +2810,7 @@ document.addEventListener('DOMContentLoaded', () => {
     state.streak = 1;
     state.gems = 250;
     state.hearts = 5;
-    state.completedLessons = ['u1-l1'];
+    state.completedLessons = ['u1-l1', 'u7-l1'];
     state.claimedChests = [];
     state.todayCorrect = 0;
     persistState();
@@ -1287,17 +2818,35 @@ document.addEventListener('DOMContentLoaded', () => {
     renderLeaderboard();
     renderQuests();
     updateTopStats();
-    openModal('✅ Progressi Azzerati', '<p>Il tuo profilo locale è stato riportato all\'inizio della Stagione 1.</p>');
+    openModal('✅ Progressi Azzerati', '<p>Il tuo profilo locale è stato riportato all\'inizio della stagione.</p>');
   });
 });
 
 // -------------------------------------------------------------
-// 16. REGISTRAZIONE SERVICE WORKER (PWA OFFLINE COMPLETA)
+// 15. REGISTRAZIONE SERVICE WORKER & ANTI-CACHE STALE SU MOBILE
 // -------------------------------------------------------------
+function purgeLegacySetupBlocks() {
+  document.querySelectorAll('.deploy-section').forEach(sec => {
+    const txt = sec.textContent || '';
+    if (
+      txt.includes('Collega il tuo Database Supabase') ||
+      txt.includes('Caricamento su Aruba') ||
+      txt.includes('CREDENZIALI PROGETTO SUPABASE') ||
+      txt.includes('PACCHETTO PRONTO PER ARUBA')
+    ) {
+      sec.remove();
+    }
+  });
+}
+purgeLegacySetupBlocks();
+
 if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.info('Fuoriclasse Service Worker attivo (PWA Ready):', reg.scope))
+    purgeLegacySetupBlocks();
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+      .then(reg => {
+        console.info('Fuoriclasse Service Worker attivo:', reg.scope);
+      })
       .catch(err => console.warn('Registrazione Service Worker:', err.message));
   });
 }

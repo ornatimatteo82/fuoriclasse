@@ -42,6 +42,11 @@ assert(html.includes('class="duo-mobile-nav"'), 'index.html include barra di nav
 console.log('\n--- 2. Verifica Illustrazioni 3D Generate (assets/) ---');
 const requiredAssets = [
   'assets/mascot-coach.jpg',
+  'assets/gael-mascot.jpg',
+  'assets/pastore-mascot.jpg',
+  'assets/trophy-quizzone.jpg',
+  'assets/trophy-gael.jpg',
+  'assets/trophy-pastore.jpg',
   'assets/stadium-hero.jpg',
   'assets/chest-gold.jpg',
   'assets/trophy-fuoriclasse.jpg'
@@ -72,26 +77,24 @@ if (manifest) {
 // 4. Test Service Worker sw.js
 console.log('\n--- 4. Verifica Service Worker sw.js ---');
 const swContent = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
-assert(swContent.includes('CACHE_NAME'), 'sw.js definisce una versione di cache');
-assert(swContent.includes('ASSETS'), 'sw.js elenca gli asset statici essenziali');
-assert(swContent.includes('assets/mascot-coach.jpg'), 'sw.js include mascot-coach.jpg nella cache offline');
-assert(swContent.includes('assets/stadium-hero.jpg'), 'sw.js include stadium-hero.jpg nella cache offline');
-assert(swContent.includes('assets/chest-gold.jpg'), 'sw.js include chest-gold.jpg nella cache offline');
-assert(swContent.includes('assets/trophy-fuoriclasse.jpg'), 'sw.js include trophy-fuoriclasse.jpg nella cache offline');
-assert(swContent.includes('caches.match'), 'sw.js implementa recupero da cache');
-assert(swContent.includes('data/curriculum.json'), 'sw.js memorizza il curriculum offline');
+assert(swContent.includes('SW_VERSION'), 'sw.js definisce una versione attiva');
+assert(swContent.includes('caches.delete'), 'sw.js gestisce la pulizia della cache');
+assert(swContent.includes('skipWaiting'), 'sw.js attiva immediatamente il nuovo worker');
+assert(swContent.includes('clients.claim'), 'sw.js acquisisce il controllo dei client');
 
 // 5. Test app.js
-console.log('\n--- 5. Verifica app.js (Motore Argon 3D + 1.080 Domande) ---');
+console.log('\n--- 5. Verifica app.js (Motore Argon 3D + 5.000 Domande) ---');
 const appContent = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
 assert(appContent.includes('loadCurriculum'), 'app.js include caricamento dinamico del curriculum');
 assert(appContent.includes('renderSnakePath'), 'app.js include rendering dinamico delle unità a serpente 3D');
-assert(appContent.includes('renderUnitJumpModal'), 'app.js include selettore rapido delle 10 Unità');
+assert(appContent.includes('renderUnitJumpModal'), 'app.js include selettore rapido delle Unità');
 assert(appContent.includes('launchConfetti'), 'app.js include motore celebrazione Confetti Canvas');
 assert(appContent.includes('renderLeaderboard'), 'app.js include gestione della classifica leghe');
 assert(appContent.includes('renderQuests'), 'app.js include gestione missioni e trofei');
 assert(appContent.includes('serviceWorker.register'), 'app.js registra il Service Worker PWA');
 assert(appContent.includes('playTone'), 'app.js implementa sintetizzatore audio Web Audio API');
+assert(appContent.includes('checkMidnightHeartsReset'), 'app.js implementa il reset vite a mezzanotte');
+assert(appContent.includes('updateHomeInstallBannerVisibility'), 'app.js gestisce la visibilità condizionale del banner PWA/Login');
 
 // 6. Test Accessibilità e CSS
 console.log('\n--- 6. Verifica CSS e Accessibilità (Stile 3D Argon/Duolingo) ---');
@@ -107,13 +110,16 @@ assert(mobileCss.includes(':focus-visible'), 'mobile.css definisce focus-visible
 assert(mobileCss.includes('.duo-mobile-nav'), 'mobile.css gestisce la barra di navigazione fissa inferiore');
 assert(darkCss.includes('body[data-theme="dark"]'), 'dark-theme.css implementa il tema scuro Stadio di Notte');
 
-// 7. Test Dati Curriculum (1080 domande)
-console.log('\n--- 7. Verifica Curriculum JSON (1.080 Domande) ---');
+// 7. Test Dati Curriculum (Super Database 5.000 Domande)
+console.log('\n--- 7. Verifica Curriculum JSON (Quizzone, Gael League & Pastore League) ---');
 const curriculum = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/curriculum.json'), 'utf8'));
-assert(curriculum.units && curriculum.units.length === 10, 'Curriculum contiene 10 unità didattiche complete');
-assert(curriculum.metadata && curriculum.metadata.totalQuestions >= 1000, `Curriculum ha ${curriculum.metadata.totalQuestions} domande (>= 1000)`);
-assert(curriculum.extraModes && curriculum.extraModes.goals.length >= 100, 'Modalità "Chi ha segnato?" ha 150 sfide');
-assert(curriculum.extraModes && curriculum.extraModes.scorers.length >= 100, 'Modalità "Re dei Bomber" ha 150 sfide');
+assert(curriculum.units && curriculum.units.length === 40, 'Curriculum contiene 40 unità didattiche (10 Gael Hard + 15 Quizzone + 15 Pastore)');
+assert(curriculum.metadata && curriculum.metadata.totalQuestions >= 3000, `Curriculum ha ${curriculum.metadata.totalQuestions} domande (>= 3000)`);
+assert(curriculum.gaelModes && curriculum.gaelModes.anni90.length >= 100, 'Gael League Anni 90 ha almeno 100 sfide carriera');
+assert(curriculum.gaelModes && curriculum.gaelModes.anni2000.length >= 100, 'Gael League Primi 2000 ha almeno 100 sfide carriera');
+assert(curriculum.extraModes && curriculum.extraModes.goals.length >= 100, 'Quizzocampo Record & Scudetti ha almeno 100 sfide');
+assert(curriculum.extraModes && curriculum.extraModes.scorers.length >= 100, 'Quizzocampo Re dei Bomber ha almeno 100 sfide');
+assert(Array.isArray(curriculum.pastoreMode) && curriculum.pastoreMode.length >= 2000, 'Modalità Pastore contiene almeno 2.000 sfide marcatori');
 
 // Riepilogo
 console.log('\n========================================');

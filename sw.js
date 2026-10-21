@@ -1,42 +1,21 @@
-const CACHE_NAME = 'fuoriclasse-argon-v4';
-const ASSETS = [
-  './',
-  './index.html',
-  './style.css',
-  './mobile.css',
-  './dark-theme.css',
-  './app.js',
-  './icon.svg',
-  './mascot.svg',
-  './assets/mascot-coach.jpg',
-  './assets/stadium-hero.jpg',
-  './assets/chest-gold.jpg',
-  './assets/trophy-fuoriclasse.jpg',
-  './manifest.webmanifest',
-  './data/curriculum.json'
-];
+// Fuoriclasse Service Worker v32 — Zero-Cache Network Direct & Anti-Loop
+const SW_VERSION = 'fuoriclasse-v32';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).catch(() => caches.match('./index.html'));
-    })
-  );
+self.addEventListener('fetch', () => {
+  // Pass-through diretto alla rete: nessuna intercettazione cache
 });

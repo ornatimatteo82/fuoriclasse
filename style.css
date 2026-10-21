@@ -37,12 +37,14 @@
   --text-muted: #64748b;
   --text-light: #94a3b8;
 
-  /* Geometria e Spaziature */
+  /* Geometria e Spaziature + Tipografia Arcade 8/16-Bit */
   --radius-sm: 12px;
   --radius-md: 16px;
   --radius-lg: 22px;
   --radius-xl: 28px;
   --font-main: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-arcade: 'VT323', monospace;
 }
 
 *, *::before, *::after {
@@ -240,6 +242,148 @@ body {
 .tool-btn:active {
   transform: translateY(2px);
   border-bottom-width: 2px;
+}
+
+.audio-pill-btn,
+.user-pill-btn {
+  width: auto;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  letter-spacing: 0.4px;
+  color: var(--text-main);
+}
+.user-pill-btn {
+  border-color: var(--duo-blue);
+  background: var(--duo-blue-tint);
+  color: #0b5384;
+}
+.audio-pill-btn[aria-pressed="false"] {
+  opacity: 0.65;
+  background: var(--bg-soft);
+}
+.audio-pill-label,
+.user-pill-label {
+  display: inline-block;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .audio-pill-label,
+  .user-pill-label {
+    display: none;
+  }
+  .audio-pill-btn,
+  .user-pill-btn {
+    width: 40px;
+    padding: 0;
+  }
+}
+
+.btn-google-hero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #1e293b;
+  border: 2px solid #cbd5e1;
+  border-bottom: 5px solid #94a3b8;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: transform 0.08s, background-color 0.15s;
+}
+.btn-google-hero:hover {
+  background: #f8fafc;
+  border-color: #3b82f6;
+}
+.btn-google-hero:active {
+  transform: translateY(3px);
+  border-bottom-width: 2px;
+}
+
+/* Stile 8/16-Bit Pixel-Art Anni '80 / Captain Tsubasa Arcade */
+.pixel-svg-icon {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.node-icon .pixel-svg-icon {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.28));
+}
+.brand-avatar-img,
+.hero-mascot-img,
+.node-companion-img,
+.chest-node-img,
+.promo-trophy-img,
+.league-hero-trophy,
+.quests-banner-chest,
+.profile-hero-img,
+.quiz-mascot-avatar,
+.completion-trophy-img,
+.widget-chest-thumb {
+  image-rendering: pixelated;
+}
+.eyebrow-pill,
+.promo-badge,
+.start-bubble-tag,
+.mascot-role-tag,
+.quiz-type-badge,
+.quiz-archive-pill,
+.profile-level-pill {
+  font-family: var(--font-pixel);
+  font-size: 9px !important;
+  letter-spacing: 0.5px;
+  line-height: 1.4;
+}
+.goal-shout-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  background: #ffc800;
+  color: #111827;
+  border: 2px solid #111827;
+  box-shadow: 0 3px 0 #111827;
+  margin-bottom: 6px;
+  animation: tsubasaFlash 0.35s ease-out;
+}
+.miss-shout-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  background: #1e293b;
+  color: #f8fafc;
+  border: 2px solid #0f172a;
+  box-shadow: 0 3px 0 #0f172a;
+  margin-bottom: 6px;
+}
+@keyframes tsubasaFlash {
+  0% { transform: scale(0.7) rotate(-3deg); filter: brightness(1.8); }
+  60% { transform: scale(1.08) rotate(1deg); }
+  100% { transform: scale(1) rotate(0); filter: brightness(1); }
 }
 
 /* ==========================================================================
@@ -456,10 +600,238 @@ body {
 }
 
 /* ==========================================================================
-   4. HERO BANNER STADIO & MASCOTTE 3D "MISTER BOMBER"
+   4. BANNER INSTALLA PWA & LOGIN + SWITCHER 3 MODALITÀ
    ========================================================================== */
 .duo-main {
   min-width: 0;
+}
+
+.home-pwa-login-banner {
+  background: linear-gradient(135deg, rgba(28, 176, 246, 0.12) 0%, rgba(88, 204, 2, 0.12) 100%);
+  border: 2px solid #1cb0f6;
+  border-radius: 18px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.banner-top-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.banner-top-badge .badge-accent {
+  background: #1cb0f6;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.banner-top-badge .badge-sub {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.banner-close-btn {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.banner-close-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.banner-body-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.banner-text-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.banner-text-content h3 {
+  font-size: 17px;
+  font-weight: 900;
+  margin: 0 0 6px 0;
+  color: var(--text-main);
+}
+
+.banner-text-content p {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin: 0 0 10px 0;
+}
+
+.banner-instructions-box {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.inst-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.inst-os-badge {
+  font-weight: 800;
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.banner-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-banner-action {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 8px 14px;
+}
+
+.banner-mascot-preview {
+  flex-shrink: 0;
+}
+
+.banner-mascot-img {
+  border-radius: 16px;
+  border: 3px solid #1cb0f6;
+  box-shadow: 0 4px 12px rgba(28, 176, 246, 0.25);
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .banner-body-grid {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .banner-mascot-preview {
+    display: none;
+  }
+}
+
+.game-mode-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 900px) {
+  .game-mode-switcher {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+.mode-switch-btn {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom: 5px solid var(--border-shadow);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  transition: transform 0.1s, border-color 0.15s, background-color 0.15s;
+}
+
+.mode-switch-btn:hover {
+  background: var(--bg-soft);
+  border-color: var(--duo-blue);
+}
+
+.mode-switch-btn:active {
+  transform: translateY(2px);
+  border-bottom-width: 3px;
+}
+
+.mode-switch-btn.active[data-mode="gael"] {
+  background: var(--duo-green-tint);
+  border-color: var(--duo-green);
+  border-bottom-color: var(--duo-green-dark);
+}
+
+.mode-switch-btn.active[data-mode="quizzone"],
+.mode-switch-btn.active[data-mode="quizzocampo"] {
+  background: var(--duo-blue-tint);
+  border-color: var(--duo-blue);
+  border-bottom-color: var(--duo-blue-dark);
+}
+
+.mode-switch-btn.active[data-mode="pastore"] {
+  background: rgba(255, 200, 0, 0.14);
+  border-color: #ffc800;
+  border-bottom-color: #d49a00;
+}
+
+.mode-switch-icon {
+  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--bg-soft);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.mode-switch-btn.active .mode-switch-icon {
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.mode-switch-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mode-switch-text b {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--text-main);
+  letter-spacing: 0.4px;
+}
+
+.mode-switch-text small {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  line-height: 1.25;
 }
 
 .path-header-banner {
@@ -1449,6 +1821,19 @@ body {
   color: #ffffff;
 }
 
+.answer-card-btn.multi-select-btn.selected {
+  background: rgba(255, 200, 0, 0.14);
+  border-color: #ffc800;
+  border-bottom-color: #d49a00;
+  color: var(--text-main);
+}
+.answer-card-btn.multi-select-btn.selected .key-badge {
+  background: #ffc800;
+  border-color: #ffc800;
+  color: #111;
+  font-weight: 900;
+}
+
 .answer-card-btn.correct {
   background: var(--duo-green-tint);
   border-color: var(--duo-green);
@@ -2037,6 +2422,24 @@ body {
   gap: 10px;
 }
 
+.duo-input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-main);
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom-width: 4px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.duo-input:focus {
+  border-color: var(--duo-blue);
+}
+
 /* ==========================================================================
    9. MODALI & SELETTORE RAPIDO UNITÀ
    ========================================================================== */
@@ -2180,4 +2583,136 @@ body {
 /* Nascondi la barra mobile su Desktop */
 .duo-mobile-nav {
   display: none;
+}
+
+/* Difficoltà progressiva Gael League & Indizio opzionale */
+.diff-rule-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.08);
+  border: 1.5px solid var(--border-light);
+  border-radius: 99px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  margin-right: 6px;
+}
+
+.hint-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fffbeb;
+  color: #b45309;
+  border: 2px solid #f59e0b;
+  border-bottom-width: 4px;
+  border-radius: 10px;
+  padding: 5px 12px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.1s, background-color 0.15s;
+}
+.hint-toggle-btn:hover {
+  background: #fef3c7;
+}
+.hint-toggle-btn:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+.mister-hint-revealed {
+  display: inline-block;
+  background: #fffbeb;
+  border: 1.5px solid #fcd34d;
+  color: #92400e;
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.club-stop-item.club-stop-mystery {
+  background: linear-gradient(180deg, #1e1b4b, #0f172a);
+  border-color: #ffc800;
+  box-shadow: 0 0 12px rgba(255, 200, 0, 0.28);
+}
+.club-stop-item.club-stop-mystery .club-stop-name {
+  color: #ffc800;
+}
+.club-stop-item.club-stop-mystery .club-stop-year {
+  background: rgba(255, 200, 0, 0.18);
+  color: #fef08a;
+}
+
+/* Schermata Bivio "Incassa o Vai alla Difficoltà Successiva" */
+.cashout-decision-box {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-next-diff-arcade {
+  width: 100%;
+  background: linear-gradient(180deg, #ff9600 0%, #e57c00 100%);
+  color: #ffffff;
+  border: 2px solid #b45309;
+  border-bottom: 5px solid #92400e;
+  border-radius: 16px;
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  font-family: inherit;
+  box-shadow: 0 8px 20px rgba(255, 150, 0, 0.28);
+  transition: transform 0.1s, filter 0.15s;
+}
+.btn-next-diff-arcade:hover {
+  filter: brightness(1.06);
+}
+.btn-next-diff-arcade:active {
+  transform: translateY(3px);
+  border-bottom-width: 2px;
+}
+
+.next-diff-top {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+.next-diff-sub {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #fffbeb;
+  opacity: 0.95;
+}
+
+.btn-cashout-bank {
+  width: 100%;
+  background: linear-gradient(180deg, #58cc02 0%, #46a302 100%);
+  color: #ffffff;
+  border: 2px solid #2b6cb0;
+  border-color: #2f7d00;
+  border-bottom: 5px solid #256b00;
+  border-radius: 14px;
+  padding: 13px 16px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.15s;
+}
+.btn-cashout-bank:hover {
+  filter: brightness(1.05);
+}
+.btn-cashout-bank:active {
+  transform: translateY(3px);
+  border-bottom-width: 2px;
 }

@@ -47,10 +47,12 @@ function validateQuestion(q, context) {
     if (uniqueOpts.size !== 4) {
       errors.push(`${context} (${q.id}): le 4 opzioni non sono distinte: ${JSON.stringify(q.options)}`);
     }
-    const rightAnswer = q.correct || q.name;
-    if (!q.options.includes(rightAnswer)) {
-      errors.push(`${context} (${q.id}): la risposta esatta ('${rightAnswer}') non è inclusa tra le opzioni.`);
-    }
+    const rightAnswers = Array.isArray(q.correct) ? q.correct : [q.correct || q.name];
+    rightAnswers.forEach(ans => {
+      if (!q.options.includes(ans)) {
+        errors.push(`${context} (${q.id}): la risposta esatta ('${ans}') non è inclusa tra le opzioni.`);
+      }
+    });
   }
 
   // Verifica tipo domanda: o player career o quiz domanda
@@ -114,7 +116,18 @@ if (!Array.isArray(curriculum.units) || curriculum.units.length === 0) {
   });
 }
 
-// Validazione Extra Modes
+// Validazione Gael Modes (Arene Carriere Anni '90, 2000, All-Stars)
+if (curriculum.gaelModes) {
+  ['anni90', 'anni2000', 'allstars'].forEach((modeKey) => {
+    if (curriculum.gaelModes[modeKey]) {
+      curriculum.gaelModes[modeKey].forEach((q, idx) => {
+        validateQuestion(q, `GaelMode [${modeKey}] > D${idx + 1}`);
+      });
+    }
+  });
+}
+
+// Validazione Extra Modes (Quizzocampo)
 if (!curriculum.extraModes) {
   errors.push('extraModes mancante nel curriculum.');
 } else {

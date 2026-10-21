@@ -1,0 +1,23 @@
+# Fuoriclasse — Hardening Sicurezza & Anti-Cache Stale per Aruba Apache
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
+
+  # Disabilita completamente la cache HTTP su HTML, Service Worker, JS, CSS e JSON
+  # così iPhone/Safari scarica SEMPRE l'ultima versione senza mai mostrare HTML vecchio
+  <FilesMatch "\.(html|htm|js|css|json|webmanifest)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+  </FilesMatch>
+</IfModule>
+
+# Impedisci il listing delle directory
+Options -Indexes
+
+# Blocca accesso a file nascosti o script SQL/SH
+<FilesMatch "(^\.|\.(sql|sh|env)$)">
+  Require all denied
+</FilesMatch>
