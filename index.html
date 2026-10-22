@@ -21,9 +21,9 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="style.css?v=36" />
-  <link rel="stylesheet" href="mobile.css?v=36" />
-  <link rel="stylesheet" href="dark-theme.css?v=36" />
+  <link rel="stylesheet" href="style.css?v=37" />
+  <link rel="stylesheet" href="mobile.css?v=37" />
+  <link rel="stylesheet" href="dark-theme.css?v=37" />
   <script>
     (function() {
       try {
@@ -116,21 +116,43 @@
   <!-- SHELL PRINCIPALE A 3 COLONNE -->
   <div class="duo-shell">
 
-    <!-- SIDEBAR NAVIGAZIONE DESKTOP -->
+    <!-- SIDEBAR NAVIGAZIONE DESKTOP (MULTI-SPORT & MODALITÀ) -->
     <aside class="duo-sidebar" aria-label="Menu principale">
       <nav class="sidebar-nav">
-        <a href="#quizzone" class="nav-item active" data-tab="path" data-gamemode="quizzone">
-          <span class="nav-icon" aria-hidden="true">⚡</span>
-          <span class="nav-label">QUIZZONE</span>
+        <!-- 3 CATEGORIE SPORTIVE PRINCIPALI -->
+        <a href="#calcio" class="nav-item active" data-tab="path" data-sport="calcio" onclick="switchSport('calcio'); return false;">
+          <span class="nav-icon" aria-hidden="true">⚽</span>
+          <span class="nav-label">CALCIO</span>
         </a>
-        <a href="#gael-league" class="nav-item" data-tab="path" data-gamemode="gael">
-          <span class="nav-icon" aria-hidden="true">👕</span>
-          <span class="nav-label">GAEL LEAGUE</span>
+        <a href="#f1" class="nav-item" data-tab="path" data-sport="f1" onclick="switchSport('f1'); return false;">
+          <span class="nav-icon" aria-hidden="true">🏎️</span>
+          <span class="nav-label">F1 BOOMER</span>
         </a>
-        <a href="#pastore-league" class="nav-item" data-tab="path" data-gamemode="pastore">
-          <span class="nav-icon" aria-hidden="true">🎯</span>
-          <span class="nav-label">PASTORE LEAGUE</span>
+        <a href="#basket" class="nav-item" data-tab="path" data-sport="basket" onclick="switchSport('basket'); return false;">
+          <span class="nav-icon" aria-hidden="true">🏀</span>
+          <span class="nav-label">BASKET NBA</span>
         </a>
+
+        <!-- SEPARATORE DI SEZIONE -->
+        <div class="sidebar-divider"></div>
+
+        <!-- MODALITÀ ATTIVE CALCIO (Visibili in Calcio) -->
+        <div class="sidebar-calcio-submodes" id="sidebarCalcioSubmodes">
+          <a href="#quizzone" class="nav-item sub-item active" data-tab="path" data-gamemode="quizzone">
+            <span class="nav-icon" aria-hidden="true">⚡</span>
+            <span class="nav-label">Quizzone</span>
+          </a>
+          <a href="#gael-league" class="nav-item sub-item" data-tab="path" data-gamemode="gael">
+            <span class="nav-icon" aria-hidden="true">👕</span>
+            <span class="nav-label">Gael League</span>
+          </a>
+          <a href="#pastore-league" class="nav-item sub-item" data-tab="path" data-gamemode="pastore">
+            <span class="nav-icon" aria-hidden="true">🎯</span>
+            <span class="nav-label">Pastore League</span>
+          </a>
+          <div class="sidebar-divider"></div>
+        </div>
+
         <a href="#classifica" class="nav-item" data-tab="league">
           <span class="nav-icon" aria-hidden="true">🏆</span>
           <span class="nav-label">CLASSIFICA</span>
@@ -325,7 +347,33 @@
           </div>
           <span class="eyebrow-pill pill-gold">DIVISIONE SCUDETTO</span>
           <h2>Classifica Generale</h2>
-          <p>I punti XP guadagnati sia in <b>Gael League</b> sia in <b>Quizzocampo</b> ti fanno scalare la Divisione Scudetto!</p>
+          <p>I punti XP guadagnati sia in <b>Calcio</b>, <b>F1 Boomer</b> o <b>Basket NBA</b> ti fanno scalare la Divisione Scudetto!</p>
+
+          <!-- SELETTORE SPORT NELLA CLASSIFICA -->
+          <div class="macro-sport-switcher" role="tablist" aria-label="Scegli Categoria Sportiva per la Classifica" style="margin:14px 0 10px;">
+            <button class="macro-sport-btn active" data-sport="calcio" type="button" onclick="switchSport('calcio')">
+              <span class="macro-btn-icon">⚽</span>
+              <div class="macro-btn-text">
+                <b>CALCIO</b>
+                <small>5.000+ Sfide</small>
+              </div>
+            </button>
+            <button class="macro-sport-btn" data-sport="f1" type="button" onclick="switchSport('f1')">
+              <span class="macro-btn-icon">🏎️</span>
+              <div class="macro-btn-text">
+                <b>F1 BOOMER</b>
+                <small>4.100+ Quiz</small>
+              </div>
+            </button>
+            <button class="macro-sport-btn" data-sport="basket" type="button" onclick="switchSport('basket')">
+              <span class="macro-btn-icon">🏀</span>
+              <div class="macro-btn-text">
+                <b>BASKET NBA</b>
+                <small>4.100+ Quiz</small>
+              </div>
+            </button>
+          </div>
+
           <div class="podium-section" id="leaguePodium">
             <!-- Popolato dinamicamente da app.js solo con giocatori reali -->
           </div>
@@ -655,6 +703,44 @@
           </div>
         </div>
 
+        <!-- SELEZIONE MULTI-SPORT NEL PROFILO (CALCIO | F1 BOOMER | BASKET NBA) -->
+        <div class="panel-card mt-16 profile-sports-card">
+          <div class="card-header-flex">
+            <h3>🏆 Le Tue Discipline Sportive</h3>
+            <span class="badge-counter-pill" id="profileSportActiveBadge">⚽ Calcio Attivo</span>
+          </div>
+          <p class="text-muted" style="margin-bottom:12px;">Scegli la disciplina in cui vuoi sfidare la community. Fiamme Streak e progressi sono salvati separatamente per ogni categoria!</p>
+          <div class="profile-sports-grid">
+            <div class="profile-sport-item active" id="profileSportCalcio" data-sport="calcio" onclick="switchSport('calcio')">
+              <div class="psi-header">
+                <span class="psi-icon">⚽</span>
+                <span class="psi-streak" id="profileStreakCalcio">🔥 1</span>
+              </div>
+              <h4>CALCIO FUORICLASSE</h4>
+              <p>5.000+ Sfide • Quizzone, Gael League e Pastore League.</p>
+              <button class="btn-primary btn-sm w-full psi-btn" type="button">GIOCA CALCIO</button>
+            </div>
+            <div class="profile-sport-item" id="profileSportF1" data-sport="f1" onclick="switchSport('f1')">
+              <div class="psi-header">
+                <span class="psi-icon">🏎️</span>
+                <span class="psi-streak" id="profileStreakF1">🔥 0</span>
+              </div>
+              <h4>F1 BOOMER</h4>
+              <p>4.100+ Quiz • Dal 1970 a oggi: miti, piloti, box e duelli GP.</p>
+              <button class="btn-outline btn-sm w-full psi-btn" type="button">GIOCA F1</button>
+            </div>
+            <div class="profile-sport-item" id="profileSportBasket" data-sport="basket" onclick="switchSport('basket')">
+              <div class="psi-header">
+                <span class="psi-icon">🏀</span>
+                <span class="psi-streak" id="profileStreakBasket">🔥 0</span>
+              </div>
+              <h4>BASKET NBA</h4>
+              <p>4.100+ Quiz • Dal 1980 a oggi: dinastie, MVP e Finals.</p>
+              <button class="btn-outline btn-sm w-full psi-btn" type="button">GIOCA NBA</button>
+            </div>
+          </div>
+        </div>
+
         <div class="panel-card mt-16">
           <div class="card-header-flex">
             <h3>👤 Account &amp; Nome Maglia</h3>
@@ -737,25 +823,25 @@
 
   </div>
 
-  <!-- BOTTOM NAVIGATION BAR (MOBILE-FIRST) -->
+  <!-- BOTTOM NAVIGATION BAR (MOBILE-FIRST CON ACCESSO DIRETTO A TUTTI GLI SPORT) -->
   <nav class="duo-mobile-nav" aria-label="Navigazione mobile">
-    <button class="mobile-nav-btn active" data-tab="path" data-gamemode="quizzone" type="button">
-      <span class="nav-btn-icon" aria-hidden="true">⚡</span>
-      <span class="nav-btn-text">Quizzone</span>
+    <button class="mobile-nav-btn active" data-tab="path" data-sport="calcio" onclick="switchSport('calcio')" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">⚽</span>
+      <span class="nav-btn-text">Calcio</span>
     </button>
-    <button class="mobile-nav-btn" data-tab="path" data-gamemode="gael" type="button">
-      <span class="nav-btn-icon" aria-hidden="true">👕</span>
-      <span class="nav-btn-text">Gael</span>
+    <button class="mobile-nav-btn" data-tab="path" data-sport="f1" onclick="switchSport('f1')" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">🏎️</span>
+      <span class="nav-btn-text">F1</span>
     </button>
-    <button class="mobile-nav-btn" data-tab="path" data-gamemode="pastore" type="button">
-      <span class="nav-btn-icon" aria-hidden="true">🎯</span>
-      <span class="nav-btn-text">Pastore</span>
+    <button class="mobile-nav-btn" data-tab="path" data-sport="basket" onclick="switchSport('basket')" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">🏀</span>
+      <span class="nav-btn-text">NBA</span>
     </button>
-    <button class="mobile-nav-btn" data-tab="league" type="button">
+    <button class="mobile-nav-btn" data-tab="league" onclick="switchTab('league')" type="button">
       <span class="nav-btn-icon" aria-hidden="true">🏆</span>
       <span class="nav-btn-text">Lega</span>
     </button>
-    <button class="mobile-nav-btn" data-tab="profile" type="button">
+    <button class="mobile-nav-btn" data-tab="profile" onclick="switchTab('profile')" type="button">
       <span class="nav-btn-icon" aria-hidden="true">👤</span>
       <span class="nav-btn-text">Profilo</span>
     </button>
@@ -1265,6 +1351,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=36"></script>
+  <script src="app.js?v=37"></script>
 </body>
 </html>

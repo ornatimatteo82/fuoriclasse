@@ -1,5 +1,5 @@
-// Fuoriclasse Service Worker v35 — Auto-Refresh & Cache Busting
-const SW_VERSION = 'fuoriclasse-v35';
+// Fuoriclasse Service Worker v37 — Auto-Refresh & Cache Busting
+const SW_VERSION = 'fuoriclasse-v37';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

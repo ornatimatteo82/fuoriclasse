@@ -63,7 +63,7 @@ end tell
 `;
   try {
     runAppleScript(refreshAs);
-    sleep(4000);
+    sleep(6500);
   } catch (e) {
     console.log('Note refresh:', e.message);
   }

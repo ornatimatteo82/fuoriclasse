@@ -2872,6 +2872,123 @@ body {
   color: #ea580c;
 }
 
+/* Sidebar Nav Item per Sport & Sottomodalità */
+.sidebar-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 6px 12px;
+}
+.sidebar-nav .nav-item.sub-item {
+  padding-left: 28px;
+  font-size: 13.5px;
+  opacity: 0.92;
+}
+.sidebar-nav .nav-item[data-sport="calcio"].active {
+  background: rgba(88, 204, 2, 0.14);
+  border-color: #58cc02;
+  color: #166534;
+}
+.sidebar-nav .nav-item[data-sport="f1"].active {
+  background: rgba(225, 6, 0, 0.14);
+  border-color: #e10600;
+  color: #991b1b;
+}
+.sidebar-nav .nav-item[data-sport="basket"].active {
+  background: rgba(249, 115, 22, 0.14);
+  border-color: #f97316;
+  color: #9a3412;
+}
+
+/* Mobile Nav Button per Sport */
+.duo-mobile-nav .mobile-nav-btn[data-sport="calcio"].active {
+  color: #58cc02;
+}
+.duo-mobile-nav .mobile-nav-btn[data-sport="f1"].active {
+  color: #e10600;
+}
+.duo-mobile-nav .mobile-nav-btn[data-sport="basket"].active {
+  color: #f97316;
+}
+
+/* Griglia Multi-Sport nel Profilo Utente */
+.profile-sports-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+@media (max-width: 680px) {
+  .profile-sports-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+.profile-sport-item {
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-bottom: 4px solid var(--border-shadow);
+  border-radius: 16px;
+  padding: 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.12s, border-color 0.15s, background-color 0.15s;
+}
+.profile-sport-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--duo-blue);
+}
+.profile-sport-item.active {
+  border-color: #58cc02;
+  border-bottom-color: #3b8a00;
+  background: rgba(88, 204, 2, 0.08);
+}
+.profile-sport-item[data-sport="f1"].active {
+  border-color: #e10600;
+  border-bottom-color: #990000;
+  background: rgba(225, 6, 0, 0.08);
+}
+.profile-sport-item[data-sport="basket"].active {
+  border-color: #f97316;
+  border-bottom-color: #c2410c;
+  background: rgba(249, 115, 22, 0.08);
+}
+.psi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.psi-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+.psi-streak {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: rgba(255, 119, 0, 0.12);
+  color: #ff7700;
+  border: 1px solid rgba(255, 119, 0, 0.25);
+}
+.profile-sport-item h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+}
+.profile-sport-item p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.35;
+  flex: 1;
+}
+.psi-btn {
+  margin-top: 4px;
+}
+
 /* ========================================================
    TEMA SPECIFICO F1 BOOMER (RACING PATTERN & SCARLET)
    ======================================================== */

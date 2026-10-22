@@ -395,6 +395,8 @@ async function pullProfileFromSupabase() {
         state.claimedChests = Array.from(new Set([...state.claimedChests, ...data.claimed_chests]));
       }
       updateTopStats();
+      updateSportBadgeUI();
+      updateSportUITheme();
       renderSnakePath();
     } else {
       await syncProfileToSupabase();
@@ -531,20 +533,33 @@ function updateSportUITheme() {
   const leagueTrophy = $('#leagueHeroTrophy');
   const modeSwitcher = document.querySelector('.game-mode-switcher');
 
-  // Aggiorna pulsanti Macro Switcher
-  $$('.macro-sport-btn').forEach(btn => {
+  // Aggiorna pulsanti Macro Switcher, Sidebar Desktop e Mobile Nav
+  $$('.macro-sport-btn, .sidebar-nav .nav-item[data-sport], .duo-mobile-nav .mobile-nav-btn[data-sport], .profile-sport-item').forEach(btn => {
     const isCur = btn.dataset.sport === sp;
     btn.classList.toggle('active', isCur);
     btn.setAttribute('aria-selected', String(isCur));
   });
 
-  // Aggiorna badge streak nel macro switcher
+  // Visibilità sottomodalità Calcio nella sidebar desktop
+  const calcioSubmodes = $('#sidebarCalcioSubmodes');
+  if (calcioSubmodes) calcioSubmodes.style.display = (sp === 'calcio') ? '' : 'none';
+
+  // Badge disciplina attiva nel profilo
+  const profileSportBadge = $('#profileSportActiveBadge');
+  if (profileSportBadge) {
+    profileSportBadge.textContent = sp === 'f1' ? '🏎️ F1 Boomer Attivo' : sp === 'basket' ? '🏀 Basket NBA Attivo' : '⚽ Calcio Attivo';
+  }
+
+  // Aggiorna badge streak nel macro switcher e nel profilo
   const cStreak = state.categoryStreaks?.calcio?.streak || 0;
   const fStreak = state.categoryStreaks?.f1?.streak || 0;
   const bStreak = state.categoryStreaks?.basket?.streak || 0;
   if ($('#streakBadgeCalcio')) $('#streakBadgeCalcio').textContent = `🔥 ${cStreak}`;
   if ($('#streakBadgeF1')) $('#streakBadgeF1').textContent = `🔥 ${fStreak}`;
   if ($('#streakBadgeBasket')) $('#streakBadgeBasket').textContent = `🔥 ${bStreak}`;
+  if ($('#profileStreakCalcio')) $('#profileStreakCalcio').textContent = `🔥 ${cStreak}`;
+  if ($('#profileStreakF1')) $('#profileStreakF1').textContent = `🔥 ${fStreak}`;
+  if ($('#profileStreakBasket')) $('#profileStreakBasket').textContent = `🔥 ${bStreak}`;
 
   if (sp === 'f1') {
     if (brandImg) brandImg.src = 'assets/f1-mascot.jpg?v=35';
@@ -725,6 +740,7 @@ window.switchSport = async (targetSport) => {
   if (targetSport === 'calcio') {
     setGameMode(state.activeGameMode, false);
   }
+  switchTab('path', state.activeGameMode);
   renderUnitJumpModal();
   renderSnakePath();
   persistState();
@@ -3072,27 +3088,32 @@ function switchTab(tabId, forcedGameMode = null) {
   if (target) target.hidden = false;
 
   $$('.sidebar-nav .nav-item').forEach(link => {
-    if (link.dataset.tab === 'path' && link.dataset.gamemode) {
-      link.classList.toggle('active', tabId === 'path' && link.dataset.gamemode === state.activeGameMode);
+    if (link.dataset.sport) {
+      link.classList.toggle('active', tabId === 'path' && link.dataset.sport === state.activeSport);
+    } else if (link.dataset.tab === 'path' && link.dataset.gamemode) {
+      link.classList.toggle('active', tabId === 'path' && state.activeSport === 'calcio' && link.dataset.gamemode === state.activeGameMode);
     } else {
       link.classList.toggle('active', link.dataset.tab === tabId);
     }
   });
 
   $$('.duo-mobile-nav .mobile-nav-btn').forEach(btn => {
-    if (btn.dataset.tab === 'path' && btn.dataset.gamemode) {
-      btn.classList.toggle('active', tabId === 'path' && btn.dataset.gamemode === state.activeGameMode);
+    if (btn.dataset.sport) {
+      btn.classList.toggle('active', tabId === 'path' && btn.dataset.sport === state.activeSport);
+    } else if (btn.dataset.tab === 'path' && btn.dataset.gamemode) {
+      btn.classList.toggle('active', tabId === 'path' && state.activeSport === 'calcio' && btn.dataset.gamemode === state.activeGameMode);
     } else {
       btn.classList.toggle('active', btn.dataset.tab === tabId);
     }
   });
 
-  if (tabId === 'path') {
+  if (tabId === 'path' && state.activeSport === 'calcio') {
     setGameMode(state.activeGameMode, false);
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+window.switchTab = switchTab;
 
 // -------------------------------------------------------------
 // 12. MOTORE AUDIO PRO STADIO & 16-BIT ARCADE (DISATTIVABILE)
@@ -3590,7 +3611,13 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#authModal').hidden = true;
   });
 
-  $('#topUserLoginBtn')?.addEventListener('click', () => $('#authModal').hidden = false);
+  $('#topUserLoginBtn')?.addEventListener('click', () => {
+    if (currentCloudUser) {
+      switchTab('profile');
+    } else {
+      $('#authModal').hidden = false;
+    }
+  });
   $('#openAuthModalBtn')?.addEventListener('click', () => $('#authModal').hidden = false);
   $('#sidebarDeployBtn')?.addEventListener('click', () => $('#authModal').hidden = false);
   $('#sidebarSourcesBtn')?.addEventListener('click', () => $('#sourcesModal').hidden = false);
