@@ -1,5 +1,5 @@
-// Fuoriclasse Service Worker v33 — Multi-Sport (Calcio, F1 Boomer, Basket NBA)
-const SW_VERSION = 'fuoriclasse-v33';
+// Fuoriclasse Service Worker v34 — Auto-Refresh & Cache Busting
+const SW_VERSION = 'fuoriclasse-v34';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -14,6 +14,12 @@ self.addEventListener('activate', (event) => {
       .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && (event.data.type === 'SKIP_WAITING' || event.data.action === 'skipWaiting')) {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', () => {

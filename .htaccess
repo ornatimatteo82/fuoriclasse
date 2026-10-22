@@ -1,4 +1,6 @@
 # Fuoriclasse — Hardening Sicurezza & Anti-Cache Stale per Aruba Apache
+DirectoryIndex index.html index.php
+
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "SAMEORIGIN"

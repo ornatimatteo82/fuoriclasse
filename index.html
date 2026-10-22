@@ -10,9 +10,9 @@
   <meta name="apple-mobile-web-app-title" content="Fuoriclasse" />
   <title>Fuoriclasse — Gael League &amp; Quizzocampo</title>
 
-  <link rel="manifest" href="manifest.webmanifest?v=33" />
-  <link rel="icon" type="image/svg+xml" href="icon.svg?v=33" />
-  <link rel="apple-touch-icon" href="assets/mascot-coach.jpg?v=33" />
+  <link rel="manifest" href="manifest.webmanifest?v=34" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg?v=34" />
+  <link rel="apple-touch-icon" href="assets/mascot-coach.jpg?v=34" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,12 +21,13 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="style.css?v=33" />
-  <link rel="stylesheet" href="mobile.css?v=33" />
-  <link rel="stylesheet" href="dark-theme.css?v=33" />
+  <link rel="stylesheet" href="style.css?v=34" />
+  <link rel="stylesheet" href="mobile.css?v=34" />
+  <link rel="stylesheet" href="dark-theme.css?v=34" />
   <script>
     (function() {
       try {
+        // Pulizia iniziale proattiva cache Service Worker per garantire aggiornamenti istantanei
         if ('caches' in window) {
           caches.keys().then(function(keys) {
             return Promise.all(keys.map(function(k) { return caches.delete(k); }));
@@ -36,7 +37,7 @@
           navigator.serviceWorker.getRegistrations().then(function(regs) {
             regs.forEach(function(r) {
               var scriptUrl = (r.active && r.active.scriptURL) || (r.installing && r.installing.scriptURL) || '';
-              if (scriptUrl.indexOf('v=25') === -1) {
+              if (scriptUrl.indexOf('v=34') === -1) {
                 r.unregister();
               } else {
                 r.update();
@@ -1194,7 +1195,16 @@
     </div>
   </div>
 
+  <!-- TOAST AGGIORNAMENTO AUTOMATICO / FORCED REFRESH DEPLOY -->
+  <div id="updateToast" class="update-toast" hidden role="status" aria-live="polite">
+    <span class="update-toast-icon">🚀</span>
+    <div class="update-toast-text">
+      <b>Nuovo aggiornamento disponibile!</b>
+      <span>Installazione e riavvio automatico...</span>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=33"></script>
+  <script src="app.js?v=34"></script>
 </body>
 </html>

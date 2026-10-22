@@ -3311,13 +3311,151 @@ function purgeLegacySetupBlocks() {
 }
 purgeLegacySetupBlocks();
 
+// ============================================================================
+// SISTEMA DI AGGIORNAMENTO AUTOMATICO & FORCED REFRESH SU NUOVO DEPLOY
+// ============================================================================
+const CURRENT_APP_BUILD = 1729582000000;
+let isCheckingUpdate = false;
+let updateReloadTriggered = false;
+
+function showUpdateNotification(msg = 'Installazione e riavvio automatico...') {
+  const toast = document.getElementById('updateToast');
+  if (toast) {
+    const textSpan = toast.querySelector('.update-toast-text span');
+    if (textSpan) textSpan.textContent = msg;
+    toast.hidden = false;
+  }
+}
+
+async function triggerForcedAppReload(newBuild) {
+  if (updateReloadTriggered) return;
+  updateReloadTriggered = true;
+
+  showUpdateNotification('Installazione e riavvio in corso...');
+  console.info('[Fuoriclasse Update] Ricaricamento forzato in corso per build:', newBuild);
+
+  // Memorizza il nuovo build prima della ricarica
+  try {
+    localStorage.setItem('fuoriclasse_build', String(newBuild || Date.now()));
+  } catch (_) {}
+
+  // Svuota cache HTTP e worker
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch (_) {}
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) {
+        if (r.waiting) r.waiting.postMessage({ type: 'SKIP_WAITING' });
+        await r.unregister();
+      }
+    }
+  } catch (_) {}
+
+  // Ricarica con query string per bypassare qualsiasi proxy/cache residua
+  setTimeout(() => {
+    try {
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.set('_v', String(newBuild || Date.now()));
+      window.location.replace(nextUrl.toString());
+    } catch (_) {
+      window.location.reload(true);
+    }
+  }, 900);
+}
+
+async function checkAppVersion(silent = true) {
+  if (isCheckingUpdate || updateReloadTriggered) return;
+  isCheckingUpdate = true;
+
+  try {
+    const fetchUrl = `version.json?_t=${Date.now()}`;
+    const res = await fetch(fetchUrl, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    });
+
+    if (!res.ok) {
+      if (!silent) console.warn('[Fuoriclasse Update] version.json non raggiungibile (HTTP ' + res.status + ')');
+      return;
+    }
+
+    const data = await res.json();
+    const serverBuild = Number(data.build) || 0;
+    const storedBuild = Number(localStorage.getItem('fuoriclasse_build')) || CURRENT_APP_BUILD;
+
+    if (serverBuild > storedBuild) {
+      console.info(`[Fuoriclasse Update] 🚀 Nuovo deploy rilevato sul server: build ${serverBuild} > locale ${storedBuild}`);
+      await triggerForcedAppReload(serverBuild);
+    } else {
+      if (!localStorage.getItem('fuoriclasse_build')) {
+        localStorage.setItem('fuoriclasse_build', String(CURRENT_APP_BUILD));
+      }
+      if (!silent) {
+        console.info(`[Fuoriclasse Update] Gioco aggiornato all'ultima versione (build: ${storedBuild})`);
+      }
+    }
+  } catch (err) {
+    if (!silent) console.debug('[Fuoriclasse Update] Controllo aggiornamento fallito:', err.message);
+  } finally {
+    isCheckingUpdate = false;
+  }
+}
+
+// Esponi per test da console
+window.checkAppUpdate = () => checkAppVersion(false);
+window.forceAppReload = () => triggerForcedAppReload(Date.now());
+
+// Registrazione Service Worker con monitoraggio aggiornamenti in tempo reale
 if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
   window.addEventListener('load', () => {
     purgeLegacySetupBlocks();
+
+    // Controlla subito se c'è una nuova versione
+    checkAppVersion(true);
+
     navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
       .then(reg => {
         console.info('Fuoriclasse Service Worker attivo:', reg.scope);
+
+        // Controllo se un nuovo worker è già in attesa
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          triggerForcedAppReload(Date.now());
+        }
+
+        // Ascolta nuovi aggiornamenti rilevati dal browser
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.info('[Fuoriclasse Update] Nuovo Service Worker installato: riavvio in corso...');
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+              triggerForcedAppReload(Date.now());
+            }
+          });
+        });
       })
       .catch(err => console.warn('Registrazione Service Worker:', err.message));
   });
+
+  // Controlla aggiornamenti ogni volta che la finestra torna attiva (visibile / focus)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      checkAppVersion(true);
+    }
+  });
+  window.addEventListener('focus', () => checkAppVersion(true));
+
+  // Controllo periodico in background ogni 3 minuti
+  setInterval(() => checkAppVersion(true), 3 * 60 * 1000);
 }
