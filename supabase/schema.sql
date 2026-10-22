@@ -48,3 +48,28 @@ alter table public.profiles add constraint profiles_security_bounds_check check 
   and gems between 0 and 1000000
   and hearts between 0 and 5
 );
+
+-- ============================================================================
+-- ANALYTICS EVENTI ANONIMI & PRIVACY-FIRST (ZERO COOKIE, GDPR COMPLIANT)
+-- Traccia le giocate, il cambio sport e le metriche di retention senza cookie
+-- ============================================================================
+create table if not exists public.analytics_events (
+  id bigint generated always as identity primary key,
+  event_name text not null,
+  sport text default 'calcio',
+  metadata jsonb default '{}'::jsonb,
+  is_pwa boolean default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_analytics_created_at on public.analytics_events (created_at desc);
+create index if not exists idx_analytics_event_name on public.analytics_events (event_name);
+
+alter table public.analytics_events enable row level security;
+
+drop policy if exists "Inserimento anonimo eventi analytics" on public.analytics_events;
+create policy "Inserimento anonimo eventi analytics"
+  on public.analytics_events
+  for insert
+  with check (true);
+

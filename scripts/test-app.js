@@ -146,6 +146,11 @@ assert(appContent.includes('recordCategoryDailyWin'), 'app.js implementa recordC
 assert(appContent.includes('switchSport'), 'app.js implementa switchSport');
 assert(appContent.includes('renderStreakDetailModal'), 'app.js implementa visualizzazione calendario retention');
 
+// 10. Test Analytics & Telemetria Leggera
+console.log('\n--- 10. Verifica Analytics Leggero & Privacy-First ---');
+assert(appContent.includes('trackEvent'), 'app.js implementa trackEvent non bloccante');
+assert(appContent.includes('analytics_events'), 'app.js e Supabase supportano la tabella analytics_events');
+
 // Riepilogo
 console.log('\n========================================');
 if (failures === 0) {

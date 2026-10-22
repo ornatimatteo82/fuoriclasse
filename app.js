@@ -419,6 +419,43 @@ async function syncProfileToSupabase() {
 }
 
 // -------------------------------------------------------------
+// 3C. TELEMETRIA & ANALYTICS LEGGERO (ZERO COOKIE, GDPR FRIENDLY)
+// -------------------------------------------------------------
+function trackEvent(eventName, metadata = {}) {
+  try {
+    const isPwa = window.matchMedia('(display-mode: standalone)').matches || Boolean(window.navigator.standalone);
+    const payload = {
+      event_name: eventName,
+      sport: state.activeSport || 'calcio',
+      is_pwa: isPwa,
+      metadata: {
+        path: window.location.pathname,
+        mode: state.activeGameMode || 'default',
+        ts: new Date().toISOString(),
+        ...metadata
+      }
+    };
+
+    // Telemetria first-party non bloccante via Supabase
+    if (supabaseClient) {
+      supabaseClient.from('analytics_events').insert(payload).then(() => {}).catch(() => {});
+    }
+
+    // Hook universale per eventuale analytics leggero esterno (GoatCounter, Umami, Plausible)
+    if (window.goatcounter && typeof window.goatcounter.count === 'function') {
+      window.goatcounter.count({ path: eventName, title: eventName, event: true });
+    }
+    if (typeof window.plausible === 'function') {
+      window.plausible(eventName, { props: payload.metadata });
+    }
+  } catch (e) {
+    // Non blocca mai l'esperienza utente
+  }
+}
+window.trackEvent = trackEvent;
+
+
+// -------------------------------------------------------------
 // 4. CARICAMENTO MULTI-SPORT & CURRICULUM (CALCIO, F1 BOOMER, BASKET NBA)
 // -------------------------------------------------------------
 const loadedSportCatalogs = {
@@ -535,6 +572,7 @@ function updateSportUITheme() {
 
 window.switchSport = async (targetSport) => {
   if (!['calcio', 'f1', 'basket'].includes(targetSport)) return;
+  const previousSport = state.activeSport;
   state.activeSport = targetSport;
 
   if (targetSport === 'calcio') {
@@ -559,6 +597,7 @@ window.switchSport = async (targetSport) => {
   renderSnakePath();
   persistState();
 
+  trackEvent('sport_switch', { from_sport: previousSport, to_sport: targetSport });
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -575,6 +614,8 @@ async function loadCurriculum() {
   renderQuests();
   updateTopStats();
   renderSnakePath();
+
+  trackEvent('page_view', { sport: state.activeSport, is_logged_in: Boolean(currentCloudUser) });
 }
 
 // -------------------------------------------------------------
@@ -1427,6 +1468,8 @@ function startQuizSession(mode, questionsList) {
   }));
   state.questionIndex = 0;
   state.selectedAnswer = null;
+
+  trackEvent('quiz_session_start', { mode, question_count: questionsList.length, sport: state.activeSport });
   state.answered = false;
   state.sessionFinished = false;
   state.sessionCorrect = 0;
@@ -2041,6 +2084,7 @@ window.cashOutQuizRun = () => {
             : 'Coppa Quizzone';
   }
   recordCategoryDailyWin(state.activeSport || 'calcio');
+  trackEvent('quiz_session_cashout', { xp: bankedXp, gems: bankedGems, sport: state.activeSport, round: state.survivalRound });
   persistState();
   updateTopStats();
   closeQuizSession();
