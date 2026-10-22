@@ -21,9 +21,9 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="style.css?v=35" />
-  <link rel="stylesheet" href="mobile.css?v=35" />
-  <link rel="stylesheet" href="dark-theme.css?v=35" />
+  <link rel="stylesheet" href="style.css?v=36" />
+  <link rel="stylesheet" href="mobile.css?v=36" />
+  <link rel="stylesheet" href="dark-theme.css?v=36" />
   <script>
     (function() {
       try {
@@ -86,8 +86,8 @@
           <span class="stat-emoji" aria-hidden="true">🔥</span>
           <b id="streakCount">1</b>
         </div>
-        <div class="stat-item stat-gems" title="Calcio-Coins (Gemme)">
-          <span class="stat-emoji" aria-hidden="true">💎</span>
+        <div class="stat-item stat-gems" title="Lattine Energy Drink">
+          <span class="stat-emoji" aria-hidden="true">🥫</span>
           <b id="gemsCount">250</b>
         </div>
         <div class="stat-item stat-hearts" id="topHeartsPillBtn" title="Clicca per ricaricare le Vite (Sistema Freemium)" style="cursor:pointer;">
@@ -347,7 +347,7 @@
             <div>
               <span class="eyebrow-pill">OBIETTIVI GIORNALIERI</span>
               <h2>Missioni &amp; Bauli Premio</h2>
-              <p>Completa le sfide in <b>Gael League</b> e <b>Quizzocampo</b> per accumulare Calcio-Coins 💎 e sbloccare i trofei.</p>
+              <p>Completa le sfide per accumulare <b>Lattine Energy Drink 🥫</b> e sbloccare i trofei.</p>
             </div>
             <img src="assets/chest-gold.jpg" alt="Baule del Campione" class="quests-banner-chest" width="84" height="84" />
           </div>
@@ -359,7 +359,7 @@
             <div class="quest-body">
               <div class="quest-title-row">
                 <h4>Talento Gael League</h4>
-                <span class="quest-reward">💎 +20</span>
+                <span class="quest-reward">🥫 +20</span>
               </div>
               <p>Rispondi correttamente a 5 sfide oggi</p>
               <div class="duo-progress-bar">
@@ -374,7 +374,7 @@
             <div class="quest-body">
               <div class="quest-title-row">
                 <h4>Campione di Quizzocampo</h4>
-                <span class="quest-reward">💎 +50</span>
+                <span class="quest-reward">🥫 +50</span>
               </div>
               <p>Raggiungi almeno 50 XP complessivi</p>
               <div class="duo-progress-bar">
@@ -389,7 +389,7 @@
             <div class="quest-body">
               <div class="quest-title-row">
                 <h4>Nostalgia Anni '90</h4>
-                <span class="quest-reward">💎 +100</span>
+                <span class="quest-reward">🥫 +100</span>
               </div>
               <p>Completa 3 tappe sul percorso principale</p>
               <div class="duo-progress-bar">
@@ -644,9 +644,9 @@
             <small>Giorni Streak</small>
           </div>
           <div class="stat-box">
-            <span class="stat-box-icon">💎</span>
+            <span class="stat-box-icon">🥫</span>
             <b id="profileGems">250</b>
-            <small>Calcio-Coins</small>
+            <small>Lattine Energy</small>
           </div>
           <div class="stat-box">
             <span class="stat-box-icon">❤️</span>
@@ -832,8 +832,8 @@
               <b class="comp-stat-val" id="compAccVal">❤️ 5</b>
             </div>
             <div class="comp-stat-card comp-gems">
-              <span class="comp-stat-label">BOTTINO GEMME</span>
-              <b class="comp-stat-val" id="compGemsVal">+15 💎</b>
+              <span class="comp-stat-label">BOTTINO LATTINE</span>
+              <b class="comp-stat-val" id="compGemsVal">+15 🥫</b>
             </div>
           </div>
 
@@ -910,7 +910,7 @@
           ⚡ Allenamento Ripasso in Campo (+1 ❤️ Gratis)
         </button>
         <button class="btn-secondary w-full" id="refillHeartsCoinsBtn" type="button">
-          💎 Ricarica Completa 5/5 ❤️ (Usa 50 Gemme • Hai <span id="freemiumGemsNow">250</span> 💎)
+          🥫 Ricarica Completa 5/5 ❤️ (Usa 50 Lattine Energy • Hai <span id="freemiumGemsNow">250</span> 🥫)
         </button>
         <!-- SPONSOR AMAZON AFFILIATE PER RICARICA VITE (+1 ❤️) -->
         <div class="amazon-sponsor-box" id="amazonSponsorBox" style="background:var(--bg-card);border:2px solid #ff9900;border-radius:14px;padding:12px;margin:4px 0;text-align:left;box-shadow:0 4px 12px rgba(255,153,0,0.12);">
@@ -979,7 +979,7 @@
         <div class="deploy-section" id="supabaseAuthBox">
           <span class="eyebrow-pill pill-gold">ACCESSO RAPIDO GOOGLE</span>
           <h3 id="authUserHeadline">Accedi con il tuo Account Google</h3>
-          <p id="authUserSub">Sincronizza in automatico i tuoi progressi, cuori, gemme e scalata in classifica su qualsiasi dispositivo con un solo tap:</p>
+          <p id="authUserSub">Sincronizza in automatico i tuoi progressi, cuori, lattine energy e scalata in classifica su qualsiasi dispositivo con un solo tap:</p>
 
           <div id="authLoggedOutView" style="display:flex;flex-direction:column;gap:12px;margin-top:14px;">
             <button class="btn-outline w-full" id="btnSupabaseGoogle" type="button" style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 18px;font-size:16px;font-weight:900;border:2px solid #e2e8f0;background:#ffffff;color:#1e293b;border-radius:14px;box-shadow:0 3px 10px rgba(0,0,0,0.06);cursor:pointer;">
@@ -1131,7 +1131,7 @@
             <b>Gelo Fiamma: <span id="freezeCountSpan">1</span> attivo</b>
             <p>Se salti un giorno, protegge la tua fiamma senza azzerare lo streak!</p>
           </div>
-          <button class="btn-equip-freeze" id="btnBuyFreeze" type="button">🛒 +1 per 100 💎</button>
+          <button class="btn-equip-freeze" id="btnBuyFreeze" type="button">🛒 +1 per 100 🥫</button>
         </div>
 
         <!-- TABELLA RICOMPENSE MILESTONE -->
@@ -1147,7 +1147,7 @@
                 </div>
               </div>
               <div class="milestone-reward-pills">
-                <span class="reward-tag-gems">+50 💎</span>
+                <span class="reward-tag-gems">+50 🥫</span>
                 <span class="reward-tag-freeze">❤️ Full Vite</span>
               </div>
             </div>
@@ -1160,7 +1160,7 @@
                 </div>
               </div>
               <div class="milestone-reward-pills">
-                <span class="reward-tag-gems">+150 💎</span>
+                <span class="reward-tag-gems">+150 🥫</span>
                 <span class="reward-tag-freeze">🧊 1 Gelo Omaggio</span>
               </div>
             </div>
@@ -1173,7 +1173,7 @@
                 </div>
               </div>
               <div class="milestone-reward-pills">
-                <span class="reward-tag-gems">+300 💎</span>
+                <span class="reward-tag-gems">+300 🥫</span>
                 <span class="reward-tag-freeze">👑 Titolo Pro</span>
               </div>
             </div>
@@ -1186,7 +1186,7 @@
                 </div>
               </div>
               <div class="milestone-reward-pills">
-                <span class="reward-tag-gems">+1.000 💎</span>
+                <span class="reward-tag-gems">+1.000 🥫</span>
                 <span class="reward-tag-freeze">⭐ Trofeo d'Oro</span>
               </div>
             </div>
@@ -1207,7 +1207,7 @@
         <p style="font-size:15px;font-weight:800;color:var(--text-muted);margin:8px 0 16px;" id="streakCelebrationMsg">Hai completato la sfida quotidiana! Mantieni vivo il ritmo anche domani.</p>
         <div id="streakCelebrationRewardBox" hidden style="background:rgba(255,150,0,0.12);border:2px dashed #ff9600;border-radius:14px;padding:12px;margin-bottom:16px;">
           <b style="color:#d97706;display:block;margin-bottom:4px;" id="streakRewardTitle">🎁 PREMIO SBLOCCATO!</b>
-          <span style="font-size:14px;font-weight:800;" id="streakRewardDesc">+50 Gemme 💎</span>
+          <span style="font-size:14px;font-weight:800;" id="streakRewardDesc">+50 Lattine Energy 🥫</span>
         </div>
         <button class="btn-primary w-full" id="streakCelebrationOkBtn" type="button" style="background:#ff7700;border-bottom-color:#c25e00;">CONTINUA A GIOCARE ➔</button>
       </div>
@@ -1265,6 +1265,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=35"></script>
+  <script src="app.js?v=36"></script>
 </body>
 </html>

@@ -178,7 +178,8 @@ const PIXEL_ICONS = {
   jersey: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="4" y="2" width="8" height="12" fill="#0066cc"/><rect x="1" y="4" width="3" height="5" fill="#0066cc"/><rect x="12" y="4" width="3" height="5" fill="#0066cc"/><rect x="6" y="2" width="4" height="2" fill="#ffc800"/><rect x="7" y="6" width="2" height="5" fill="#ffffff"/><rect x="4" y="1" width="8" height="1" fill="#0f172a"/><rect x="4" y="14" width="8" height="1" fill="#0f172a"/></svg>`,
   star: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="7" y="1" width="2" height="14" fill="#ffc800"/><rect x="1" y="6" width="14" height="3" fill="#ffc800"/><rect x="4" y="4" width="8" height="7" fill="#ffc800"/><rect x="3" y="11" width="3" height="3" fill="#ffc800"/><rect x="10" y="11" width="3" height="3" fill="#ffc800"/><rect x="6" y="5" width="2" height="2" fill="#fffbeb"/></svg>`,
   flame: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="7" y="1" width="2" height="3" fill="#ff4b4b"/><rect x="5" y="4" width="6" height="4" fill="#ff4b4b"/><rect x="3" y="7" width="10" height="6" fill="#ff9600"/><rect x="5" y="13" width="6" height="2" fill="#ff4b4b"/><rect x="6" y="8" width="4" height="5" fill="#ffc800"/><rect x="7" y="10" width="2" height="3" fill="#ffffff"/></svg>`,
-  gem: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="4" y="2" width="8" height="3" fill="#38bdf8"/><rect x="2" y="5" width="12" height="4" fill="#0284c7"/><rect x="4" y="9" width="8" height="3" fill="#0369a1"/><rect x="6" y="12" width="4" height="2" fill="#0284c7"/><rect x="7" y="14" width="2" height="1" fill="#0369a1"/><rect x="5" y="3" width="3" height="2" fill="#e0f2fe"/></svg>`,
+  energyCan: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="6" y="1" width="4" height="1" fill="#cbd5e1"/><rect x="5" y="2" width="6" height="1" fill="#94a3b8"/><rect x="4" y="3" width="8" height="11" fill="#0284c7"/><rect x="5" y="4" width="6" height="9" fill="#0ea5e9"/><rect x="8" y="5" width="2" height="3" fill="#ffc800"/><rect x="6" y="7" width="3" height="2" fill="#ffc800"/><rect x="7" y="9" width="3" height="3" fill="#ffc800"/><rect x="5" y="14" width="6" height="1" fill="#94a3b8"/></svg>`,
+  gem: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="6" y="1" width="4" height="1" fill="#cbd5e1"/><rect x="5" y="2" width="6" height="1" fill="#94a3b8"/><rect x="4" y="3" width="8" height="11" fill="#0284c7"/><rect x="5" y="4" width="6" height="9" fill="#0ea5e9"/><rect x="8" y="5" width="2" height="3" fill="#ffc800"/><rect x="6" y="7" width="3" height="2" fill="#ffc800"/><rect x="7" y="9" width="3" height="3" fill="#ffc800"/><rect x="5" y="14" width="6" height="1" fill="#94a3b8"/></svg>`,
   heart: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="2" y="3" width="5" height="2" fill="#ff4b4b"/><rect x="9" y="3" width="5" height="2" fill="#ff4b4b"/><rect x="1" y="5" width="14" height="4" fill="#ff4b4b"/><rect x="3" y="9" width="10" height="2" fill="#ea2b2b"/><rect x="5" y="11" width="6" height="2" fill="#ea2b2b"/><rect x="7" y="13" width="2" height="2" fill="#b91c1c"/><rect x="3" y="4" width="2" height="2" fill="#fecaca"/></svg>`,
   trophy: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="4" y="2" width="8" height="6" fill="#ffc800"/><rect x="2" y="3" width="2" height="3" fill="#e5a400"/><rect x="12" y="3" width="2" height="3" fill="#e5a400"/><rect x="6" y="8" width="4" height="3" fill="#e5a400"/><rect x="4" y="11" width="8" height="2" fill="#ffc800"/><rect x="3" y="13" width="10" height="2" fill="#78350f"/><rect x="5" y="3" width="2" height="3" fill="#fef08a"/></svg>`,
   bolt: `<svg class="pixel-svg-icon" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="8" y="1" width="4" height="3" fill="#ffc800"/><rect x="6" y="4" width="5" height="3" fill="#ffc800"/><rect x="4" y="7" width="8" height="2" fill="#fef08a"/><rect x="6" y="9" width="5" height="3" fill="#ffc800"/><rect x="4" y="12" width="4" height="3" fill="#e5a400"/></svg>`,
@@ -864,7 +865,7 @@ function showStreakCelebration(sp, streakCount, savedByFreeze, reward) {
   if (reward && rBox) {
     rBox.hidden = false;
     if ($('#streakRewardTitle')) $('#streakRewardTitle').textContent = `🎁 ${reward.title}`;
-    if ($('#streakRewardDesc')) $('#streakRewardDesc').textContent = `+${reward.gems} Gemme 💎 ${reward.freeze ? '+ 1 Gelo Fiamma 🧊' : ''}`;
+    if ($('#streakRewardDesc')) $('#streakRewardDesc').textContent = `+${reward.gems} Lattine Energy 🥫 ${reward.freeze ? '+ 1 Gelo Fiamma 🧊' : ''}`;
   } else if (rBox) {
     rBox.hidden = true;
   }
@@ -1220,7 +1221,7 @@ function renderSnakePath() {
         ? `<div class="node-row">
              <button class="chest-node-btn ${isChestClaimed ? 'claimed' : ''}" type="button" title="Baule del Campione" onclick="claimChestBonus('${chestId}', this)">
                <img src="assets/chest-gold.jpg" alt="Baule Premio" class="chest-node-img" width="76" height="76" />
-               <span class="chest-label-pill">${isChestClaimed ? '✓ BAULE APERTO' : '🎁 +25 GEMME'}</span>
+               <span class="chest-label-pill">${isChestClaimed ? '✓ BAULE APERTO' : '🎁 +25 LATTINE 🥫'}</span>
              </button>
            </div>`
         : '';
@@ -1408,7 +1409,7 @@ window.claimChestBonus = (chestId, btnEl) => {
   openModal('🎉 Baule del Campione Aperto!', `
     <div class="text-center">
       <img src="assets/chest-gold.jpg" alt="Baule" style="width:96px;height:96px;border-radius:50%;border:3px solid #ffc800;margin-bottom:10px;" />
-      <p>Hai trovato <b>+25 Calcio-Coins 💎</b> e <b>+15 XP ⚡</b>!</p>
+      <p>Hai trovato <b>+25 Lattine Energy Drink 🥫</b> e <b>+15 XP ⚡</b>!</p>
     </div>
   `);
 };
@@ -2175,19 +2176,19 @@ function failQuizSessionByNoHearts() {
     $('#completionTitle').style.color = 'var(--duo-red)';
   }
   if ($('#completionSub')) {
-    $('#completionSub').innerHTML = `Non hai incassato in tempo e il bottino accumulato (<b>${lostXp} XP</b> e <b>${lostGems} 💎</b>) è sfumato! Ricarica subito le 5 vite per riprovare la scalata.`;
+    $('#completionSub').innerHTML = `Non hai incassato in tempo e il bottino accumulato (<b>${lostXp} XP</b> e <b>${lostGems} 🥫</b>) è sfumato! Ricarica subito le 5 vite per riprovare la scalata.`;
   }
 
   $('#compXpVal').textContent = '0 XP';
   $('#compAccVal').textContent = '💔 0 Vite';
-  $('#compGemsVal').textContent = '0 💎';
+  $('#compGemsVal').textContent = '0 🥫';
 
   const nextBtn = $('#btnNextDifficulty');
   if (nextBtn) nextBtn.hidden = true;
 
   const cashBtn = $('#btnCashOutBank');
   if (cashBtn) {
-    cashBtn.textContent = '🏥 RICARICA VITE (GEMME / ALLENAMENTO / SPOT)';
+    cashBtn.textContent = '🏥 RICARICA VITE (LATTINE / ALLENAMENTO / SPOT)';
     cashBtn.onclick = () => {
       closeQuizSession();
       openHeartsFreemiumModal();
@@ -2288,12 +2289,12 @@ function completeQuizSession() {
     $('#completionTitle').style.color = 'var(--duo-green)';
   }
   if ($('#completionSub')) {
-    $('#completionSub').innerHTML = `Hai nel piatto <b>+${state.pendingXp} XP</b> e <b>+${state.pendingGems} 💎</b> con <b>❤️ ${state.hearts} vite</b> rimaste! Vuoi <b>incassare il bottino</b> o sfidare altre 5 domande alla <b>Difficoltà Successiva (Liv. ${nextDiff}/10 • Bonus x${nextMult})</b> finché non esaurisci le vite?`;
+    $('#completionSub').innerHTML = `Hai nel piatto <b>+${state.pendingXp} XP</b> e <b>+${state.pendingGems} 🥫</b> con <b>❤️ ${state.hearts} vite</b> rimaste! Vuoi <b>incassare il bottino</b> o sfidare altre 5 domande alla <b>Difficoltà Successiva (Liv. ${nextDiff}/10 • Bonus x${nextMult})</b> finché non esaurisci le vite?`;
   }
 
   $('#compXpVal').textContent = `+${state.pendingXp} XP`;
   $('#compAccVal').textContent = `❤️ ${state.hearts}/${state.maxHearts}`;
-  $('#compGemsVal').textContent = `+${state.pendingGems} 💎`;
+  $('#compGemsVal').textContent = `+${state.pendingGems} 🥫`;
 
   const nextBtn = $('#btnNextDifficulty');
   if (nextBtn) {
@@ -2310,7 +2311,7 @@ function completeQuizSession() {
 
   const cashBtn = $('#btnCashOutBank');
   if (cashBtn) {
-    cashBtn.textContent = `💰 INCASSA ORA (+${state.pendingXp} XP & +${state.pendingGems} 💎)`;
+    cashBtn.textContent = `💰 INCASSA ORA (+${state.pendingXp} XP & +${state.pendingGems} 🥫)`;
     cashBtn.onclick = () => window.cashOutQuizRun();
   }
 
@@ -3729,7 +3730,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     await syncProfileToSupabase();
     await renderLeaderboard();
-    openModal('☁️ Sincronizzazione Completata', '<p>I tuoi XP, Cuori, Gemme e Tappe di Gael League e Quizzocampo sono stati salvati su Supabase!</p>');
+    openModal('☁️ Sincronizzazione Completata', '<p>I tuoi XP, Cuori, Lattine Energy e Tappe sono stati salvati su Supabase!</p>');
   });
 
   $('#btnSupabaseLogout')?.addEventListener('click', async () => {
@@ -3740,7 +3741,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (msgEl) msgEl.textContent = '👋 Disconnesso dall\'account Cloud.';
   });
 
-  // Modal Infermeria & Ricarica Vite (Architettura Freemium: Ripasso, Gemme, Spot Sponsor, Timer 15m, PRO)
+  // Modal Infermeria & Ricarica Vite (Architettura Freemium: Ripasso, Lattine, Spot Sponsor, Timer 15m, PRO)
   $('#topHeartsPillBtn')?.addEventListener('click', () => openHeartsFreemiumModal());
   $('#heartsModalClose')?.addEventListener('click', () => {
     $('#heartsEmptyModal').hidden = true;
@@ -3768,10 +3769,10 @@ document.addEventListener('DOMContentLoaded', () => {
       persistState();
       if ($('#freemiumHeartsNow')) $('#freemiumHeartsNow').textContent = state.hearts;
       if ($('#freemiumGemsNow')) $('#freemiumGemsNow').textContent = state.gems;
-      if (fb) fb.textContent = '🎉 5/5 Vite ricaricate con 50 Gemme!';
+      if (fb) fb.textContent = '🎉 5/5 Vite ricaricate con 50 Lattine Energy!';
       setTimeout(() => { $('#heartsEmptyModal').hidden = true; }, 800);
     } else {
-      if (fb) fb.textContent = '⚠️ Ti servono 50 💎! Usa l\'Allenamento gratuito o lo Spot Sponsor.';
+      if (fb) fb.textContent = '⚠️ Ti servono 50 🥫! Usa l\'Allenamento gratuito o lo Spot Sponsor.';
     }
   });
 
@@ -3916,7 +3917,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const curSport = state.activeSport || 'calcio';
     const cost = 100;
     if (state.gems < cost) {
-      alert('Non hai abbastanza gemme! Te ne servono 100 💎 per acquistare un Gelo Fiamma.');
+      alert('Non hai abbastanza lattine! Te ne servono 100 🥫 per acquistare un Gelo Fiamma.');
       return;
     }
     state.gems -= cost;
