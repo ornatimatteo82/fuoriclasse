@@ -27,8 +27,8 @@ const WIKI_CACHE_PREFIX = 'fuoriclasse_wikidata_v1_';
 const WIKI_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
 // Configurazione Supabase Ufficiale Pre-collegata
-const DEFAULT_SUPABASE_URL = 'https://zmasnwtbahotcdvqdhfd.supabase.co';
-const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_HseKP-eaKFM6Ebpi1V2jSg_mYZnwWq3';
+const DEFAULT_SUPABASE_URL = 'https://mwpuznfkjcprxgyovizs.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_XAyu9fWmK_WI8b7wvraAVA_e4hbP9SW';
 let supabaseClient = null;
 let currentCloudUser = null;
 
