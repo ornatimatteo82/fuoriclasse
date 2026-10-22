@@ -53,6 +53,10 @@ const state = {
   },
   activeGameMode: 'quizzocampo', // 'quizzocampo' | 'gael' | 'pastore' | 'f1-percorso' | 'basket-percorso'
   lastHeartsRefillDay: new Date().toLocaleDateString('en-CA'),
+  lastHeartLostTime: null,
+  dailyRefillsDate: new Date().toLocaleDateString('en-CA'),
+  dailyRefillsCount: 0,
+  notificationsEnabled: false,
 
   // Progressi percorso: chiavi 'u1-l1' completate e bauli riscattati
   completedLessons: ['u1-l1', 'u11-l1'],
@@ -239,6 +243,18 @@ function loadState() {
       if (typeof saved.lastHeartsRefillDay === 'string') {
         state.lastHeartsRefillDay = saved.lastHeartsRefillDay;
       }
+      if (typeof saved.dailyRefillsDate === 'string') {
+        state.dailyRefillsDate = saved.dailyRefillsDate;
+      }
+      if (Number.isFinite(saved.dailyRefillsCount)) {
+        state.dailyRefillsCount = saved.dailyRefillsCount;
+      }
+      if (Number.isFinite(saved.lastHeartLostTime)) {
+        state.lastHeartLostTime = saved.lastHeartLostTime;
+      }
+      if (typeof saved.notificationsEnabled === 'boolean') {
+        state.notificationsEnabled = saved.notificationsEnabled;
+      }
       if (Array.isArray(saved.completedLessons) && saved.completedLessons.length) {
         state.completedLessons = saved.completedLessons;
       }
@@ -265,6 +281,10 @@ function persistState() {
       gems: state.gems,
       hearts: state.hearts,
       lastHeartsRefillDay: state.lastHeartsRefillDay,
+      lastHeartLostTime: state.lastHeartLostTime,
+      dailyRefillsDate: state.dailyRefillsDate,
+      dailyRefillsCount: state.dailyRefillsCount,
+      notificationsEnabled: state.notificationsEnabled,
       soundEnabled: state.soundEnabled,
       theme: state.theme,
       activeGameMode: state.activeGameMode,
@@ -481,13 +501,15 @@ const loadedSportCatalogs = {
 
 async function loadSportCurriculum(sport = state.activeSport) {
   if (loadedSportCatalogs[sport]) {
-    catalog = loadedSportCatalogs[sport];
-    return catalog;
+    if (sport === state.activeSport) {
+      catalog = loadedSportCatalogs[sport];
+    }
+    return loadedSportCatalogs[sport];
   }
 
-  let jsonUrl = 'data/curriculum.json?v=32';
-  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=32';
-  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=32';
+  let jsonUrl = 'data/curriculum.json?v=35';
+  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=35';
+  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=35';
 
   try {
     const res = await fetch(jsonUrl);
@@ -495,12 +517,16 @@ async function loadSportCurriculum(sport = state.activeSport) {
     const data = await res.json();
     if (data && Array.isArray(data.units) && data.units.length > 0) {
       loadedSportCatalogs[sport] = data;
-      catalog = data;
+      // Imposta catalog SOLO ED ESCLUSIVAMENTE se corrisponde allo sport attivo dell'utente!
+      if (sport === state.activeSport) {
+        catalog = data;
+      }
     }
+    return data;
   } catch (err) {
     console.warn(`Caricamento curriculum ${sport} non riuscito:`, err.message);
   }
-  return catalog;
+  return loadedSportCatalogs[sport] || catalog;
 }
 
 function updateSportBadgeUI() {
@@ -759,6 +785,8 @@ async function loadCurriculum() {
 
   checkMidnightHeartsReset();
   updateHomeInstallBannerVisibility();
+  updateNotificationUI();
+  checkAndTriggerStreakReminder();
   updateSportBadgeUI();
   updateSportUITheme();
   if (state.activeSport === 'calcio') {
@@ -780,10 +808,22 @@ function preloadOtherSportCurricula() {
   setTimeout(() => {
     ['calcio', 'f1', 'basket'].forEach(sp => {
       if (sp !== state.activeSport && !loadedSportCatalogs[sp]) {
-        loadSportCurriculum(sp);
+        const url = sp === 'f1' ? 'data/curriculum-f1.json?v=35' : (sp === 'basket' ? 'data/curriculum-basket.json?v=35' : 'data/curriculum.json?v=35');
+        fetch(url)
+          .then(r => r.json())
+          .then(data => {
+            if (data && Array.isArray(data.units)) {
+              loadedSportCatalogs[sp] = data;
+              // Assicurati al 100% che il catalog globale rimanga sempre quello dello sport attivo
+              if (loadedSportCatalogs[state.activeSport]) {
+                catalog = loadedSportCatalogs[state.activeSport];
+              }
+            }
+          })
+          .catch(() => {});
       }
     });
-  }, 1800);
+  }, 2500);
 }
 
 // -------------------------------------------------------------
@@ -967,14 +1007,63 @@ function checkMidnightHeartsReset() {
   if (state.lastHeartsRefillDay && state.lastHeartsRefillDay !== today) {
     state.hearts = state.maxHearts;
     state.lastHeartsRefillDay = today;
+    state.dailyRefillsDate = today;
+    state.dailyRefillsCount = 0;
+    state.lastHeartLostTime = null;
     persistState();
     updateTopStats();
     if ($('#freemiumHeartsNow')) $('#freemiumHeartsNow').textContent = state.hearts;
-    console.log('🌙 [Midnight Reset] Vite ricaricate al 100% (5/5 ❤️) per il nuovo giorno:', today);
+    if ($('#freemiumRefillsLeft')) $('#freemiumRefillsLeft').textContent = '2';
+    console.log('🌙 [Midnight Reset] Vite ricaricate al 100% (5/5 ❤️) e ricariche manuali azzerate (2/2) per il nuovo giorno:', today);
   } else if (!state.lastHeartsRefillDay) {
     state.lastHeartsRefillDay = today;
+    state.dailyRefillsDate = today;
+    state.dailyRefillsCount = 0;
     persistState();
   }
+  applyOfflineHeartsRegen();
+}
+
+function applyOfflineHeartsRegen() {
+  if (state.hearts >= state.maxHearts) {
+    state.lastHeartLostTime = null;
+    return;
+  }
+  const now = Date.now();
+  if (!state.lastHeartLostTime) {
+    // Se non c'è timestamp registrato ma il giocatore ha meno di 5 vite,
+    // significa che la sessione precedente era terminata: ripristina le vite piene!
+    state.hearts = state.maxHearts;
+    state.lastHeartLostTime = null;
+    updateTopStats();
+    persistState();
+    return;
+  }
+  const elapsedMs = now - Number(state.lastHeartLostTime);
+  const msPerHeart = 15 * 60 * 1000;
+  if (elapsedMs >= msPerHeart) {
+    const heartsToAdd = Math.floor(elapsedMs / msPerHeart);
+    state.hearts = Math.min(state.maxHearts, state.hearts + heartsToAdd);
+    if (state.hearts >= state.maxHearts) {
+      state.lastHeartLostTime = null;
+    } else {
+      state.lastHeartLostTime = now - (elapsedMs % msPerHeart);
+    }
+    updateTopStats();
+    persistState();
+  }
+}
+
+function getDailyHeartRefillsInfo() {
+  const today = getLocalDateString();
+  if (state.dailyRefillsDate !== today) {
+    state.dailyRefillsDate = today;
+    state.dailyRefillsCount = 0;
+    persistState();
+  }
+  const count = Number(state.dailyRefillsCount) || 0;
+  const remaining = Math.max(0, 2 - count);
+  return { today, count, remaining, max: 2 };
 }
 
 function isRunningStandalonePwa() {
@@ -988,19 +1077,156 @@ function isRunningStandalonePwa() {
 function updateHomeInstallBannerVisibility() {
   const banner = $('#homeInstallLoginBanner');
   if (!banner) return;
-  const isStandalone = isRunningStandalonePwa();
-  const isLoggedIn = Boolean(currentCloudUser);
+  // Banner sempre visibile come richiesto dall'utente
+  banner.hidden = false;
+  banner.style.display = 'block';
 
-  // Scompare se uno ha la pwa o è loggato già
-  if (isStandalone || isLoggedIn) {
-    banner.hidden = true;
-    banner.style.display = 'none';
-  } else {
-    banner.hidden = false;
-    banner.style.display = '';
+  const loginBtn = $('#btnBannerLoginGoogle');
+  if (loginBtn) {
+    if (currentCloudUser) {
+      loginBtn.innerHTML = `<span>👤 CONNESSO: ${esc(sanitizeUsername(state.username || 'CAMPIONE'))}</span>`;
+      loginBtn.onclick = () => switchTab('profile');
+    }
+  }
+
+  // Notifiche status sul banner
+  const notifBtn = $('#btnBannerNotifications');
+  if (notifBtn && 'Notification' in window) {
+    if (Notification.permission === 'granted') {
+      notifBtn.innerHTML = '<span>🔔 NOTIFICHE ATTIVE ✅</span>';
+    } else {
+      notifBtn.innerHTML = '<span>🔔 NOTIFICHE SALVA-STREAK</span>';
+    }
   }
 }
 window.updateHomeInstallBannerVisibility = updateHomeInstallBannerVisibility;
+
+// -------------------------------------------------------------
+// NOTIFICHE PWA & SISTEMA PROMEMORIA SALVA-STREAK
+// -------------------------------------------------------------
+function hasCompletedStreakToday() {
+  const today = getLocalDateString();
+  const streaks = state.categoryStreaks || {};
+  return Boolean(
+    (streaks.calcio && streaks.calcio.lastWinDate === today) ||
+    (streaks.f1 && streaks.f1.lastWinDate === today) ||
+    (streaks.basket && streaks.basket.lastWinDate === today)
+  );
+}
+
+async function showStreakNotification(title, body, url = 'https://www.fuoriclasse.cloud/') {
+  const notifTitle = title || '🔥 Salva la tua Streak Fuoriclasse!';
+  const notifOptions = {
+    body: body || 'Non hai ancora giocato oggi! Mancano poche ore a mezzanotte: fai una sfida rapida per non azzerare la tua serie di vittorie!',
+    icon: 'icon.svg',
+    badge: 'icon.svg',
+    tag: 'fuoriclasse-streak-alert',
+    renotify: true,
+    data: { url: url }
+  };
+
+  // 1. Prova prima tramite Service Worker Registration (supportato in PWA iOS 16.4+ e Android)
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      if (reg && reg.showNotification) {
+        await reg.showNotification(notifTitle, notifOptions);
+        return true;
+      }
+    } catch (err) {
+      console.warn('SW notification fallback:', err);
+    }
+  }
+
+  // 2. Fallback a standard Notification API
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      new Notification(notifTitle, notifOptions);
+      return true;
+    } catch (err) {
+      console.warn('Notification API error:', err);
+    }
+  }
+  return false;
+}
+
+function checkAndTriggerStreakReminder(forceTest = false) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  const today = getLocalDateString();
+  const alreadyWon = hasCompletedStreakToday();
+  const currentHour = new Date().getHours();
+
+  // Avvisa solo se l'utente non ha ancora vinto una sfida oggi ed è sera (dalle 19:00 in poi)
+  if (!alreadyWon && (currentHour >= 19 || forceTest)) {
+    const lastSent = localStorage.getItem('fuoriclasse_streak_reminder_sent_day');
+    if (lastSent !== today || forceTest) {
+      localStorage.setItem('fuoriclasse_streak_reminder_sent_day', today);
+      const activeStreak = (state.categoryStreaks?.calcio?.streak || 0) + (state.categoryStreaks?.f1?.streak || 0) + (state.categoryStreaks?.basket?.streak || 0) || 1;
+      showStreakNotification(
+        '⚠️ Salva la tua Streak Fuoriclasse!',
+        `Attento! Se non giochi una sfida prima di mezzanotte perderai la tua serie di ${activeStreak} giorni consecutivi 🔥!`
+      );
+    }
+  }
+}
+
+async function requestStreakNotificationPermission() {
+  if (!('Notification' in window)) {
+    openModal('🔔 Notifiche non supportate', '<p>Questo browser non supporta le notifiche di sistema. Su iPhone/iPad, aggiungi Fuoriclasse alla schermata Home (PWA su iOS 16.4+) per abilitare le notifiche push.</p>');
+    return false;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    updateNotificationUI();
+    updateHomeInstallBannerVisibility();
+
+    if (permission === 'granted') {
+      state.notificationsEnabled = true;
+      persistState();
+      playTone('correct');
+      await showStreakNotification(
+        '🎉 Notifiche Salva-Streak Attivate!',
+        'Ottimo! Ti invieremo un promemoria la sera solo se rischi di dimenticarti di giocare e perdere la streak 🔥.'
+      );
+      openModal('🔔 Notifiche Salva-Streak Attive!', '<p>Riceverai un avviso la sera (dopo le 19:00) sul tuo dispositivo se rischi di azzerare la tua serie di vittorie giornaliere 🔥!</p>');
+      return true;
+    } else if (permission === 'denied') {
+      openModal('⚠️ Notifiche Bloccate', '<p>Hai bloccato le notifiche nelle impostazioni del browser. Per attivarle, tocca l\'icona del lucchetto / impostazioni sito accanto alla barra indirizzi e consenti "Notifiche".</p>');
+      return false;
+    }
+  } catch (err) {
+    console.warn('Errore richiesta permessi notifiche:', err);
+  }
+  return false;
+}
+
+function updateNotificationUI() {
+  const isGranted = ('Notification' in window) && Notification.permission === 'granted';
+  const badge = $('#notifStatusBadge');
+  const toggleBtn = $('#btnToggleNotifications');
+  const testBtn = $('#btnTestNotification');
+  const bannerBtn = $('#btnBannerNotifications');
+
+  if (badge) {
+    badge.textContent = isGranted ? '🔔 Notifiche Attive' : 'Non Attive';
+    badge.style.background = isGranted ? 'rgba(88,204,2,0.18)' : '';
+    badge.style.color = isGranted ? 'var(--duo-green)' : '';
+  }
+  if (toggleBtn) {
+    toggleBtn.textContent = isGranted ? '✅ Notifiche Salva-Streak Attive' : '🔔 Attiva Notifiche Salva-Streak';
+    toggleBtn.className = isGranted ? 'btn-secondary btn-sm' : 'btn-primary btn-sm';
+  }
+  if (testBtn) {
+    testBtn.style.display = isGranted ? 'inline-flex' : 'none';
+  }
+  if (bannerBtn) {
+    bannerBtn.innerHTML = isGranted ? '<span>🔔 NOTIFICHE ATTIVE ✅</span>' : '<span>🔔 NOTIFICHE SALVA-STREAK</span>';
+  }
+}
+window.updateNotificationUI = updateNotificationUI;
+window.requestStreakNotificationPermission = requestStreakNotificationPermission;
 
 // -------------------------------------------------------------
 // 5. SWITCHER 3 MODALITÀ DI GIOCO: QUIZZONE, GAEL LEAGUE, PASTORE LEAGUE
@@ -1065,7 +1291,7 @@ window.setGameMode = (mode, scroll = true) => {
   }
   if ($('#heroDescription')) {
     $('#heroDescription').innerHTML = isPastore
-      ? 'La modalità ufficiale sui <b>Marcatori di Serie A dal 1990 ad oggi</b> con <b>Giuseppe Pastore</b>! Ricordi le doppiette scudetto, i gol vittoria al 94\' e chi NON ha segnato in quel tabellino?'
+      ? 'La modalità sui <b>Marcatori di Serie A dal 1990 ad oggi</b> in stile <b>Giuseppe Pastore</b>! Ricordi le doppiette scudetto, i gol vittoria al 94\' e chi NON ha segnato in quel tabellino?'
       : isGael
         ? 'Percorso a <b>10 Unità ad alta difficoltà</b>: niente superstar scontate! Si parte dai Fantasisti ribelli e si sale fino a <b>bomber di provincia, meteore dimenticate e livelli PRO con Club Misteriosi ❓ e zero date</b>!'
         : 'Percorso a <b>15 Unità</b>: dal Calcio Pop fino alle <b>notti magiche azzurre, Champions League, sanzioni e l\'Esame Supremo del Mister</b>!';
@@ -1407,9 +1633,14 @@ window.forceStartNode = (uIdx, lIdx) => {
     return;
   }
 
+  // Ri-allinea tassativamente catalog con lo sport attivo prima di estrarre le domande
+  if (loadedSportCatalogs[state.activeSport]) {
+    catalog = loadedSportCatalogs[state.activeSport];
+  }
+
   state.activeUnitIdx = uIdx;
   state.activeLessonIdx = lIdx;
-  const lesson = catalog.units[uIdx]?.lessons?.[lIdx];
+  const lesson = catalog?.units?.[uIdx]?.lessons?.[lIdx];
   const questions = lesson?.questions || lesson?.players || [];
   startQuizSession('path', questions);
 };
@@ -1673,10 +1904,35 @@ function updateAmazonSponsorCard() {
 }
 
 function openHeartsFreemiumModal() {
+  const { count, remaining } = getDailyHeartRefillsInfo();
   if ($('#freemiumHeartsNow')) $('#freemiumHeartsNow').textContent = state.hearts;
   if ($('#freemiumGemsNow')) $('#freemiumGemsNow').textContent = state.gems;
+  if ($('#freemiumRefillsLeft')) $('#freemiumRefillsLeft').textContent = remaining;
   if ($('#heartsModalEmoji')) $('#heartsModalEmoji').textContent = state.hearts <= 0 ? '💔' : '❤️';
   if ($('#freemiumActionFeedback')) $('#freemiumActionFeedback').textContent = '';
+
+  const refillBtn = $('#refillHeartsCoinsBtn');
+  if (refillBtn) {
+    if (remaining <= 0) {
+      refillBtn.textContent = '🥫 Ricarica 5/5 ❤️ (Max 2 ricariche/giorno raggiunte!)';
+      refillBtn.disabled = true;
+    } else {
+      refillBtn.textContent = `🥫 Ricarica Completa 5/5 ❤️ (50 🥫 • Ricarica ${count + 1}/2 di oggi)`;
+      refillBtn.disabled = false;
+    }
+  }
+
+  const adBtn = $('#watchAdForHeartBtn');
+  if (adBtn) {
+    if (remaining <= 0) {
+      adBtn.textContent = '❤️ Sponsor Amazon (Max 2/giorno raggiunto)';
+      adBtn.disabled = true;
+    } else {
+      adBtn.textContent = '❤️ Guarda 5s (+1 Vita)';
+      adBtn.disabled = false;
+    }
+  }
+
   updateAmazonSponsorCard();
   const modal = $('#heartsEmptyModal');
   if (modal) modal.hidden = false;
@@ -1686,26 +1942,61 @@ window.openHeartsFreemiumModal = openHeartsFreemiumModal;
 function startQuizSession(mode, questionsList) {
   if (!questionsList || questionsList.length === 0) return;
 
+  // SAFEGUARD MULTI-SPORT: Assicura che le domande corrispondano SEMPRE allo sport attivo
+  let safeQuestions = questionsList;
+  if (state.activeSport === 'calcio' || (mode && (mode.startsWith('gael') || mode === 'pastore'))) {
+    safeQuestions = questionsList.filter(q => q.sport !== 'f1' && q.sport !== 'basket' && !(q.category && (q.category.includes('f1') || q.category.includes('basket'))));
+    if (safeQuestions.length === 0) {
+      const soccerCat = loadedSportCatalogs.calcio;
+      if (soccerCat && soccerCat.units) {
+        const u = soccerCat.units[state.activeUnitIdx] || soccerCat.units[0];
+        const l = u?.lessons?.[state.activeLessonIdx] || u?.lessons?.[0];
+        safeQuestions = l?.questions || l?.players || [];
+      }
+    }
+  } else if (state.activeSport === 'f1') {
+    safeQuestions = questionsList.filter(q => q.sport === 'f1' || (q.category && q.category.includes('f1')) || mode === 'f1');
+  } else if (state.activeSport === 'basket') {
+    safeQuestions = questionsList.filter(q => q.sport === 'basket' || (q.category && q.category.includes('basket')) || mode === 'basket');
+  }
+  if (!safeQuestions || safeQuestions.length === 0) safeQuestions = questionsList;
+
   // Sistema Freemium: se l'utente ha 0 vite e non sta facendo l'allenamento recupero vite, apri il modale Infermeria Freemium
   if (mode !== 'practice' && state.hearts <= 0) {
     openHeartsFreemiumModal();
     return;
   }
 
-  const firstQ = questionsList[0] || {};
-  const isGael = Boolean(firstQ.name && Array.isArray(firstQ.clubs));
+  const firstQ = safeQuestions[0] || {};
+  const isGael = Boolean((firstQ.name && Array.isArray(firstQ.clubs)) || (mode && mode.startsWith('gael')));
+  const isPastore = Boolean(!isGael && (mode === 'pastore' || (firstQ.category && firstQ.category.toLowerCase().includes('pastore'))));
+  const isF1 = Boolean(!isGael && !isPastore && (mode === 'f1' || (mode === 'path' && state.activeSport === 'f1') || firstQ.sport === 'f1' || (firstQ.category && firstQ.category.toLowerCase().includes('f1'))));
+  const isBasket = Boolean(!isGael && !isPastore && !isF1 && (mode === 'basket' || (mode === 'path' && state.activeSport === 'basket') || firstQ.sport === 'basket' || (firstQ.category && firstQ.category.toLowerCase().includes('basket'))));
 
   state.quizMode = mode;
   state.sessionGameType = isGael
     ? 'gael'
-    : (state.activeSport === 'f1' ? 'f1' : state.activeSport === 'basket' ? 'basket' : (state.activeGameMode || 'quizzocampo'));
+    : isPastore
+      ? 'pastore'
+      : isF1
+        ? 'f1'
+        : isBasket
+          ? 'basket'
+          : 'quizzocampo';
+
+  state.sessionSport = isF1 ? 'f1' : isBasket ? 'basket' : 'calcio';
+
+  // Salva lo sport attivo pre-quiz e allinea il tema del body per l'overlay del quiz
+  state.preQuizSport = state.activeSport || document.body.getAttribute('data-sport') || 'calcio';
+  document.body.setAttribute('data-sport', state.sessionSport);
+
   state.survivalRound = 1;
   state.currentDiffLevel = Math.min(10, Math.max(1, Number(firstQ.difficultyLevel) || ((state.activeUnitIdx % 10) + 1) || 1));
   state.pendingXp = 0;
   state.pendingGems = 0;
-  state.usedQuestionIds = new Set(questionsList.map(q => q.name || q.question || q.id));
+  state.usedQuestionIds = new Set(safeQuestions.map(q => q.name || q.question || q.id));
 
-  state.currentQuestions = questionsList.map(q => ({
+  state.currentQuestions = safeQuestions.map(q => ({
     ...q,
     difficultyLevel: state.currentDiffLevel,
     options: [...(q.options || [])]
@@ -1713,7 +2004,7 @@ function startQuizSession(mode, questionsList) {
   state.questionIndex = 0;
   state.selectedAnswer = null;
 
-  trackEvent('quiz_session_start', { mode, question_count: questionsList.length, sport: state.activeSport });
+  trackEvent('quiz_session_start', { mode, question_count: questionsList.length, sport: state.sessionSport });
   state.answered = false;
   state.sessionFinished = false;
   state.sessionCorrect = 0;
@@ -1739,8 +2030,13 @@ function closeQuizSession() {
   }
   state.quizOpen = false;
   state.sessionFinished = false;
+  state.sessionGameType = null;
+  state.sessionSport = null;
   stopConfetti();
   $('#quizOverlay').hidden = true;
+  // Ripristina lo sport della schermata principale
+  const restoreSport = state.activeSport || state.preQuizSport || 'calcio';
+  document.body.setAttribute('data-sport', restoreSport);
   renderSnakePath();
   renderUnitJumpModal();
   renderQuests();
@@ -1765,26 +2061,26 @@ function renderQuizQuestion() {
 
   $('#quizHeartsNum').textContent = state.hearts;
 
-  // Aggiornamento mascotte e mood del quiz in base allo sport / modalità
+  // Aggiornamento mascotte e mood del quiz in base allo sport / modalità della sessione
   const mascotImg = $('#quizMascotImg');
-  const sp = state.activeSport || 'calcio';
-  const gm = state.sessionGameType || state.activeGameMode || 'quizzocampo';
+  const isPlayer = Boolean(q.name && Array.isArray(q.clubs));
+  const gm = state.sessionGameType || (isPlayer ? 'gael' : (state.activeGameMode || 'quizzocampo'));
 
   if (mascotImg) {
-    if (sp === 'f1' || gm === 'f1') {
-      mascotImg.src = 'assets/f1-mascot.jpg?v=36';
-      mascotImg.alt = 'Il Pilota Boomer 16-Bit';
-    } else if (sp === 'basket' || gm === 'basket') {
-      mascotImg.src = 'assets/basket-mascot.jpg?v=36';
-      mascotImg.alt = 'Il Campione NBA 16-Bit';
-    } else if (gm === 'pastore') {
-      mascotImg.src = 'assets/pastore-mascot.jpg?v=36';
-      mascotImg.alt = 'Giuseppe Pastore 16-Bit';
-    } else if (gm === 'gael' || Boolean(q.name && Array.isArray(q.clubs))) {
-      mascotImg.src = 'assets/gael-mascot.jpg?v=36';
+    if (gm === 'gael' || isPlayer) {
+      mascotImg.src = 'assets/gael-mascot.jpg?v=38';
       mascotImg.alt = 'Gael 16-Bit';
+    } else if (gm === 'pastore') {
+      mascotImg.src = 'assets/pastore-mascot.jpg?v=38';
+      mascotImg.alt = 'Giuseppe Pastore 16-Bit';
+    } else if (gm === 'f1') {
+      mascotImg.src = 'assets/f1-mascot.jpg?v=38';
+      mascotImg.alt = 'Il Pilota Boomer 16-Bit';
+    } else if (gm === 'basket') {
+      mascotImg.src = 'assets/basket-mascot.jpg?v=38';
+      mascotImg.alt = 'Il Campione NBA 16-Bit';
     } else {
-      mascotImg.src = 'assets/mascot-coach.jpg?v=36';
+      mascotImg.src = 'assets/mascot-coach.jpg?v=38';
       mascotImg.alt = 'Il Mister #10';
     }
   }
@@ -1793,12 +2089,16 @@ function renderQuizQuestion() {
   if (moodEl) {
     if (state.comboStreak >= 2) {
       moodEl.textContent = '🔥';
-    } else if (sp === 'f1' || gm === 'f1') {
+    } else if (gm === 'gael' || isPlayer) {
+      moodEl.textContent = '👕';
+    } else if (gm === 'pastore') {
+      moodEl.textContent = '🎯';
+    } else if (gm === 'f1') {
       moodEl.textContent = '🏎️';
-    } else if (sp === 'basket' || gm === 'basket') {
+    } else if (gm === 'basket') {
       moodEl.textContent = '🏀';
     } else {
-      moodEl.textContent = '🎯';
+      moodEl.textContent = '⚡';
     }
   }
 
@@ -1810,7 +2110,6 @@ function renderQuizQuestion() {
   continueBtn.textContent = 'VERIFICA';
 
   // Distinzione tra domanda GAEL LEAGUE (carriera con maglie) e QUIZZOCAMPO (quiz)
-  const isPlayer = Boolean(q.name && Array.isArray(q.clubs));
   const tagEl = $('#quizTag');
   const archivePill = $('#quizArchivePill');
   const promptEl = $('#quizPrompt');
@@ -2123,6 +2422,9 @@ function verifyAnswer() {
 
     if (state.quizMode !== 'practice') {
       state.hearts = Math.max(0, state.hearts - 1);
+      if (state.hearts < state.maxHearts && !state.lastHeartLostTime) {
+        state.lastHeartLostTime = Date.now();
+      }
     }
     $('#quizHeartsNum').textContent = state.hearts;
     const missVariant = playTone('wrong');
@@ -2243,30 +2545,25 @@ function completeQuizSession() {
 
   playTone('cheer');
 
-  const isPastoreMode = state.sessionGameType === 'pastore' || state.activeGameMode === 'pastore';
-  const isGaelMode = state.sessionGameType === 'gael' || state.activeGameMode === 'gael';
-  const isF1 = state.activeSport === 'f1';
-  const isBasket = state.activeSport === 'basket';
+  const gm = state.sessionGameType || (state.activeSport === 'f1' ? 'f1' : state.activeSport === 'basket' ? 'basket' : (state.activeGameMode || 'quizzocampo'));
   const compTrophy = $('#completionTrophyImg');
   if (compTrophy) {
-    compTrophy.src = isF1
-      ? 'assets/trophy-f1.jpg?v=32'
-      : isBasket
-        ? 'assets/trophy-basket.jpg?v=32'
-        : isPastoreMode
-          ? 'assets/trophy-pastore.jpg?v=32'
-          : isGaelMode
-            ? 'assets/trophy-gael.jpg?v=32'
-            : 'assets/trophy-quizzone.jpg?v=32';
-    compTrophy.alt = isF1
-      ? 'Coppa dei Motori F1'
-      : isBasket
-        ? 'Trofeo Larry O\'Brien NBA'
-        : isPastoreMode
-          ? 'Coppa Pastore League'
-          : isGaelMode
-            ? 'Coppa Gael League'
-            : 'Coppa Quizzone';
+    if (gm === 'gael') {
+      compTrophy.src = 'assets/trophy-gael.jpg?v=38';
+      compTrophy.alt = 'Coppa Gael League';
+    } else if (gm === 'pastore') {
+      compTrophy.src = 'assets/trophy-pastore.jpg?v=38';
+      compTrophy.alt = 'Coppa Pastore League';
+    } else if (gm === 'f1') {
+      compTrophy.src = 'assets/trophy-f1.jpg?v=38';
+      compTrophy.alt = 'Coppa dei Motori F1';
+    } else if (gm === 'basket') {
+      compTrophy.src = 'assets/trophy-basket.jpg?v=38';
+      compTrophy.alt = 'Trofeo Larry O\'Brien NBA';
+    } else {
+      compTrophy.src = 'assets/trophy-quizzone.jpg?v=38';
+      compTrophy.alt = 'Coppa Quizzone';
+    }
   }
 
   if (state.quizMode === 'path') {
@@ -2359,30 +2656,25 @@ window.cashOutQuizRun = () => {
 
   playTone('cheer');
 
-  const isPastoreMode = state.sessionGameType === 'pastore' || state.activeGameMode === 'pastore';
-  const isGaelMode = state.sessionGameType === 'gael' || state.activeGameMode === 'gael';
-  const isF1 = state.activeSport === 'f1';
-  const isBasket = state.activeSport === 'basket';
+  const gm = state.sessionGameType || (state.activeSport === 'f1' ? 'f1' : state.activeSport === 'basket' ? 'basket' : (state.activeGameMode || 'quizzocampo'));
   const compTrophy = $('#completionTrophyImg');
   if (compTrophy) {
-    compTrophy.src = isF1
-      ? 'assets/trophy-f1.jpg?v=32'
-      : isBasket
-        ? 'assets/trophy-basket.jpg?v=32'
-        : isPastoreMode
-          ? 'assets/trophy-pastore.jpg?v=32'
-          : isGaelMode
-            ? 'assets/trophy-gael.jpg?v=32'
-            : 'assets/trophy-quizzone.jpg?v=32';
-    compTrophy.alt = isF1
-      ? 'Coppa dei Motori F1'
-      : isBasket
-        ? 'Trofeo Larry O\'Brien NBA'
-        : isPastoreMode
-          ? 'Coppa Pastore League'
-          : isGaelMode
-            ? 'Coppa Gael League'
-            : 'Coppa Quizzone';
+    if (gm === 'gael') {
+      compTrophy.src = 'assets/trophy-gael.jpg?v=38';
+      compTrophy.alt = 'Coppa Gael League';
+    } else if (gm === 'pastore') {
+      compTrophy.src = 'assets/trophy-pastore.jpg?v=38';
+      compTrophy.alt = 'Coppa Pastore League';
+    } else if (gm === 'f1') {
+      compTrophy.src = 'assets/trophy-f1.jpg?v=38';
+      compTrophy.alt = 'Coppa dei Motori F1';
+    } else if (gm === 'basket') {
+      compTrophy.src = 'assets/trophy-basket.jpg?v=38';
+      compTrophy.alt = 'Trofeo Larry O\'Brien NBA';
+    } else {
+      compTrophy.src = 'assets/trophy-quizzone.jpg?v=38';
+      compTrophy.alt = 'Coppa Quizzone';
+    }
   }
   recordCategoryDailyWin(state.activeSport || 'calcio');
   trackEvent('quiz_session_cashout', { xp: bankedXp, gems: bankedGems, sport: state.activeSport, round: state.survivalRound });
@@ -2464,11 +2756,12 @@ async function renderStoryCardToCanvas() {
   canvas.width = W;
   canvas.height = H;
 
-  const sp = state.activeSport || 'calcio';
-  const isF1 = sp === 'f1';
-  const isBasket = sp === 'basket';
-  const isPastore = state.sessionGameType === 'pastore' || state.activeGameMode === 'pastore';
-  const isGael = state.sessionGameType === 'gael' || state.activeGameMode === 'gael';
+  const gm = state.sessionGameType || (state.activeSport === 'f1' ? 'f1' : state.activeSport === 'basket' ? 'basket' : (state.activeGameMode || 'quizzocampo'));
+  const isF1 = gm === 'f1';
+  const isBasket = gm === 'basket';
+  const isPastore = gm === 'pastore';
+  const isGael = gm === 'gael';
+  const sp = isF1 ? 'f1' : isBasket ? 'basket' : 'calcio';
 
   const sportTitle = isF1
     ? 'QUIZ LIKE A BOOMER 🏎️'
@@ -3667,6 +3960,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  $('#btnBannerNotifications')?.addEventListener('click', () => {
+    requestStreakNotificationPermission();
+  });
+
+  $('#btnToggleNotifications')?.addEventListener('click', () => {
+    requestStreakNotificationPermission();
+  });
+
+  $('#btnTestNotification')?.addEventListener('click', async () => {
+    const activeStreak = (state.categoryStreaks?.calcio?.streak || 0) + (state.categoryStreaks?.f1?.streak || 0) + (state.categoryStreaks?.basket?.streak || 0) || 1;
+    await showStreakNotification(
+      '⚠️ [TEST] Salva la tua Streak Fuoriclasse!',
+      `Attento! Se non giochi una sfida prima di mezzanotte perderai la tua serie di ${activeStreak} giorni consecutivi 🔥!`
+    );
+  });
+
   $('#btnBannerDismiss')?.addEventListener('click', () => {
     const banner = $('#homeInstallLoginBanner');
     if (banner) {
@@ -3675,11 +3984,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Reset vite a mezzanotte quando l'utente riapre la scheda/app
+  // Reset vite a mezzanotte quando l'utente riapre la scheda/app + check promemoria streak
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
       checkMidnightHeartsReset();
       updateHomeInstallBannerVisibility();
+      updateNotificationUI();
+      checkAndTriggerStreakReminder();
     }
   });
 
@@ -3787,6 +4098,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   $('#refillHeartsCoinsBtn')?.addEventListener('click', () => {
     const fb = $('#freemiumActionFeedback');
+    const { count, remaining } = getDailyHeartRefillsInfo();
+    if (remaining <= 0) {
+      if (fb) fb.innerHTML = '⚠️ <b>Limite giornaliero raggiunto (2/2 ricariche usate oggi)!</b><br>Torna domani a mezzanotte o attendi la ricarica naturale (+1 ❤️ ogni 15 minuti).';
+      return;
+    }
     if (state.hearts >= state.maxHearts) {
       if (fb) fb.textContent = '✅ Hai già il massimo delle vite (5/5 ❤️)!';
       return;
@@ -3794,13 +4110,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (state.gems >= 50) {
       state.gems -= 50;
       state.hearts = state.maxHearts;
+      state.dailyRefillsCount = count + 1;
       playTone('cheer');
       updateTopStats();
       persistState();
       if ($('#freemiumHeartsNow')) $('#freemiumHeartsNow').textContent = state.hearts;
       if ($('#freemiumGemsNow')) $('#freemiumGemsNow').textContent = state.gems;
-      if (fb) fb.textContent = '🎉 5/5 Vite ricaricate con 50 Lattine Energy!';
-      setTimeout(() => { $('#heartsEmptyModal').hidden = true; }, 800);
+      if ($('#freemiumRefillsLeft')) $('#freemiumRefillsLeft').textContent = Math.max(0, 2 - state.dailyRefillsCount);
+      if (fb) fb.innerHTML = `🎉 <b>5/5 Vite ricaricate con 50 🥫!</b> (Ricarica ${state.dailyRefillsCount}/2 usata per oggi)`;
+      setTimeout(() => { $('#heartsEmptyModal').hidden = true; }, 1200);
     } else {
       if (fb) fb.textContent = '⚠️ Ti servono 50 🥫! Usa l\'Allenamento gratuito o lo Spot Sponsor.';
     }
@@ -3809,6 +4127,11 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#watchAdForHeartBtn')?.addEventListener('click', () => {
     const btn = $('#watchAdForHeartBtn');
     const fb = $('#freemiumActionFeedback');
+    const { count, remaining } = getDailyHeartRefillsInfo();
+    if (remaining <= 0) {
+      if (fb) fb.innerHTML = '⚠️ <b>Limite giornaliero raggiunto (2/2 ricariche usate oggi)!</b>';
+      return;
+    }
     if (state.hearts >= state.maxHearts) {
       if (fb) fb.textContent = '✅ Hai già 5/5 ❤️!';
       return;
@@ -3824,21 +4147,24 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         clearInterval(timer);
         state.hearts = Math.min(state.maxHearts, state.hearts + 1);
+        state.dailyRefillsCount = count + 1;
         playTone('correct');
         updateTopStats();
         persistState();
         btn.disabled = false;
         btn.textContent = '❤️ Guarda 5s (+1 Vita)';
         if ($('#freemiumHeartsNow')) $('#freemiumHeartsNow').textContent = state.hearts;
-        if (fb) fb.textContent = '🎉 +1 ❤️ Vita ricaricata con lo Sponsor Amazon!';
+        if ($('#freemiumRefillsLeft')) $('#freemiumRefillsLeft').textContent = Math.max(0, 2 - state.dailyRefillsCount);
+        if (fb) fb.innerHTML = `🎉 <b>+1 ❤️ Vita ricaricata!</b> (Ricarica ${state.dailyRefillsCount}/2 usata per oggi)`;
       }
     }, 1000);
   });
 
-  // Timer automatico rigenerazione gratuita (+1 ❤️ ogni 15 minuti) & Reset Vite a Mezzanotte
+  // Timer automatico rigenerazione gratuita (+1 ❤️ ogni 15 minuti) & Reset Vite a Mezzanotte & Promemoria Streak
   let regenSecondsLeft = 15 * 60;
   setInterval(() => {
     checkMidnightHeartsReset();
+    checkAndTriggerStreakReminder();
     const timerEl = $('#heartsRegenTimerText');
     if (state.hearts >= state.maxHearts) {
       regenSecondsLeft = 15 * 60;

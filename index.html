@@ -29,9 +29,9 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="style.css?v=37" />
-  <link rel="stylesheet" href="mobile.css?v=37" />
-  <link rel="stylesheet" href="dark-theme.css?v=37" />
+  <link rel="stylesheet" href="style.css?v=39" />
+  <link rel="stylesheet" href="mobile.css?v=39" />
+  <link rel="stylesheet" href="dark-theme.css?v=39" />
   <script>
     (function() {
       try {
@@ -204,8 +204,8 @@
            ========================================================= -->
       <section class="view-panel active" id="view-path" aria-label="Percorso di gioco">
 
-        <!-- BANNER ISTRUZIONI LOGIN & INSTALLAZIONE PWA (Scompare se in PWA o loggato) -->
-        <div class="home-pwa-login-banner" id="homeInstallLoginBanner" style="display:none;">
+        <!-- BANNER ISTRUZIONI LOGIN & INSTALLAZIONE PWA (Sempre visibile, interattivo) -->
+        <div class="home-pwa-login-banner" id="homeInstallLoginBanner">
           <div class="banner-top-badge">
             <span class="badge-accent">⚡ ESPERIENZA COMPLETA</span>
             <span class="badge-sub">SALVATAGGIO CLOUD &amp; PWA A SCHERMO INTERO</span>
@@ -215,8 +215,8 @@
             <div class="banner-text-content">
               <h3>📱 Salva la tua Carriera &amp; Gioca a Schermo Intero!</h3>
               <p>
-                Accedi con <b>Google</b> con 1 solo clic per non perdere mai vite, XP, streak e personalizzare il tuo Nickname nella Classifica.
-                Installa <b>Fuoriclasse PWA</b> sul tuo telefono o PC per giocare a schermo intero come una vera app!
+                Accedi con <b>Google</b> con 1 solo clic per non perdere mai vite, XP e streak.
+                Installa <b>Fuoriclasse PWA</b> sul tuo telefono o PC e attiva le notifiche per non perdere la serie 🔥!
               </p>
               <div class="banner-instructions-box">
                 <div class="inst-line">
@@ -235,6 +235,9 @@
                 </button>
                 <button class="btn-outline btn-banner-action" id="btnBannerInstallPwa" type="button">
                   <span>📲 INSTALLA PWA ORA</span>
+                </button>
+                <button class="btn-secondary btn-banner-action" id="btnBannerNotifications" type="button">
+                  <span>🔔 NOTIFICHE SALVA-STREAK</span>
                 </button>
               </div>
             </div>
@@ -298,7 +301,7 @@
             </span>
             <div class="mode-switch-text">
               <b>PASTORE LEAGUE (15 UNITÀ)</b>
-              <small>2.000 sfide sui Marcatori di Serie A dal 1990 ad oggi con Giuseppe Pastore!</small>
+              <small>2.000 sfide sui Marcatori di Serie A dal 1990 ad oggi in stile Giuseppe Pastore!</small>
             </div>
           </button>
         </div>
@@ -769,6 +772,25 @@
             <button class="btn-outline" id="resetProgressBtn" type="button">🗑️ Azzera Progressi</button>
           </div>
         </div>
+
+        <!-- NOTIFICHE PWA & SALVA-STREAK -->
+        <div class="panel-card mt-16 profile-notifications-card" id="profileNotificationsCard">
+          <div class="card-header-flex">
+            <h3>🔔 Notifiche PWA Salva-Streak</h3>
+            <span class="badge-counter-pill" id="notifStatusBadge">Non Attive</span>
+          </div>
+          <p class="text-muted" style="margin-bottom:12px;">
+            Ricevi un avviso sul telefono o PC la sera (verso le 20:00) se rischi di perdere la tua serie quotidiana di vittorie consecutive 🔥!
+          </p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <button class="btn-primary btn-sm" id="btnToggleNotifications" type="button">
+              🔔 Attiva Notifiche Salva-Streak
+            </button>
+            <button class="btn-secondary btn-sm" id="btnTestNotification" type="button" style="display:none;">
+              ⚡ Invia Notifica di Prova
+            </button>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -995,7 +1017,10 @@
       </div>
       <div class="modal-big-emoji" id="heartsModalEmoji">❤️</div>
       <h2 id="heartsEmptyTitle">Gestione Vite (<span id="freemiumHeartsNow">0</span>/5 ❤️)</h2>
-      <p id="heartsRegenTimerText" style="font-size:13px;font-weight:800;color:var(--duo-blue-dark);margin:6px 0 14px;">
+      <div id="freemiumRefillsBadge" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:900;background:rgba(255,200,0,0.15);border:1px solid #ffc800;color:var(--text-main);padding:5px 12px;border-radius:20px;margin:4px 0 10px;">
+        ⚡ Ricariche disponibili oggi: <span id="freemiumRefillsLeft">2</span>/2 (Max 2 al giorno)
+      </div>
+      <p id="heartsRegenTimerText" style="font-size:13px;font-weight:800;color:var(--duo-blue-dark);margin:0 0 14px;">
         ⏱️ Rigenerazione gratuita automatica: +1 ❤️ ogni 15 minuti
       </p>
 
@@ -1359,6 +1384,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=37"></script>
+  <script src="app.js?v=39"></script>
 </body>
 </html>

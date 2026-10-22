@@ -47,31 +47,10 @@ function sleep(ms) {
   execSync(`sleep ${ms / 1000}`);
 }
 
-async function uploadAndExtractCodeUpdate() {
-  console.log('🔄 Rinfresco sessione Aruba File Manager...');
-  const refreshAs = `
-tell application "Google Chrome"
-    repeat with aWindow in every window
-        repeat with aTab in every tab of aWindow
-            if URL of aTab contains "fm.aruba.it" then
-                set URL of aTab to "https://admin.aruba.it/PannelloAdmin/BridgePost.aspx?Servizio=Gestione_NewLinuxfileManager"
-                return "ok"
-            end if
-        end repeat
-    end repeat
-end tell
-`;
-  try {
-    runAppleScript(refreshAs);
-    sleep(6500);
-  } catch (e) {
-    console.log('Note refresh:', e.message);
-  }
+async function uploadSinglePackage(zipFilename) {
+  const zipPath = path.join(__dirname, '..', 'deploy-packages', zipFilename);
 
-  const zipPath = path.join(__dirname, '..', 'deploy-packages', '01-code.zip');
-  const zipFilename = '01-code.zip';
-
-  console.log(`\n📦 Upload pacchetto codice aggiornato: ${zipFilename} (${(fs.statSync(zipPath).size / 1024).toFixed(1)} KB)...`);
+  console.log(`\n📦 Upload pacchetto: ${zipFilename} (${(fs.statSync(zipPath).size / 1024).toFixed(1)} KB)...`);
   const zipBuffer = fs.readFileSync(zipPath);
   const base64 = zipBuffer.toString('base64');
   const chunkSize = 250000;
@@ -153,8 +132,7 @@ end tell
           throw new Error(status.error);
         }
         if (status.success) {
-          console.log(`\n✓ 01-code.zip estratto con successo! File aggiornati: ${status.extractedCount}`);
-          console.log('File:', status.sample.join(', '));
+          console.log(`✓ ${zipFilename} estratto con successo! File aggiornati: ${status.extractedCount}`);
           return status;
         }
       } catch (err) {
@@ -166,6 +144,32 @@ end tell
     attempts++;
   }
   throw new Error(`Timeout attesa completamento per ${zipFilename}`);
+}
+
+async function uploadAndExtractCodeUpdate() {
+  console.log('🔄 Rinfresco sessione Aruba File Manager...');
+  const refreshAs = `
+tell application "Google Chrome"
+    repeat with aWindow in every window
+        repeat with aTab in every tab of aWindow
+            if URL of aTab contains "fm.aruba.it" then
+                set URL of aTab to "https://admin.aruba.it/PannelloAdmin/BridgePost.aspx?Servizio=Gestione_NewLinuxfileManager"
+                return "ok"
+            end if
+        end repeat
+    end repeat
+end tell
+`;
+  try {
+    runAppleScript(refreshAs);
+    sleep(6500);
+  } catch (e) {
+    console.log('Note refresh:', e.message);
+  }
+
+  // Carica ed estrai 01-code.zip e 02-data-calcio.zip
+  await uploadSinglePackage('01-code.zip');
+  await uploadSinglePackage('02-data-calcio.zip');
 }
 
 uploadAndExtractCodeUpdate().catch(err => {
