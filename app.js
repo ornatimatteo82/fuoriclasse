@@ -2090,6 +2090,57 @@ window.cashOutQuizRun = () => {
   closeQuizSession();
 };
 
+window.shareQuizRunResult = async () => {
+  const sportNames = {
+    calcio: 'Calcio ⚽',
+    f1: 'Quiz like a Boomer 🏎️',
+    basket: 'Basket NBA 🏀'
+  };
+  const sp = state.activeSport || 'calcio';
+  const sportLabel = sportNames[sp] || 'Calcio ⚽';
+  const streakDays = state.categoryStreaks?.[sp]?.streak || 1;
+  const level = state.currentDiffLevel || 1;
+  const heartsLeft = state.hearts || 5;
+  const xpGained = state.pendingXp || 90;
+
+  const text = `🏆 Fuoriclasse — ${sportLabel}
+Difficoltà Livello ${level}/10 Superata! (+${xpGained} XP)
+🟩🟩🟩🟩🟩
+🔥 Streak: ${streakDays} giorni consecutivi (❤️ ${heartsLeft}/${state.maxHearts || 5})
+Mettiti alla prova su: https://fuoriclasse.cloud`;
+
+  const btn = $('#btnShareRun');
+  const oldText = btn ? btn.textContent : '';
+
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title: `Fuoriclasse — ${sportLabel}`,
+        text: text,
+        url: 'https://fuoriclasse.cloud'
+      });
+      trackEvent('share_run_native', { sport: sp, level });
+    } else {
+      await navigator.clipboard.writeText(text);
+      trackEvent('share_run_clipboard', { sport: sp, level });
+      if (btn) {
+        btn.textContent = '✅ RISULTATO COPIATO! INCOLLA IN CHAT';
+        setTimeout(() => { if (btn) btn.textContent = oldText; }, 2500);
+      }
+    }
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      try {
+        await navigator.clipboard.writeText(text);
+        if (btn) {
+          btn.textContent = '✅ RISULTATO COPIATO! INCOLLA IN CHAT';
+          setTimeout(() => { if (btn) btn.textContent = oldText; }, 2500);
+        }
+      } catch (_) {}
+    }
+  }
+};
+
 window.advanceToNextDifficultyRound = () => {
   if (state.hearts <= 0) {
     failQuizSessionByNoHearts();
