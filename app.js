@@ -1251,10 +1251,30 @@ async function requestStreakNotificationPermission() {
 
 function updateNotificationUI() {
   const isGranted = ('Notification' in window) && Notification.permission === 'granted';
+  const isPwa = isRunningStandalonePwa();
   const badge = $('#notifStatusBadge');
   const toggleBtn = $('#btnToggleNotifications');
   const testBtn = $('#btnTestNotification');
   const bannerBtn = $('#btnBannerNotifications');
+  const pwaNotifBox = $('#pwaStreakNotifBox');
+  const topBellBtn = $('#topNotifBellBtn');
+
+  // Gestione pulsante e box notifiche dedicato quando si è in PWA
+  if (pwaNotifBox) {
+    if (isPwa && !isGranted) {
+      pwaNotifBox.style.display = 'flex';
+    } else {
+      pwaNotifBox.style.display = 'none';
+    }
+  }
+
+  if (topBellBtn) {
+    if (isPwa && !isGranted) {
+      topBellBtn.style.display = 'grid';
+    } else {
+      topBellBtn.style.display = 'none';
+    }
+  }
 
   if (badge) {
     badge.textContent = isGranted ? '🔔 Notifiche Attive' : 'Non Attive';
@@ -4019,6 +4039,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   $('#btnBannerNotifications')?.addEventListener('click', () => {
+    requestStreakNotificationPermission();
+  });
+
+  $('#btnPwaEnableNotifications')?.addEventListener('click', () => {
+    requestStreakNotificationPermission();
+  });
+
+  $('#topNotifBellBtn')?.addEventListener('click', () => {
     requestStreakNotificationPermission();
   });
 

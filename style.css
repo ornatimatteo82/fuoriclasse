@@ -741,6 +741,74 @@ body {
   }
 }
 
+/* Box Notifiche Salva-Streak in PWA */
+.pwa-streak-notif-box {
+  background: linear-gradient(135deg, rgba(255, 150, 0, 0.12) 0%, rgba(28, 176, 246, 0.12) 100%);
+  border: 2px solid #ff9600;
+  border-bottom: 4px solid #cc7800;
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: 0 4px 14px rgba(255, 150, 0, 0.15);
+}
+.pwa-notif-icon-col {
+  font-size: 28px;
+  line-height: 1;
+}
+.pwa-notif-text-col {
+  flex: 1;
+  min-width: 0;
+}
+.pwa-notif-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--text-main);
+  margin-bottom: 3px;
+}
+.pwa-notif-desc {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  margin: 0;
+}
+.pwa-notif-action-btn {
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: 900;
+  padding: 10px 16px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.notif-bell-btn {
+  position: relative;
+  animation: pulse-bell 2s infinite ease-in-out;
+}
+@keyframes pulse-bell {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@media (max-width: 600px) {
+  .pwa-streak-notif-box {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .pwa-notif-action-btn {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
 .game-mode-switcher {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

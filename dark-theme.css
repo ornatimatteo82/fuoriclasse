@@ -163,6 +163,12 @@ body[data-theme="dark"] .mode-switch-btn.active .mode-switch-icon {
   background: rgba(15, 25, 34, 0.65);
 }
 
+body[data-theme="dark"] .pwa-streak-notif-box {
+  background: linear-gradient(135deg, rgba(255, 150, 0, 0.18) 0%, rgba(28, 176, 246, 0.14) 100%);
+  border-color: #ff9600;
+  border-bottom-color: #8c5300;
+}
+
 body[data-theme="dark"] .home-pwa-login-banner {
   background: linear-gradient(135deg, rgba(28, 176, 246, 0.15) 0%, rgba(88, 204, 2, 0.1) 100%);
   border-color: #0284c7;
