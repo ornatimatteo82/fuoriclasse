@@ -167,9 +167,9 @@ end tell
     console.log('Note refresh:', e.message);
   }
 
-  // Carica ed estrai 01-code.zip e 02-data-calcio.zip
+  // Carica ed estrai 01-code.zip e 04-data-basket.zip
   await uploadSinglePackage('01-code.zip');
-  await uploadSinglePackage('02-data-calcio.zip');
+  await uploadSinglePackage('04-data-basket.zip');
 }
 
 uploadAndExtractCodeUpdate().catch(err => {
