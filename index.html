@@ -10,9 +10,9 @@
   <meta name="apple-mobile-web-app-title" content="Fuoriclasse" />
   <title>Fuoriclasse — Gael League &amp; Quizzocampo</title>
 
-  <link rel="manifest" href="manifest.webmanifest?v=32" />
-  <link rel="icon" type="image/svg+xml" href="icon.svg?v=32" />
-  <link rel="apple-touch-icon" href="assets/mascot-coach.jpg?v=32" />
+  <link rel="manifest" href="manifest.webmanifest?v=33" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg?v=33" />
+  <link rel="apple-touch-icon" href="assets/mascot-coach.jpg?v=33" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,9 +21,9 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="style.css?v=32" />
-  <link rel="stylesheet" href="mobile.css?v=32" />
-  <link rel="stylesheet" href="dark-theme.css?v=32" />
+  <link rel="stylesheet" href="style.css?v=33" />
+  <link rel="stylesheet" href="mobile.css?v=33" />
+  <link rel="stylesheet" href="dark-theme.css?v=33" />
   <script>
     (function() {
       try {
@@ -62,16 +62,23 @@
         <span class="brand-wordmark">FUORICLASSE</span>
       </a>
 
+      <!-- Selettore Macro Sport (Calcio, F1 Boomer, Basket NBA) -->
+      <button class="sport-badge-btn" id="sportSelectorBtn" type="button" title="Scegli Categoria Sportiva (Calcio, F1 Boomer, Basket NBA)">
+        <span class="sport-emoji" id="currentSportEmoji" aria-hidden="true">⚽</span>
+        <span class="sport-title" id="currentSportText">CALCIO</span>
+        <span class="chevron-down" aria-hidden="true">▾</span>
+      </button>
+
       <!-- Selettore rapido Unità -->
-      <button class="section-badge-btn" id="sectionDropdownBtn" type="button" title="Salta a un'Unità di Gael League o Quizzocampo">
-        <span class="flag-icon" aria-hidden="true">👕</span>
+      <button class="section-badge-btn" id="sectionDropdownBtn" type="button" title="Salta a un'Unità">
+        <span class="flag-icon" aria-hidden="true" id="currentUnitBadgeIcon">👕</span>
         <span class="section-title" id="currentUnitBadgeText">GAEL LEAGUE • ANNI '90</span>
         <span class="chevron-down" aria-hidden="true">▾</span>
       </button>
 
       <!-- Statistiche Giocatore (Streak, Calcio-Coins, Vite) -->
       <div class="gamification-stats" role="status" aria-label="Statistiche giocatore">
-        <div class="stat-item stat-streak" title="Giorni di fila (Streak)">
+        <div class="stat-item stat-streak" id="topStreakPillBtn" title="Clicca per visualizzare la Fiamma e i premi Streak per Categoria" style="cursor:pointer;">
           <span class="stat-emoji" aria-hidden="true">🔥</span>
           <b id="streakCount">1</b>
         </div>
@@ -137,9 +144,9 @@
       <div class="sidebar-PromoCard">
         <div class="promo-card-header">
           <div style="display:flex;align-items:center;margin-right:6px;">
-            <img src="assets/trophy-quizzone.jpg?v=32" alt="Coppa Quizzone" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #1cb0f6;" />
-            <img src="assets/trophy-gael.jpg?v=32" alt="Coppa Gael League" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #58cc02;margin-left:-8px;" />
-            <img src="assets/trophy-pastore.jpg?v=32" alt="Coppa Pastore League" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #ffc800;margin-left:-8px;" />
+            <img src="assets/trophy-quizzone.jpg?v=33" alt="Coppa Quizzone" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #1cb0f6;" />
+            <img src="assets/trophy-gael.jpg?v=33" alt="Coppa Gael League" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #58cc02;margin-left:-8px;" />
+            <img src="assets/trophy-pastore.jpg?v=33" alt="Coppa Pastore League" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #ffc800;margin-left:-8px;" />
           </div>
           <div>
             <span class="promo-badge">3 TROFEI 16-BIT</span>
@@ -207,7 +214,7 @@
         <div class="game-mode-switcher mode-switcher-3" role="tablist" aria-label="Scegli la tipologia di gioco">
           <button class="mode-switch-btn active" id="switchModeQuiz" data-mode="quizzone" type="button" role="tab" aria-selected="true">
             <span class="mode-switch-icon">
-              <img src="assets/mascot-coach.jpg?v=32" alt="" width="32" height="32" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
+              <img src="assets/mascot-coach.jpg?v=33" alt="" width="32" height="32" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
             </span>
             <div class="mode-switch-text">
               <b>QUIZZONE (15 UNITÀ)</b>
@@ -216,7 +223,7 @@
           </button>
           <button class="mode-switch-btn" id="switchModeGael" data-mode="gael" type="button" role="tab" aria-selected="false">
             <span class="mode-switch-icon">
-              <img src="assets/gael-mascot.jpg?v=32" alt="" width="32" height="32" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
+              <img src="assets/gael-mascot.jpg?v=33" alt="" width="32" height="32" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
             </span>
             <div class="mode-switch-text">
               <b>GAEL LEAGUE (10 UNITÀ HARD)</b>
@@ -225,7 +232,7 @@
           </button>
           <button class="mode-switch-btn" id="switchModePastore" data-mode="pastore" type="button" role="tab" aria-selected="false">
             <span class="mode-switch-icon">
-              <img src="assets/pastore-mascot.jpg?v=32" alt="" width="32" height="32" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
+              <img src="assets/pastore-mascot.jpg?v=33" alt="" width="32" height="32" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
             </span>
             <div class="mode-switch-text">
               <b>PASTORE LEAGUE (15 UNITÀ)</b>
@@ -282,7 +289,7 @@
       <section class="view-panel" id="view-league" hidden aria-label="Classifica Lega">
         <div class="panel-card league-header-card">
           <div class="league-trophy-showcase">
-            <img src="assets/trophy-quizzone.jpg?v=32" alt="Trofeo Divisione" class="league-hero-trophy" id="leagueHeroTrophy" width="96" height="96" />
+            <img src="assets/trophy-quizzone.jpg?v=33" alt="Trofeo Divisione" class="league-hero-trophy" id="leagueHeroTrophy" width="96" height="96" />
           </div>
           <span class="eyebrow-pill pill-gold">DIVISIONE SCUDETTO</span>
           <h2>Classifica Generale</h2>
@@ -978,6 +985,197 @@
     </div>
   </div>
 
+  <!-- MODALE SELETTORE SPORT & ONBOARDING -->
+  <div class="duo-modal-backdrop" id="sportModal" role="dialog" aria-modal="true" aria-labelledby="sportModalTitle" hidden>
+    <div class="duo-modal-card" style="max-width:580px;">
+      <div class="modal-head">
+        <h2 id="sportModalTitle">🏆 Scegli la tua Passione Sportiva</h2>
+        <button class="modal-close-x" id="sportModalClose" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted);font-size:14px;margin-bottom:12px;">Seleziona lo sport in cui vuoi cimentarti oggi. Ogni categoria ha il suo <b>percorso dedicato</b> e la sua <b>Fiamma Streak indipendente</b> 🔥!</p>
+        
+        <div class="sport-picker-grid">
+          <!-- CARD CALCIO -->
+          <div class="sport-card-choice active" id="chooseSportCalcio" data-sport="calcio">
+            <div class="sport-card-head">
+              <div class="sport-avatar-wrap" style="border-color:#58cc02;">
+                <img src="assets/mascot-coach.jpg?v=33" alt="Calcio" />
+              </div>
+              <span class="eyebrow-pill pill-green">5.000+ SFIDE</span>
+            </div>
+            <h3 class="sport-card-title">⚽ Calcio (Fuoriclasse)</h3>
+            <p class="sport-card-desc">Quizzone (Serie A &amp; Champions), Gael League (Carriere Anni '90 &amp; 2000) e Pastore League (Marcatori).</p>
+            <div class="sport-streak-pill" id="calcioStreakPill">🔥 Streak: <b id="calcioModalStreakVal">1</b> giorni</div>
+            <button class="btn-primary btn-sm w-full" type="button">GIOCA A CALCIO ➔</button>
+          </div>
+
+          <!-- CARD F1 BOOMER -->
+          <div class="sport-card-choice" id="chooseSportF1" data-sport="f1">
+            <div class="sport-card-head">
+              <div class="sport-avatar-wrap" style="border-color:#ff4b4b;">
+                <img src="assets/f1-mascot.jpg?v=33" alt="F1 Boomer" onerror="this.onerror=null;this.parentElement.innerHTML='🏎️';" />
+              </div>
+              <span class="eyebrow-pill" style="background:#fee2e2;color:#b91c1c;border-color:#fca5a5;">4.100+ QUIZ</span>
+            </div>
+            <h3 class="sport-card-title">🏎️ F1: Quiz like a Boomer</h3>
+            <p class="sport-card-desc">Dal 1970 al 2024: ruggiti V10 e V12, Lauda vs Hunt, Senna, Schumi, curve mitiche e segreti dei box.</p>
+            <div class="sport-streak-pill" id="f1StreakPill" style="color:#b91c1c;background:#fef2f2;border-color:#fecaca;">🔥 Streak: <b id="f1ModalStreakVal">0</b> giorni</div>
+            <button class="btn-secondary btn-sm w-full" type="button" style="background:#ef4444;border-color:#b91c1c;">ACCENDI I MOTORI ➔</button>
+          </div>
+
+          <!-- CARD BASKET NBA -->
+          <div class="sport-card-choice" id="chooseSportBasket" data-sport="basket">
+            <div class="sport-card-head">
+              <div class="sport-avatar-wrap" style="border-color:#ff9600;">
+                <img src="assets/basket-mascot.jpg?v=33" alt="Basket NBA" onerror="this.onerror=null;this.parentElement.innerHTML='🏀';" />
+              </div>
+              <span class="eyebrow-pill pill-gold">4.100+ QUIZ</span>
+            </div>
+            <h3 class="sport-card-title">🏀 Basket: Buzzer Beater</h3>
+            <p class="sport-card-desc">Dal 1980 ad oggi: Showtime Lakers-Celtics, l'era Jordan, Kobe, LeBron, Curry e canestri sulla sirena.</p>
+            <div class="sport-streak-pill" id="basketStreakPill" style="color:#c2410c;background:#fff7ed;border-color:#fed7aa;">🔥 Streak: <b id="basketModalStreakVal">0</b> giorni</div>
+            <button class="btn-secondary btn-sm w-full" type="button" style="background:#f97316;border-color:#c2410c;">SCENDI SUL PARQUET ➔</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE DETTAGLIO STREAK PER CATEGORIA & PREMI DUOLINGO RETENTION -->
+  <div class="duo-modal-backdrop" id="streakDetailModal" role="dialog" aria-modal="true" aria-labelledby="streakDetailTitle" hidden>
+    <div class="duo-modal-card" style="max-width:520px;">
+      <div class="modal-head">
+        <h2 id="streakDetailTitle">🔥 Fiamma Giornaliera &amp; Premi</h2>
+        <button class="modal-close-x" id="streakDetailClose" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="streak-header-hero">
+          <span class="streak-flame-icon-large" aria-hidden="true">🔥</span>
+          <div class="streak-days-counter-hero" id="streakDetailCounterHero">1 GIORNO</div>
+          <p style="color:var(--text-muted);font-weight:800;font-size:13.5px;margin:0;">Gioca almeno 1 sfida al giorno in ogni sport per far crescere la fiamma!</p>
+        </div>
+
+        <!-- STREAK INDIPENDENTI PER SPORT -->
+        <div class="category-streak-cards-row">
+          <div class="cat-streak-card active-sport" id="catCardCalcio">
+            <div class="cat-streak-title">⚽ Calcio</div>
+            <div class="cat-streak-val">🔥 <span id="catValCalcio">1</span></div>
+            <small style="font-size:11px;font-weight:800;color:var(--text-muted);" id="catSubCalcio">Oggi giocato</small>
+          </div>
+          <div class="cat-streak-card" id="catCardF1">
+            <div class="cat-streak-title">🏎️ F1 Boomer</div>
+            <div class="cat-streak-val">🔥 <span id="catValF1">0</span></div>
+            <small style="font-size:11px;font-weight:800;color:var(--text-muted);" id="catSubF1">Non ancora</small>
+          </div>
+          <div class="cat-streak-card" id="catCardBasket">
+            <div class="cat-streak-title">🏀 Basket NBA</div>
+            <div class="cat-streak-val">🔥 <span id="catValBasket">0</span></div>
+            <small style="font-size:11px;font-weight:800;color:var(--text-muted);" id="catSubBasket">Non ancora</small>
+          </div>
+        </div>
+
+        <!-- CALENDARIO SETTIMANALE -->
+        <div class="weekly-streak-strip" id="modalWeeklyStreakStrip">
+          <div class="weekday-bubble"><span class="weekday-label">L</span><div class="weekday-dot" data-wday="1">✓</div></div>
+          <div class="weekday-bubble"><span class="weekday-label">M</span><div class="weekday-dot" data-wday="2">✓</div></div>
+          <div class="weekday-bubble"><span class="weekday-label">M</span><div class="weekday-dot" data-wday="3">✓</div></div>
+          <div class="weekday-bubble"><span class="weekday-label">G</span><div class="weekday-dot" data-wday="4">✓</div></div>
+          <div class="weekday-bubble"><span class="weekday-label">V</span><div class="weekday-dot" data-wday="5">✓</div></div>
+          <div class="weekday-bubble"><span class="weekday-label">S</span><div class="weekday-dot" data-wday="6">✓</div></div>
+          <div class="weekday-bubble"><span class="weekday-label">D</span><div class="weekday-dot" data-wday="0">✓</div></div>
+        </div>
+
+        <!-- PROTEZIONE GELO FIAMMA (STREAK FREEZE) -->
+        <div class="streak-freeze-banner">
+          <div style="font-size:32px;">🧊</div>
+          <div class="freeze-info-text">
+            <b>Gelo Fiamma: <span id="freezeCountSpan">1</span> attivo</b>
+            <p>Se salti un giorno, protegge la tua fiamma senza azzerare lo streak!</p>
+          </div>
+          <button class="btn-equip-freeze" id="btnBuyFreeze" type="button">🛒 +1 per 100 💎</button>
+        </div>
+
+        <!-- TABELLA RICOMPENSE MILESTONE -->
+        <div style="margin-top:14px;">
+          <h4 style="font-size:14px;font-weight:900;margin-bottom:8px;">🎁 Ricompense di Costanza (per Categoria)</h4>
+          <div class="milestone-rewards-list">
+            <div class="milestone-reward-row">
+              <div class="milestone-reward-badge">
+                <span>🥉</span>
+                <div>
+                  <div>3 Giorni di Fila</div>
+                  <small style="color:var(--text-muted);">Traguardo Bronzo</small>
+                </div>
+              </div>
+              <div class="milestone-reward-pills">
+                <span class="reward-tag-gems">+50 💎</span>
+                <span class="reward-tag-freeze">❤️ Full Vite</span>
+              </div>
+            </div>
+            <div class="milestone-reward-row">
+              <div class="milestone-reward-badge">
+                <span>🥈</span>
+                <div>
+                  <div>7 Giorni di Fila</div>
+                  <small style="color:var(--text-muted);">Settimana di Fuoco</small>
+                </div>
+              </div>
+              <div class="milestone-reward-pills">
+                <span class="reward-tag-gems">+150 💎</span>
+                <span class="reward-tag-freeze">🧊 1 Gelo Omaggio</span>
+              </div>
+            </div>
+            <div class="milestone-reward-row">
+              <div class="milestone-reward-badge">
+                <span>🥇</span>
+                <div>
+                  <div>14 Giorni di Fila</div>
+                  <small style="color:var(--text-muted);">Veterano Quotidiano</small>
+                </div>
+              </div>
+              <div class="milestone-reward-pills">
+                <span class="reward-tag-gems">+300 💎</span>
+                <span class="reward-tag-freeze">👑 Titolo Pro</span>
+              </div>
+            </div>
+            <div class="milestone-reward-row">
+              <div class="milestone-reward-badge">
+                <span>🏆</span>
+                <div>
+                  <div>30 Giorni di Fila</div>
+                  <small style="color:var(--text-muted);">Leggenda Assoluta</small>
+                </div>
+              </div>
+              <div class="milestone-reward-pills">
+                <span class="reward-tag-gems">+1.000 💎</span>
+                <span class="reward-tag-freeze">⭐ Trofeo d'Oro</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE POPUP CELEBRAZIONE STREAK -->
+  <div class="duo-modal-backdrop" id="streakCelebrationModal" role="dialog" aria-modal="true" aria-labelledby="streakCelebrationTitle" hidden>
+    <div class="duo-modal-card" style="max-width:440px;text-align:center;">
+      <div class="modal-body" style="padding:28px 20px;">
+        <div class="streak-flame-icon-large" style="font-size:72px;" aria-hidden="true">🔥</div>
+        <h2 id="streakCelebrationTitle" style="font-size:26px;font-weight:900;color:#ff6a00;margin:10px 0 4px;">FIAMMA ACCESA!</h2>
+        <div style="font-size:42px;font-weight:900;color:var(--text-main);" id="streakCelebrationNum">2 GIORNI</div>
+        <p style="font-size:15px;font-weight:800;color:var(--text-muted);margin:8px 0 16px;" id="streakCelebrationMsg">Hai completato la sfida quotidiana! Mantieni vivo il ritmo anche domani.</p>
+        <div id="streakCelebrationRewardBox" hidden style="background:rgba(255,150,0,0.12);border:2px dashed #ff9600;border-radius:14px;padding:12px;margin-bottom:16px;">
+          <b style="color:#d97706;display:block;margin-bottom:4px;" id="streakRewardTitle">🎁 PREMIO SBLOCCATO!</b>
+          <span style="font-size:14px;font-weight:800;" id="streakRewardDesc">+50 Gemme 💎</span>
+        </div>
+        <button class="btn-primary w-full" id="streakCelebrationOkBtn" type="button" style="background:#ff7700;border-bottom-color:#c25e00;">CONTINUA A GIOCARE ➔</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODALE FONTI & LICENZE -->
   <div class="duo-modal-backdrop" id="sourcesModal" role="dialog" aria-modal="true" aria-labelledby="sourcesTitle" hidden>
     <div class="duo-modal-card">
@@ -994,6 +1192,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=32"></script>
+  <script src="app.js?v=33"></script>
 </body>
 </html>

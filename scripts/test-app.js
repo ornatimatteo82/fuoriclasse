@@ -47,6 +47,10 @@ const requiredAssets = [
   'assets/trophy-quizzone.jpg',
   'assets/trophy-gael.jpg',
   'assets/trophy-pastore.jpg',
+  'assets/f1-mascot.jpg',
+  'assets/basket-mascot.jpg',
+  'assets/trophy-f1.jpg',
+  'assets/trophy-basket.jpg',
   'assets/stadium-hero.jpg',
   'assets/chest-gold.jpg',
   'assets/trophy-fuoriclasse.jpg'
@@ -120,6 +124,27 @@ assert(curriculum.gaelModes && curriculum.gaelModes.anni2000.length >= 100, 'Gae
 assert(curriculum.extraModes && curriculum.extraModes.goals.length >= 100, 'Quizzocampo Record & Scudetti ha almeno 100 sfide');
 assert(curriculum.extraModes && curriculum.extraModes.scorers.length >= 100, 'Quizzocampo Re dei Bomber ha almeno 100 sfide');
 assert(Array.isArray(curriculum.pastoreMode) && curriculum.pastoreMode.length >= 2000, 'Modalità Pastore contiene almeno 2.000 sfide marcatori');
+
+// 8. Test Multi-Sport F1 & Basket Curriculum
+console.log('\n--- 8. Verifica Motori F1 & Basket NBA (4.000+ Domande per Categoria) ---');
+const f1Raw = fs.readFileSync(path.join(ROOT, 'data', 'curriculum-f1.json'), 'utf8');
+const f1Data = JSON.parse(f1Raw);
+assert(f1Data && f1Data.metadata && f1Data.metadata.sport === 'f1', 'F1 curriculum metadata corretto');
+assert(f1Data.units && f1Data.units.length === 10, `F1 contiene 10 unità storiche (1970-2024) (${f1Data.units.length})`);
+assert(f1Data.f1Pool && f1Data.f1Pool.length >= 4000, `F1 contiene almeno 4.000 quiz verificati (${f1Data.f1Pool.length})`);
+
+const basketRaw = fs.readFileSync(path.join(ROOT, 'data', 'curriculum-basket.json'), 'utf8');
+const basketData = JSON.parse(basketRaw);
+assert(basketData && basketData.metadata && basketData.metadata.sport === 'basket', 'Basket curriculum metadata corretto');
+assert(basketData.units && basketData.units.length === 10, `Basket contiene 10 unità storiche (1980-2024) (${basketData.units.length})`);
+assert(basketData.basketPool && basketData.basketPool.length >= 4000, `Basket contiene almeno 4.000 quiz NBA verificati (${basketData.basketPool.length})`);
+
+// 9. Test Retention & Category Streaks in app.js
+console.log('\n--- 9. Verifica Retention Engine & Streaks Indipendenti ---');
+assert(appContent.includes('categoryStreaks'), 'app.js definisce categoryStreaks per categoria indipendente');
+assert(appContent.includes('recordCategoryDailyWin'), 'app.js implementa recordCategoryDailyWin');
+assert(appContent.includes('switchSport'), 'app.js implementa switchSport');
+assert(appContent.includes('renderStreakDetailModal'), 'app.js implementa visualizzazione calendario retention');
 
 // Riepilogo
 console.log('\n========================================');

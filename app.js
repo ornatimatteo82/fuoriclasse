@@ -40,7 +40,13 @@ const state = {
   soundEnabled: true,
   theme: 'light',
   activeTab: 'path',
-  activeGameMode: 'quizzocampo', // 'quizzocampo' | 'gael' | 'pastore'
+  activeSport: 'calcio', // 'calcio' | 'f1' | 'basket'
+  categoryStreaks: {
+    calcio: { streak: 3, lastDay: null, freezeCount: 1 },
+    f1: { streak: 0, lastDay: null, freezeCount: 0 },
+    basket: { streak: 0, lastDay: null, freezeCount: 0 }
+  },
+  activeGameMode: 'quizzocampo', // 'quizzocampo' | 'gael' | 'pastore' | 'f1-percorso' | 'basket-percorso'
   lastHeartsRefillDay: new Date().toLocaleDateString('en-CA'),
 
   // Progressi percorso: chiavi 'u1-l1' completate e bauli riscattati
@@ -192,9 +198,31 @@ function loadState() {
       state.hearts = Number.isFinite(saved.hearts) ? saved.hearts : state.hearts;
       state.soundEnabled = typeof saved.soundEnabled === 'boolean' ? saved.soundEnabled : true;
       state.theme = saved.theme === 'dark' ? 'dark' : 'light';
-      state.activeGameMode = (saved.activeGameMode === 'gael' || saved.activeGameMode === 'pastore')
-        ? saved.activeGameMode
-        : 'quizzocampo';
+      if (saved.activeSport && ['calcio', 'f1', 'basket'].includes(saved.activeSport)) {
+        state.activeSport = saved.activeSport;
+      }
+      if (saved.categoryStreaks && typeof saved.categoryStreaks === 'object') {
+        state.categoryStreaks = {
+          calcio: {
+            streak: Number(saved.categoryStreaks.calcio?.streak) || 1,
+            lastDay: saved.categoryStreaks.calcio?.lastDay || null,
+            freezeCount: Number(saved.categoryStreaks.calcio?.freezeCount) || 1
+          },
+          f1: {
+            streak: Number(saved.categoryStreaks.f1?.streak) || 0,
+            lastDay: saved.categoryStreaks.f1?.lastDay || null,
+            freezeCount: Number(saved.categoryStreaks.f1?.freezeCount) || 0
+          },
+          basket: {
+            streak: Number(saved.categoryStreaks.basket?.streak) || 0,
+            lastDay: saved.categoryStreaks.basket?.lastDay || null,
+            freezeCount: Number(saved.categoryStreaks.basket?.freezeCount) || 0
+          }
+        };
+      } else if (Number.isFinite(saved.streak)) {
+        state.categoryStreaks.calcio.streak = saved.streak;
+      }
+      state.activeGameMode = saved.activeGameMode || (state.activeSport === 'f1' ? 'f1-percorso' : state.activeSport === 'basket' ? 'basket-percorso' : 'quizzocampo');
       if (typeof saved.lastHeartsRefillDay === 'string') {
         state.lastHeartsRefillDay = saved.lastHeartsRefillDay;
       }
@@ -214,10 +242,13 @@ function loadState() {
 
 function persistState() {
   try {
+    const activeStreak = state.categoryStreaks?.[state.activeSport]?.streak || 1;
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       username: state.username,
       xp: state.xp,
-      streak: state.streak,
+      streak: activeStreak,
+      activeSport: state.activeSport,
+      categoryStreaks: state.categoryStreaks,
       gems: state.gems,
       hearts: state.hearts,
       lastHeartsRefillDay: state.lastHeartsRefillDay,
@@ -388,27 +419,331 @@ async function syncProfileToSupabase() {
 }
 
 // -------------------------------------------------------------
-// 4. CARICAMENTO CURRICULUM JSON (5.000 SFIDE: GAEL PRO, QUIZZOCAMPO & MODALITÀ PASTORE)
+// 4. CARICAMENTO MULTI-SPORT & CURRICULUM (CALCIO, F1 BOOMER, BASKET NBA)
 // -------------------------------------------------------------
-async function loadCurriculum() {
+const loadedSportCatalogs = {
+  calcio: null,
+  f1: null,
+  basket: null
+};
+
+async function loadSportCurriculum(sport = state.activeSport) {
+  if (loadedSportCatalogs[sport]) {
+    catalog = loadedSportCatalogs[sport];
+    return catalog;
+  }
+
+  let jsonUrl = 'data/curriculum.json?v=32';
+  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=32';
+  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=32';
+
   try {
-    const res = await fetch('data/curriculum.json?v=25');
+    const res = await fetch(jsonUrl);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data && Array.isArray(data.units) && data.units.length > 0) {
+      loadedSportCatalogs[sport] = data;
       catalog = data;
     }
   } catch (err) {
-    console.warn('Caricamento curriculum.json non riuscito:', err.message);
+    console.warn(`Caricamento curriculum ${sport} non riuscito:`, err.message);
   }
+  return catalog;
+}
+
+function updateSportBadgeUI() {
+  const sp = state.activeSport || 'calcio';
+  const emojiEl = $('#currentSportEmoji');
+  const textEl = $('#currentSportText');
+  const btnEl = $('#sportSelectorBtn');
+
+  if (sp === 'f1') {
+    if (emojiEl) emojiEl.textContent = '🏎️';
+    if (textEl) textEl.textContent = 'F1 BOOMER';
+    if (btnEl) btnEl.className = 'sport-badge-btn sport-f1';
+  } else if (sp === 'basket') {
+    if (emojiEl) emojiEl.textContent = '🏀';
+    if (textEl) textEl.textContent = 'BASKET NBA';
+    if (btnEl) btnEl.className = 'sport-badge-btn sport-basket';
+  } else {
+    if (emojiEl) emojiEl.textContent = '⚽';
+    if (textEl) textEl.textContent = 'CALCIO';
+    if (btnEl) btnEl.className = 'sport-badge-btn';
+  }
+
+  $$('.sport-card-choice').forEach(card => {
+    card.classList.toggle('active', card.dataset.sport === sp);
+  });
+}
+
+function updateSportUITheme() {
+  const sp = state.activeSport || 'calcio';
+  const brandImg = document.querySelector('.brand-avatar-img');
+  const mascotImg = document.querySelector('.hero-mascot-img');
+  const roleTag = document.querySelector('.mascot-role-tag');
+  const leagueTrophy = $('#leagueHeroTrophy');
+  const modeSwitcher = document.querySelector('.game-mode-switcher');
+
+  if (sp === 'f1') {
+    if (brandImg) brandImg.src = 'assets/f1-mascot.jpg?v=32';
+    if (mascotImg) {
+      mascotImg.src = 'assets/f1-mascot.jpg?v=32';
+      mascotImg.alt = 'Il Pilota Boomer 16-Bit';
+    }
+    if (roleTag) roleTag.textContent = 'IL PILOTA BOOMER';
+    if ($('#mascotGreeting')) {
+      $('#mascotGreeting').textContent = '"Senti il rombo dei V12 e l\'odore di gomma bruciata? Da Lauda e Senna a Schumi, qui conta la vera conoscenza dei motori!"';
+    }
+    if (leagueTrophy) {
+      leagueTrophy.src = 'assets/trophy-f1.jpg?v=32';
+      leagueTrophy.alt = 'Coppa dei Motori / Pistone d\'Oro';
+    }
+    if ($('#heroModeBadge')) $('#heroModeBadge').textContent = '🏎️ F1 • 1970 - 2024';
+    if ($('#heroPoolBadge')) $('#heroPoolBadge').textContent = '4.100+ SFIDE STORICHE';
+    if ($('#heroTitle')) $('#heroTitle').textContent = 'Quiz like a Boomer: Formula 1';
+    if ($('#heroDescription')) $('#heroDescription').innerHTML = 'Ruggiti V10 e V12, Lauda vs Hunt, Senna a Donington, l\'era Schumi, curve mitiche e segreti dei box!';
+    if ($('#heroQuickPlayText')) $('#heroQuickPlayText').textContent = 'SCENDI IN PISTA';
+    if ($('#currentUnitBadgeText')) $('#currentUnitBadgeText').textContent = 'F1 BOOMER • 10 UNITÀ GP';
+    if (modeSwitcher) modeSwitcher.style.display = 'none';
+  } else if (sp === 'basket') {
+    if (brandImg) brandImg.src = 'assets/basket-mascot.jpg?v=32';
+    if (mascotImg) {
+      mascotImg.src = 'assets/basket-mascot.jpg?v=32';
+      mascotImg.alt = 'Il Campione NBA 16-Bit';
+    }
+    if (roleTag) roleTag.textContent = 'IL CAMPIONE NBA #23';
+    if ($('#mascotGreeting')) {
+      $('#mascotGreeting').textContent = '"Mancano 5 secondi sul cronometro dei 24: hai il sangue freddo per infilare il tiro sulla sirena come Jordan, Kobe o Curry?"';
+    }
+    if (leagueTrophy) {
+      leagueTrophy.src = 'assets/trophy-basket.jpg?v=32';
+      leagueTrophy.alt = 'Trofeo Larry O\'Brien / Anello NBA';
+    }
+    if ($('#heroModeBadge')) $('#heroModeBadge').textContent = '🏀 NBA • 1980 - 2024';
+    if ($('#heroPoolBadge')) $('#heroPoolBadge').textContent = '4.100+ SFIDE STORICHE';
+    if ($('#heroTitle')) $('#heroTitle').textContent = 'Buzzer Beater: NBA Legends';
+    if ($('#heroDescription')) $('#heroDescription').innerHTML = 'Showtime Lakers vs Celtics, i Bulls di Jordan, Kobe & Shaq, LeBron, Steph Curry e i canestri a fil di sirena!';
+    if ($('#heroQuickPlayText')) $('#heroQuickPlayText').textContent = 'PALLA A DUE';
+    if ($('#currentUnitBadgeText')) $('#currentUnitBadgeText').textContent = 'BASKET NBA • 10 UNITÀ FINALS';
+    if (modeSwitcher) modeSwitcher.style.display = 'none';
+  } else {
+    // CALCIO
+    if (brandImg) brandImg.src = 'assets/mascot-coach.jpg?v=32';
+    if (modeSwitcher) modeSwitcher.style.display = 'grid';
+  }
+}
+
+window.switchSport = async (targetSport) => {
+  if (!['calcio', 'f1', 'basket'].includes(targetSport)) return;
+  state.activeSport = targetSport;
+
+  if (targetSport === 'calcio') {
+    state.activeGameMode = 'quizzocampo';
+  } else if (targetSport === 'f1') {
+    state.activeGameMode = 'f1';
+  } else if (targetSport === 'basket') {
+    state.activeGameMode = 'basket';
+  }
+
+  const modal = $('#sportModal');
+  if (modal) modal.hidden = true;
+
+  updateSportBadgeUI();
+  updateTopStats();
+
+  await loadSportCurriculum(targetSport);
+
+  updateSportUITheme();
+  setGameMode(state.activeGameMode, false);
+  renderUnitJumpModal();
+  renderSnakePath();
+  persistState();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+async function loadCurriculum() {
+  await loadSportCurriculum(state.activeSport || 'calcio');
 
   checkMidnightHeartsReset();
   updateHomeInstallBannerVisibility();
+  updateSportBadgeUI();
+  updateSportUITheme();
   setGameMode(state.activeGameMode, false);
   renderUnitJumpModal();
   renderLeaderboard();
   renderQuests();
   updateTopStats();
+  renderSnakePath();
+}
+
+// -------------------------------------------------------------
+// 4B. RETENTION & STREAK PER CATEGORIA (DUOLINGO ENGINE)
+// -------------------------------------------------------------
+function recordCategoryDailyWin(sp = state.activeSport || 'calcio') {
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  if (!state.categoryStreaks) {
+    state.categoryStreaks = {
+      calcio: { streak: 1, lastDay: null, freezeCount: 1 },
+      f1: { streak: 0, lastDay: null, freezeCount: 0 },
+      basket: { streak: 0, lastDay: null, freezeCount: 0 }
+    };
+  }
+  const cat = state.categoryStreaks[sp] || { streak: 0, lastDay: null, freezeCount: 0 };
+
+  if (cat.lastDay === todayStr) {
+    return;
+  }
+
+  const yesterday = new Date(now.getTime() - 86400000);
+  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+  let savedByFreeze = false;
+
+  if (!cat.lastDay) {
+    cat.streak = 1;
+    cat.lastDay = todayStr;
+  } else if (cat.lastDay === yesterdayStr) {
+    cat.streak += 1;
+    cat.lastDay = todayStr;
+  } else {
+    // Saltato un giorno
+    if (cat.freezeCount > 0) {
+      cat.freezeCount--;
+      cat.streak += 1;
+      cat.lastDay = todayStr;
+      savedByFreeze = true;
+    } else {
+      cat.streak = 1;
+      cat.lastDay = todayStr;
+    }
+  }
+
+  state.categoryStreaks[sp] = cat;
+  const reward = checkStreakRewards(sp, cat.streak);
+
+  persistState();
+  updateTopStats();
+
+  showStreakCelebration(sp, cat.streak, savedByFreeze, reward);
+}
+
+function checkStreakRewards(sp, streakCount) {
+  const claimedKey = `streak_reward_${sp}_${streakCount}`;
+  if (!state.claimedChests) state.claimedChests = [];
+  if (state.claimedChests.includes(claimedKey)) return null;
+
+  let reward = null;
+  if (streakCount === 3) {
+    reward = { gems: 50, title: '🥉 Traguardo Bronzo (3 Giorni di Fila!)' };
+    state.gems += 50;
+    state.hearts = state.maxHearts;
+  } else if (streakCount === 7) {
+    reward = { gems: 150, freeze: true, title: '🥈 Traguardo Argento (Settimana di Fuoco!)' };
+    state.gems += 150;
+    state.categoryStreaks[sp].freezeCount = (state.categoryStreaks[sp].freezeCount || 0) + 1;
+  } else if (streakCount === 14) {
+    reward = { gems: 300, title: '🥇 Traguardo Oro (14 Giorni di Fila!)' };
+    state.gems += 300;
+    state.hearts = state.maxHearts;
+  } else if (streakCount === 30) {
+    reward = { gems: 1000, title: '🏆 Leggenda Assoluta (30 Giorni di Fila!)' };
+    state.gems += 1000;
+  }
+
+  if (reward) {
+    state.claimedChests.push(claimedKey);
+  }
+  return reward;
+}
+
+function showStreakCelebration(sp, streakCount, savedByFreeze, reward) {
+  const sportNames = { calcio: 'Calcio', f1: 'F1 Boomer', basket: 'Basket NBA' };
+  const modal = $('#streakCelebrationModal');
+  if (!modal) return;
+
+  if ($('#streakCelebrationNum')) {
+    $('#streakCelebrationNum').textContent = `${streakCount} GIORN${streakCount === 1 ? 'O' : 'I'}`;
+  }
+  if ($('#streakCelebrationMsg')) {
+    $('#streakCelebrationMsg').textContent = savedByFreeze
+      ? `🧊 Il tuo Gelo Fiamma ha salvato la tua sequenza in ${sportNames[sp] || 'questa categoria'}! Streak continuato a ${streakCount} giorni!`
+      : `Hai completato la tua sfida quotidiana in ${sportNames[sp] || 'questa categoria'}! Mantieni vivo il ritmo anche domani.`;
+  }
+
+  const rBox = $('#streakCelebrationRewardBox');
+  if (reward && rBox) {
+    rBox.hidden = false;
+    if ($('#streakRewardTitle')) $('#streakRewardTitle').textContent = `🎁 ${reward.title}`;
+    if ($('#streakRewardDesc')) $('#streakRewardDesc').textContent = `+${reward.gems} Gemme 💎 ${reward.freeze ? '+ 1 Gelo Fiamma 🧊' : ''}`;
+  } else if (rBox) {
+    rBox.hidden = true;
+  }
+
+  modal.hidden = false;
+  launchConfetti();
+  playTone('cheer');
+}
+
+function renderStreakDetailModal() {
+  const curSport = state.activeSport || 'calcio';
+  const curStreak = state.categoryStreaks?.[curSport]?.streak || 0;
+
+  if ($('#streakDetailCounterHero')) {
+    $('#streakDetailCounterHero').textContent = `${curStreak} GIORN${curStreak === 1 ? 'O' : 'I'}`;
+  }
+
+  if ($('#catValCalcio')) $('#catValCalcio').textContent = state.categoryStreaks?.calcio?.streak || 0;
+  if ($('#catValF1')) $('#catValF1').textContent = state.categoryStreaks?.f1?.streak || 0;
+  if ($('#catValBasket')) $('#catValBasket').textContent = state.categoryStreaks?.basket?.streak || 0;
+
+  if ($('#calcioModalStreakVal')) $('#calcioModalStreakVal').textContent = state.categoryStreaks?.calcio?.streak || 0;
+  if ($('#f1ModalStreakVal')) $('#f1ModalStreakVal').textContent = state.categoryStreaks?.f1?.streak || 0;
+  if ($('#basketModalStreakVal')) $('#basketModalStreakVal').textContent = state.categoryStreaks?.basket?.streak || 0;
+
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  const checkStatus = (sport) => {
+    const s = state.categoryStreaks?.[sport];
+    if (s?.lastDay === todayStr) return '✅ Fatto oggi';
+    return '⏳ Da fare oggi';
+  };
+
+  if ($('#catSubCalcio')) $('#catSubCalcio').textContent = checkStatus('calcio');
+  if ($('#catSubF1')) $('#catSubF1').textContent = checkStatus('f1');
+  if ($('#catSubBasket')) $('#catSubBasket').textContent = checkStatus('basket');
+
+  $('#catCardCalcio')?.classList.toggle('active-sport', curSport === 'calcio');
+  $('#catCardF1')?.classList.toggle('active-sport', curSport === 'f1');
+  $('#catCardBasket')?.classList.toggle('active-sport', curSport === 'basket');
+
+  if ($('#freezeCountSpan')) {
+    $('#freezeCountSpan').textContent = state.categoryStreaks?.[curSport]?.freezeCount || 0;
+  }
+
+  const currentWDay = now.getDay();
+  $$('#modalWeeklyStreakStrip .weekday-dot').forEach(dot => {
+    const wday = Number(dot.dataset.wday);
+    const isToday = wday === currentWDay;
+    const isDoneToday = state.categoryStreaks?.[curSport]?.lastDay === todayStr;
+
+    dot.className = 'weekday-dot';
+    if (isToday && isDoneToday) {
+      dot.classList.add('done');
+      dot.textContent = '🔥';
+    } else if (isToday) {
+      dot.classList.add('today-pending');
+      dot.textContent = '•';
+    } else if (wday < currentWDay && curStreak > 0) {
+      dot.classList.add('done');
+      dot.textContent = '✓';
+    } else {
+      dot.textContent = '';
+    }
+  });
 }
 
 // -------------------------------------------------------------
@@ -613,12 +948,12 @@ function getActiveLessonCoords(modeFilter = state.activeGameMode) {
   let fallbackLesson = 0;
   for (let uIdx = 0; uIdx < catalog.units.length; uIdx++) {
     const u = catalog.units[uIdx];
-    const uMode = u.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
-    if (uMode !== modeFilter) continue;
+    const isVisible = state.activeSport !== 'calcio' || (u.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore')) === modeFilter;
+    if (!isVisible) continue;
 
     for (let lIdx = 0; lIdx < u.lessons.length; lIdx++) {
-      const key = `u${uIdx + 1}-l${lIdx + 1}`;
-      if (!state.completedLessons.includes(key)) {
+      const key = `${u.id || `u${uIdx + 1}`}-l${lIdx + 1}`;
+      if (!state.completedLessons.includes(key) && !state.completedLessons.includes(`u${uIdx + 1}-l${lIdx + 1}`)) {
         return { uIdx, lIdx };
       }
       fallbackUnit = uIdx;
@@ -630,18 +965,19 @@ function getActiveLessonCoords(modeFilter = state.activeGameMode) {
 
 function renderSnakePath() {
   const container = $('#unitsContainer');
-  if (!container) return;
+  if (!container || !catalog || !Array.isArray(catalog.units)) return;
 
   let modeFoundCurrent = false;
   let modeLessonsCount = 0;
   let modeCompletedCount = 0;
 
   catalog.units.forEach((u, uIdx) => {
-    const uMode = u.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
-    if (uMode !== state.activeGameMode) return;
+    const isVisible = state.activeSport !== 'calcio' || (u.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore')) === state.activeGameMode;
+    if (!isVisible) return;
     u.lessons.forEach((_, lIdx) => {
       modeLessonsCount++;
-      if (state.completedLessons.includes(`u${uIdx + 1}-l${lIdx + 1}`)) {
+      const lessonKey = `${u.id || `u${uIdx + 1}`}-l${lIdx + 1}`;
+      if (state.completedLessons.includes(lessonKey) || state.completedLessons.includes(`u${uIdx + 1}-l${lIdx + 1}`)) {
         modeCompletedCount++;
       }
     });
@@ -655,22 +991,24 @@ function renderSnakePath() {
   let visibleUnitOrder = 0;
   const html = catalog.units.map((unit, uIdx) => {
     const uMode = unit.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
-    if (uMode !== state.activeGameMode) return '';
+    const isVisible = state.activeSport !== 'calcio' || uMode === state.activeGameMode;
+    if (!isVisible) return '';
 
     const themeClass = UNIT_THEMES[visibleUnitOrder % UNIT_THEMES.length];
     visibleUnitOrder++;
 
     const unitTitle = unit.title || unit.name || `Unità ${uIdx + 1}`;
     const unitDesc = unit.subtitle || unit.description || '';
-    const unitCode = unit.code || `${uMode === 'pastore' ? 'PASTORE LEAGUE' : uMode === 'gael' ? 'GAEL LEAGUE' : 'QUIZZONE'} • UNITÀ ${visibleUnitOrder}`;
+    const unitCode = unit.code || (state.activeSport === 'f1' ? `F1 BOOMER • GP UNITÀ ${visibleUnitOrder}` : state.activeSport === 'basket' ? `BASKET NBA • FINALS UNITÀ ${visibleUnitOrder}` : `${uMode === 'pastore' ? 'PASTORE LEAGUE' : uMode === 'gael' ? 'GAEL LEAGUE' : 'QUIZZONE'} • UNITÀ ${visibleUnitOrder}`);
 
-    const completedInUnit = unit.lessons.filter((_, lIdx) =>
-      state.completedLessons.includes(`u${uIdx + 1}-l${lIdx + 1}`)
-    ).length;
+    const completedInUnit = unit.lessons.filter((_, lIdx) => {
+      const lessonKey = `${unit.id || `u${uIdx + 1}`}-l${lIdx + 1}`;
+      return state.completedLessons.includes(lessonKey) || state.completedLessons.includes(`u${uIdx + 1}-l${lIdx + 1}`);
+    }).length;
 
     const nodesHtml = unit.lessons.map((lesson, lIdx) => {
-      const lessonKey = `u${uIdx + 1}-l${lIdx + 1}`;
-      const isCompleted = state.completedLessons.includes(lessonKey);
+      const lessonKey = `${unit.id || `u${uIdx + 1}`}-l${lIdx + 1}`;
+      const isCompleted = state.completedLessons.includes(lessonKey) || state.completedLessons.includes(`u${uIdx + 1}-l${lIdx + 1}`);
 
       let status = 'locked';
       if (isCompleted) {
@@ -1213,6 +1551,18 @@ function renderQuizQuestion() {
     subEl.innerHTML = q.match
       ? `<span class="diff-rule-pill" style="background:#ffc800;color:#000;font-weight:900;">🏟️ ${esc(q.match)}${isMulti ? ` • Scegli ${targetCount} calciatori` : ''}</span>`
       : '';
+  } else if (q.mode === 'f1' || state.activeSport === 'f1') {
+    tagEl.textContent = `🏎️ ${q.tag || 'QUIZ LIKE A BOOMER • FORMULA 1'}`;
+    archivePill.textContent = '🏁 F1 LEGENDS (1970 - 2024)';
+    archivePill.hidden = false;
+    promptEl.textContent = q.question;
+    subEl.textContent = '';
+  } else if (q.mode === 'basket' || state.activeSport === 'basket') {
+    tagEl.textContent = `🏀 ${q.tag || 'BUZZER BEATER • NBA LEGENDS'}`;
+    archivePill.textContent = '🏆 NBA FINALS & DRAFT (1980 - 2024)';
+    archivePill.hidden = false;
+    promptEl.textContent = q.question;
+    subEl.textContent = '';
   } else {
     const parsedQ = parseCleanQuestionText(q.question || '');
     tagEl.textContent = `⚡ ${q.tag || 'QUIZZONE'}`;
@@ -1551,26 +1901,40 @@ function completeQuizSession() {
 
   const isPastoreMode = state.sessionGameType === 'pastore' || state.activeGameMode === 'pastore';
   const isGaelMode = state.sessionGameType === 'gael' || state.activeGameMode === 'gael';
+  const isF1 = state.activeSport === 'f1';
+  const isBasket = state.activeSport === 'basket';
   const compTrophy = $('#completionTrophyImg');
   if (compTrophy) {
-    compTrophy.src = isPastoreMode
-      ? 'assets/trophy-pastore.jpg'
-      : isGaelMode
-        ? 'assets/trophy-gael.jpg'
-        : 'assets/trophy-quizzone.jpg';
-    compTrophy.alt = isPastoreMode
-      ? 'Coppa Pastore League'
-      : isGaelMode
-        ? 'Coppa Gael League'
-        : 'Coppa Quizzone';
+    compTrophy.src = isF1
+      ? 'assets/trophy-f1.jpg?v=32'
+      : isBasket
+        ? 'assets/trophy-basket.jpg?v=32'
+        : isPastoreMode
+          ? 'assets/trophy-pastore.jpg?v=32'
+          : isGaelMode
+            ? 'assets/trophy-gael.jpg?v=32'
+            : 'assets/trophy-quizzone.jpg?v=32';
+    compTrophy.alt = isF1
+      ? 'Coppa dei Motori F1'
+      : isBasket
+        ? 'Trofeo Larry O\'Brien NBA'
+        : isPastoreMode
+          ? 'Coppa Pastore League'
+          : isGaelMode
+            ? 'Coppa Gael League'
+            : 'Coppa Quizzone';
   }
 
   if (state.quizMode === 'path') {
-    const key = `u${state.activeUnitIdx + 1}-l${state.activeLessonIdx + 1}`;
+    const unitObj = catalog?.units?.[state.activeUnitIdx];
+    const key = `${unitObj?.id || `u${state.activeUnitIdx + 1}`}-l${state.activeLessonIdx + 1}`;
     if (!state.completedLessons.includes(key)) {
       state.completedLessons.push(key);
     }
   }
+
+  // RETENTION & STREAK PER CATEGORIA
+  recordCategoryDailyWin(state.activeSport || 'calcio');
 
   persistState();
   updateTopStats();
@@ -1653,19 +2017,30 @@ window.cashOutQuizRun = () => {
 
   const isPastoreMode = state.sessionGameType === 'pastore' || state.activeGameMode === 'pastore';
   const isGaelMode = state.sessionGameType === 'gael' || state.activeGameMode === 'gael';
+  const isF1 = state.activeSport === 'f1';
+  const isBasket = state.activeSport === 'basket';
   const compTrophy = $('#completionTrophyImg');
   if (compTrophy) {
-    compTrophy.src = isPastoreMode
-      ? 'assets/trophy-pastore.jpg'
-      : isGaelMode
-        ? 'assets/trophy-gael.jpg'
-        : 'assets/trophy-quizzone.jpg';
-    compTrophy.alt = isPastoreMode
-      ? 'Coppa Pastore League'
-      : isGaelMode
-        ? 'Coppa Gael League'
-        : 'Coppa Quizzone';
+    compTrophy.src = isF1
+      ? 'assets/trophy-f1.jpg?v=32'
+      : isBasket
+        ? 'assets/trophy-basket.jpg?v=32'
+        : isPastoreMode
+          ? 'assets/trophy-pastore.jpg?v=32'
+          : isGaelMode
+            ? 'assets/trophy-gael.jpg?v=32'
+            : 'assets/trophy-quizzone.jpg?v=32';
+    compTrophy.alt = isF1
+      ? 'Coppa dei Motori F1'
+      : isBasket
+        ? 'Trofeo Larry O\'Brien NBA'
+        : isPastoreMode
+          ? 'Coppa Pastore League'
+          : isGaelMode
+            ? 'Coppa Gael League'
+            : 'Coppa Quizzone';
   }
+  recordCategoryDailyWin(state.activeSport || 'calcio');
   persistState();
   updateTopStats();
   closeQuizSession();
@@ -2801,6 +3176,58 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     openModal('🔄 Cache Wikidata Ripulita', `<p>Sono state rimosse <b>${count}</b> voci dalla cache locale.</p>`);
+  });
+
+  // GESTIONE SELETTORE MULTI-SPORT
+  $('#sportSelectorBtn')?.addEventListener('click', () => {
+    renderStreakDetailModal();
+    const modal = $('#sportModal');
+    if (modal) modal.hidden = false;
+  });
+  $('#sportModalClose')?.addEventListener('click', () => {
+    const modal = $('#sportModal');
+    if (modal) modal.hidden = true;
+  });
+  $('#chooseSportCalcio')?.addEventListener('click', () => window.switchSport('calcio'));
+  $('#chooseSportF1')?.addEventListener('click', () => window.switchSport('f1'));
+  $('#chooseSportBasket')?.addEventListener('click', () => window.switchSport('basket'));
+
+  // GESTIONE FIAMMA & RETENTION STREAK
+  const openStreakModal = () => {
+    renderStreakDetailModal();
+    const modal = $('#streakDetailModal');
+    if (modal) modal.hidden = false;
+  };
+  $('#topStreakPillBtn')?.addEventListener('click', openStreakModal);
+  $('#railStreakBox')?.addEventListener('click', openStreakModal);
+  $('#streakDetailClose')?.addEventListener('click', () => {
+    const modal = $('#streakDetailModal');
+    if (modal) modal.hidden = true;
+  });
+  $('#streakCelebrationOkBtn')?.addEventListener('click', () => {
+    const modal = $('#streakCelebrationModal');
+    if (modal) modal.hidden = true;
+  });
+
+  // ACQUISTO GELO FIAMMA (STREAK FREEZE)
+  $('#btnBuyFreeze')?.addEventListener('click', () => {
+    const curSport = state.activeSport || 'calcio';
+    const cost = 100;
+    if (state.gems < cost) {
+      alert('Non hai abbastanza gemme! Te ne servono 100 💎 per acquistare un Gelo Fiamma.');
+      return;
+    }
+    state.gems -= cost;
+    if (!state.categoryStreaks) state.categoryStreaks = {};
+    if (!state.categoryStreaks[curSport]) {
+      state.categoryStreaks[curSport] = { streak: 0, lastDay: null, freezeCount: 0 };
+    }
+    state.categoryStreaks[curSport].freezeCount = (state.categoryStreaks[curSport].freezeCount || 0) + 1;
+    playTone('cheer');
+    persistState();
+    updateTopStats();
+    renderStreakDetailModal();
+    openModal('🧊 Gelo Fiamma Attivato!', `<p>Hai protetto la tua fiamma per la categoria <b>${curSport.toUpperCase()}</b>! Se salti un giorno di sfide, il Gelo Fiamma manterrà intatto il tuo streak.</p>`);
   });
 
   // Reset Progressi

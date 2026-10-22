@@ -1,5 +1,5 @@
-// Fuoriclasse Service Worker v32 — Zero-Cache Network Direct & Anti-Loop
-const SW_VERSION = 'fuoriclasse-v32';
+// Fuoriclasse Service Worker v33 — Multi-Sport (Calcio, F1 Boomer, Basket NBA)
+const SW_VERSION = 'fuoriclasse-v33';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

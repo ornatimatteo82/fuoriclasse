@@ -14,13 +14,13 @@
   "categories": ["sports", "games", "education"],
   "icons": [
     {
-      "src": "./assets/mascot-coach.jpg?v=32",
+      "src": "./assets/mascot-coach.jpg?v=33",
       "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "./icon.svg?v=32",
+      "src": "./icon.svg?v=33",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
