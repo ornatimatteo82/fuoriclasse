@@ -546,17 +546,22 @@ function updateSportUITheme() {
   if ($('#streakBadgeBasket')) $('#streakBadgeBasket').textContent = `🔥 ${bStreak}`;
 
   if (sp === 'f1') {
-    if (brandImg) brandImg.src = 'assets/f1-mascot.jpg?v=34';
+    if (brandImg) brandImg.src = 'assets/f1-mascot.jpg?v=35';
     if (mascotImg) {
-      mascotImg.src = 'assets/f1-mascot.jpg?v=34';
+      mascotImg.src = 'assets/f1-mascot.jpg?v=35';
       mascotImg.alt = 'Il Pilota Boomer 16-Bit';
+    }
+    const bannerMascot = document.querySelector('.banner-mascot-img');
+    if (bannerMascot) {
+      bannerMascot.src = 'assets/f1-mascot.jpg?v=35';
+      bannerMascot.alt = 'Il Pilota Boomer';
     }
     if (roleTag) roleTag.textContent = 'IL PILOTA BOOMER 🏎️';
     if ($('#mascotGreeting')) {
       $('#mascotGreeting').textContent = '"Senti il rombo dei V12 e l\'odore di gomma bruciata? Da Lauda e Senna a Schumi, qui conta la vera conoscenza dei motori!"';
     }
     if (leagueTrophy) {
-      leagueTrophy.src = 'assets/trophy-f1.jpg?v=34';
+      leagueTrophy.src = 'assets/trophy-f1.jpg?v=35';
       leagueTrophy.alt = 'Coppa dei Motori / Pistone d\'Oro';
     }
     if ($('#heroModeBadge')) $('#heroModeBadge').textContent = '🏎️ F1 • 1970 - 2024';
@@ -567,18 +572,45 @@ function updateSportUITheme() {
     if ($('#currentUnitBadgeText')) $('#currentUnitBadgeText').textContent = 'F1 BOOMER • 10 UNITÀ GP';
     if ($('#currentUnitBadgeIcon')) $('#currentUnitBadgeIcon').textContent = '🏎️';
     if (modeSwitcher) modeSwitcher.style.display = 'none';
+
+    // Sidebar navigation in F1
+    const gaelNav = document.querySelector('.sidebar-nav [data-gamemode="gael"]');
+    const pastoreNav = document.querySelector('.sidebar-nav [data-gamemode="pastore"]');
+    const quizNav = document.querySelector('.sidebar-nav [data-gamemode="quizzone"]');
+    if (gaelNav) gaelNav.style.display = 'none';
+    if (pastoreNav) pastoreNav.style.display = 'none';
+    if (quizNav) {
+      quizNav.querySelector('.nav-icon').textContent = '🏎️';
+      quizNav.querySelector('.nav-label').textContent = 'GP F1';
+    }
+    const promoHeader = document.querySelector('.promo-card-header div');
+    if (promoHeader) {
+      promoHeader.innerHTML = '<img src="assets/trophy-f1.jpg?v=35" alt="Coppa F1" class="promo-trophy-img" width="36" height="36" style="border-radius:10px;border:2px solid #ffffff;" />';
+    }
+    const promoBadge = document.querySelector('.sidebar-PromoCard .promo-badge');
+    if (promoBadge) promoBadge.textContent = '10 UNITÀ GP';
+    const promoTitle = document.querySelector('.sidebar-PromoCard h4');
+    if (promoTitle) promoTitle.textContent = 'Coppa dei Motori';
+    const promoDesc = document.querySelector('.sidebar-PromoCard p');
+    if (promoDesc) promoDesc.innerHTML = '<b>Quiz like a Boomer</b>: oltre 4.100 sfide storiche di Formula 1 dal 1970 ad oggi!';
+
   } else if (sp === 'basket') {
-    if (brandImg) brandImg.src = 'assets/basket-mascot.jpg?v=34';
+    if (brandImg) brandImg.src = 'assets/basket-mascot.jpg?v=35';
     if (mascotImg) {
-      mascotImg.src = 'assets/basket-mascot.jpg?v=34';
+      mascotImg.src = 'assets/basket-mascot.jpg?v=35';
       mascotImg.alt = 'Il Campione NBA 16-Bit';
+    }
+    const bannerMascot = document.querySelector('.banner-mascot-img');
+    if (bannerMascot) {
+      bannerMascot.src = 'assets/basket-mascot.jpg?v=35';
+      bannerMascot.alt = 'Il Campione NBA';
     }
     if (roleTag) roleTag.textContent = 'IL CAMPIONE NBA #23 🏀';
     if ($('#mascotGreeting')) {
       $('#mascotGreeting').textContent = '"Mancano 5 secondi sul cronometro dei 24: hai il sangue freddo per infilare il tiro sulla sirena come Jordan, Kobe o Curry?"';
     }
     if (leagueTrophy) {
-      leagueTrophy.src = 'assets/trophy-basket.jpg?v=34';
+      leagueTrophy.src = 'assets/trophy-basket.jpg?v=35';
       leagueTrophy.alt = 'Trofeo Larry O\'Brien / Anello NBA';
     }
     if ($('#heroModeBadge')) $('#heroModeBadge').textContent = '🏀 NBA • 1980 - 2024';
@@ -589,11 +621,63 @@ function updateSportUITheme() {
     if ($('#currentUnitBadgeText')) $('#currentUnitBadgeText').textContent = 'BASKET NBA • 10 UNITÀ FINALS';
     if ($('#currentUnitBadgeIcon')) $('#currentUnitBadgeIcon').textContent = '🏀';
     if (modeSwitcher) modeSwitcher.style.display = 'none';
+
+    // Sidebar navigation in Basket
+    const gaelNav = document.querySelector('.sidebar-nav [data-gamemode="gael"]');
+    const pastoreNav = document.querySelector('.sidebar-nav [data-gamemode="pastore"]');
+    const quizNav = document.querySelector('.sidebar-nav [data-gamemode="quizzone"]');
+    if (gaelNav) gaelNav.style.display = 'none';
+    if (pastoreNav) pastoreNav.style.display = 'none';
+    if (quizNav) {
+      quizNav.querySelector('.nav-icon').textContent = '🏀';
+      quizNav.querySelector('.nav-label').textContent = 'NBA FINALS';
+    }
+    const promoHeader = document.querySelector('.promo-card-header div');
+    if (promoHeader) {
+      promoHeader.innerHTML = '<img src="assets/trophy-basket.jpg?v=35" alt="Trofeo NBA" class="promo-trophy-img" width="36" height="36" style="border-radius:10px;border:2px solid #ff9600;" />';
+    }
+    const promoBadge = document.querySelector('.sidebar-PromoCard .promo-badge');
+    if (promoBadge) promoBadge.textContent = '10 UNITÀ FINALS';
+    const promoTitle = document.querySelector('.sidebar-PromoCard h4');
+    if (promoTitle) promoTitle.textContent = 'Trofeo Larry O\'Brien';
+    const promoDesc = document.querySelector('.sidebar-PromoCard p');
+    if (promoDesc) promoDesc.innerHTML = '<b>Buzzer Beater</b>: oltre 4.100 sfide storiche NBA dal 1980 ad oggi!';
+
   } else {
     // CALCIO
-    if (brandImg) brandImg.src = 'assets/mascot-coach.jpg?v=34';
+    if (brandImg) brandImg.src = 'assets/mascot-coach.jpg?v=35';
+    const bannerMascot = document.querySelector('.banner-mascot-img');
+    if (bannerMascot) {
+      bannerMascot.src = 'assets/mascot-coach.jpg?v=35';
+      bannerMascot.alt = 'Il Mister';
+    }
     if (modeSwitcher) modeSwitcher.style.display = 'grid';
     if ($('#currentUnitBadgeIcon')) $('#currentUnitBadgeIcon').textContent = '⚽';
+
+    // Sidebar navigation in Calcio
+    const gaelNav = document.querySelector('.sidebar-nav [data-gamemode="gael"]');
+    const pastoreNav = document.querySelector('.sidebar-nav [data-gamemode="pastore"]');
+    const quizNav = document.querySelector('.sidebar-nav [data-gamemode="quizzone"]');
+    if (gaelNav) gaelNav.style.display = '';
+    if (pastoreNav) pastoreNav.style.display = '';
+    if (quizNav) {
+      quizNav.querySelector('.nav-icon').textContent = '⚡';
+      quizNav.querySelector('.nav-label').textContent = 'QUIZZONE';
+    }
+    const promoHeader = document.querySelector('.promo-card-header div');
+    if (promoHeader) {
+      promoHeader.innerHTML = `
+        <img src="assets/trophy-quizzone.jpg?v=35" alt="Coppa Quizzone" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #1cb0f6;" />
+        <img src="assets/trophy-gael.jpg?v=35" alt="Coppa Gael League" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #58cc02;margin-left:-8px;" />
+        <img src="assets/trophy-pastore.jpg?v=35" alt="Coppa Pastore League" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #ffc800;margin-left:-8px;" />
+      `;
+    }
+    const promoBadge = document.querySelector('.sidebar-PromoCard .promo-badge');
+    if (promoBadge) promoBadge.textContent = '3 TROFEI 16-BIT';
+    const promoTitle = document.querySelector('.sidebar-PromoCard h4');
+    if (promoTitle) promoTitle.textContent = 'Coppe di Lega';
+    const promoDesc = document.querySelector('.sidebar-PromoCard p');
+    if (promoDesc) promoDesc.innerHTML = '<b>Quizzone</b> (15 Unità) + <b>Gael League</b> (10 Unità Hard &amp; PRO) + <b>Pastore League</b> (15 Unità sui marcatori di Serie A dal 1990 ad oggi).';
   }
 }
 
@@ -613,12 +697,30 @@ window.switchSport = async (targetSport) => {
   const modal = $('#sportModal');
   if (modal) modal.hidden = true;
 
+  // 1. Aggiornamento UI e tema istantaneo (zero lag per l'utente)
+  document.body.setAttribute('data-sport', targetSport);
   updateSportBadgeUI();
+  updateSportUITheme();
   updateTopStats();
 
+  // 2. Feedback visivo immediato nel percorso se il catalogo deve ancora essere scaricato
+  const container = $('#unitsContainer');
+  if (!loadedSportCatalogs[targetSport] && container) {
+    const sportName = targetSport === 'f1' ? 'F1 BOOMER (4.100+ SFIDE)' : targetSport === 'basket' ? 'BASKET NBA (4.100+ SFIDE)' : 'CALCIO (5.000+ SFIDE)';
+    const sportIcon = targetSport === 'f1' ? '🏎️' : targetSport === 'basket' ? '🏀' : '⚽';
+    container.innerHTML = `
+      <div style="text-align:center;padding:70px 20px;color:#ffffff;">
+        <div style="font-size:3.8rem;margin-bottom:14px;animation:pulseCurrentNode 1.2s infinite;">${sportIcon}</div>
+        <h3 style="font-size:1.35rem;font-weight:900;letter-spacing:0.5px;margin-bottom:8px;color:#ffffff;">Accensione ${sportName}...</h3>
+        <p style="opacity:0.8;font-size:0.95rem;max-width:440px;margin:0 auto;">Preparazione griglia di partenza e verifica sfide storiche verificate...</p>
+      </div>
+    `;
+  }
+
+  // 3. Caricamento del curriculum dello sport scelto
   await loadSportCurriculum(targetSport);
 
-  updateSportUITheme();
+  // 4. Se torniamo a calcio, riallinea modalità
   if (targetSport === 'calcio') {
     setGameMode(state.activeGameMode, false);
   }
@@ -647,6 +749,19 @@ async function loadCurriculum() {
   renderSnakePath();
 
   trackEvent('page_view', { sport: state.activeSport, is_logged_in: Boolean(currentCloudUser) });
+
+  // Precarica in background le altre categorie per click istantaneo a zero attesa
+  preloadOtherSportCurricula();
+}
+
+function preloadOtherSportCurricula() {
+  setTimeout(() => {
+    ['calcio', 'f1', 'basket'].forEach(sp => {
+      if (sp !== state.activeSport && !loadedSportCatalogs[sp]) {
+        loadSportCurriculum(sp);
+      }
+    });
+  }, 1800);
 }
 
 // -------------------------------------------------------------
@@ -1168,19 +1283,37 @@ function renderSnakePath() {
 // -------------------------------------------------------------
 function renderUnitJumpModal() {
   const list = $('#unitJumpList');
-  if (!list) return;
+  if (!list || !catalog || !Array.isArray(catalog.units)) return;
+
+  const sp = state.activeSport || 'calcio';
 
   list.innerHTML = catalog.units.map((unit, uIdx) => {
-    const uMode = unit.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
-    const isCurrentMode = uMode === state.activeGameMode;
+    let modeLabel = 'QUIZZONE';
+    let modeIcon = '⚡';
+    let unitOrder = uIdx + 1;
+    let isCurrentMode = true;
+
+    if (sp === 'f1') {
+      modeLabel = 'F1 BOOMER';
+      modeIcon = '🏎️';
+    } else if (sp === 'basket') {
+      modeLabel = 'BASKET NBA';
+      modeIcon = '🏀';
+    } else {
+      const uMode = unit.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
+      isCurrentMode = uMode === state.activeGameMode;
+      modeLabel = uMode === 'pastore' ? 'PASTORE LEAGUE' : uMode === 'gael' ? 'GAEL LEAGUE' : 'QUIZZONE';
+      modeIcon = uMode === 'pastore' ? '🎯' : uMode === 'gael' ? '👕' : '⚡';
+      const modeUnits = catalog.units.filter(u => (u.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore')) === uMode);
+      unitOrder = modeUnits.indexOf(unit) + 1;
+    }
+
     const unitTitle = unit.title || unit.name || `Unità ${uIdx + 1}`;
-    const modeLabel = uMode === 'pastore' ? 'PASTORE LEAGUE' : uMode === 'gael' ? 'GAEL LEAGUE' : 'QUIZZONE';
-    const modeIcon = uMode === 'pastore' ? '🎯' : uMode === 'gael' ? '👕' : '⚡';
-    const modeUnits = catalog.units.filter(u => (u.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore')) === uMode);
-    const unitOrder = modeUnits.indexOf(unit) + 1;
-    const done = unit.lessons.filter((_, lIdx) =>
-      state.completedLessons.includes(`u${uIdx + 1}-l${lIdx + 1}`)
-    ).length;
+    const done = unit.lessons.filter((_, lIdx) => {
+      const lessonKey = `${unit.id || `u${uIdx + 1}`}-l${lIdx + 1}`;
+      return state.completedLessons.includes(lessonKey) || state.completedLessons.includes(`u${uIdx + 1}-l${lIdx + 1}`);
+    }).length;
+
     return `
       <button class="unit-jump-item ${isCurrentMode ? 'active-mode-item' : ''}" type="button" onclick="jumpToUnit(${uIdx})">
         <small>${modeIcon} ${esc(modeLabel)} • U${unitOrder}</small>
@@ -1201,6 +1334,8 @@ window.jumpToUnit = (uIdx) => {
     const uMode = unit.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
     setGameMode(uMode, false);
     switchTab('path', uMode);
+  } else {
+    switchTab('path');
   }
 
   const unitTitle = unit.title || unit.name || '';
@@ -1705,10 +1840,18 @@ function renderCareerRouteBoxes(q, revealAll = false) {
       `;
     }).join('');
   } else if (q.route && q.route.length) {
+    const isF1 = state.activeSport === 'f1';
+    const isBasket = state.activeSport === 'basket';
+    const badgeStyle = isF1
+      ? 'background:#ffffff;border:2px solid #ffffff;border-radius:12px;padding:7px 12px;font-weight:900;font-size:13px;color:#e10600;box-shadow:0 3px 8px rgba(255,255,255,0.25);'
+      : isBasket
+        ? 'background:#1d428a;border:2px solid #f97316;border-radius:12px;padding:7px 12px;font-weight:900;font-size:13px;color:#ffffff;box-shadow:0 3px 8px rgba(249,115,22,0.3);'
+        : 'background:var(--duo-blue-tint);border:2px solid #93dbfc;border-radius:12px;padding:7px 12px;font-weight:900;font-size:13px;color:#0b699e;';
+
     routeBox.innerHTML = q.route.map((r, i) => `
       ${i > 0 ? '<span class="route-arrow-icon" aria-hidden="true">➔</span>' : ''}
       <div class="club-stop-item">
-        <div style="background:var(--duo-blue-tint);border:2px solid #93dbfc;border-radius:12px;padding:7px 12px;font-weight:900;font-size:13px;color:#0b699e;">
+        <div style="${badgeStyle}">
           ${esc(r[0])}
         </div>
         <span class="club-stop-name">${esc(r[1])}</span>

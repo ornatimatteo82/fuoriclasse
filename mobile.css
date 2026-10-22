@@ -88,6 +88,30 @@
     transform: translateY(-2px);
   }
 
+  body[data-sport="f1"] .duo-mobile-nav {
+    background: rgba(16, 16, 21, 0.96) !important;
+    border-top: 2px solid rgba(225, 6, 0, 0.4) !important;
+  }
+  body[data-sport="f1"] .mobile-nav-btn {
+    color: #cbd5e1 !important;
+  }
+  body[data-sport="f1"] .mobile-nav-btn.active {
+    color: #ffffff !important;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.7) !important;
+  }
+
+  body[data-sport="basket"] .duo-mobile-nav {
+    background: rgba(10, 17, 32, 0.96) !important;
+    border-top: 2px solid rgba(249, 115, 22, 0.4) !important;
+  }
+  body[data-sport="basket"] .mobile-nav-btn {
+    color: #cbd5e1 !important;
+  }
+  body[data-sport="basket"] .mobile-nav-btn.active {
+    color: #fb923c !important;
+    text-shadow: 0 0 10px rgba(249, 115, 22, 0.5) !important;
+  }
+
   /* Topbar compatta su schermi stretti */
   .section-title {
     display: none;

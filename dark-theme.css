@@ -182,3 +182,448 @@ body[data-theme="dark"] .duo-input {
   border-color: var(--border-light);
   color: #ffffff;
 }
+
+/* ==========================================================================
+   F1 BOOMER SPECIFIC THEME (NO AZZURRO — BIANCO PURO, ROSSO CORSA & CARBONIO)
+   ========================================================================== */
+body[data-sport="f1"],
+body[data-sport="f1"][data-theme="dark"] {
+  --bg-app: #101015 !important;
+  --bg-card: #181822 !important;
+  --bg-soft: #22222e !important;
+  --border-light: rgba(255, 255, 255, 0.22) !important;
+  --text-main: #ffffff !important;
+  --text-muted: #cbd5e1 !important;
+  --text-light: #94a3b8 !important;
+
+  background-color: #101015 !important;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(225, 6, 0, 0.22) 0%, transparent 60%),
+    radial-gradient(circle at 0% 40%, rgba(255, 255, 255, 0.05) 0%, transparent 40%),
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(225, 6, 0, 0.05) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px !important;
+  color: #ffffff !important;
+}
+
+/* Sidebar Nav in F1: NO AZZURRO -> BIANCO PURO E ROSSO */
+body[data-sport="f1"] .nav-item.active,
+body[data-sport="f1"][data-theme="dark"] .nav-item.active {
+  background: #ffffff !important;
+  color: #e10600 !important;
+  border: 2px solid #ffffff !important;
+  border-bottom: 4px solid #d1d5db !important;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.3) !important;
+}
+body[data-sport="f1"] .nav-item.active .nav-label,
+body[data-sport="f1"][data-theme="dark"] .nav-item.active .nav-label {
+  color: #e10600 !important;
+  font-weight: 900 !important;
+}
+body[data-sport="f1"] .nav-item.active .nav-icon,
+body[data-sport="f1"][data-theme="dark"] .nav-item.active .nav-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) !important;
+}
+body[data-sport="f1"] .nav-item:not(.active),
+body[data-sport="f1"][data-theme="dark"] .nav-item:not(.active) {
+  color: #cbd5e1 !important;
+}
+body[data-sport="f1"] .nav-item:not(.active):hover,
+body[data-sport="f1"][data-theme="dark"] .nav-item:not(.active):hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+/* Mobile Nav in F1: Bianco puro */
+body[data-sport="f1"] .duo-mobile-nav .mobile-nav-btn.active,
+body[data-sport="f1"][data-theme="dark"] .duo-mobile-nav .mobile-nav-btn.active {
+  color: #ffffff !important;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Banner PWA / Login in F1: BIANCO E CARBONIO (NO AZZURRO) */
+body[data-sport="f1"] .home-pwa-login-banner,
+body[data-sport="f1"][data-theme="dark"] .home-pwa-login-banner {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(225, 6, 0, 0.18) 100%) !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+body[data-sport="f1"] .banner-top-badge .badge-accent,
+body[data-sport="f1"][data-theme="dark"] .banner-top-badge .badge-accent {
+  background: #ffffff !important;
+  color: #e10600 !important;
+  font-weight: 900 !important;
+}
+body[data-sport="f1"] .banner-top-badge .badge-sub,
+body[data-sport="f1"][data-theme="dark"] .banner-top-badge .badge-sub {
+  color: #f1f5f9 !important;
+}
+body[data-sport="f1"] .banner-text-content h3,
+body[data-sport="f1"][data-theme="dark"] .banner-text-content h3 {
+  color: #ffffff !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+}
+body[data-sport="f1"] .banner-text-content p,
+body[data-sport="f1"][data-theme="dark"] .banner-text-content p {
+  color: #e2e8f0 !important;
+}
+body[data-sport="f1"] .banner-instructions-box,
+body[data-sport="f1"][data-theme="dark"] .banner-instructions-box {
+  background: rgba(22, 22, 30, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+body[data-sport="f1"] .banner-instructions-box .inst-line,
+body[data-sport="f1"][data-theme="dark"] .banner-instructions-box .inst-line {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+/* Macro Switcher in F1: Bianco puro e Rosso */
+body[data-sport="f1"] .macro-sport-btn[data-sport="f1"].active,
+body[data-theme="dark"] .macro-sport-btn[data-sport="f1"].active {
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+  border-bottom: 4px solid #cbd5e1 !important;
+  color: #111114 !important;
+  box-shadow: 0 4px 18px rgba(255, 255, 255, 0.35) !important;
+}
+body[data-sport="f1"] .macro-sport-btn[data-sport="f1"].active .macro-btn-text b,
+body[data-theme="dark"] .macro-sport-btn[data-sport="f1"].active .macro-btn-text b {
+  color: #e10600 !important;
+}
+
+/* Topbar in F1 */
+body[data-sport="f1"] .duo-topbar,
+body[data-sport="f1"][data-theme="dark"] .duo-topbar {
+  background: rgba(16, 16, 21, 0.96) !important;
+  border-bottom: 2px solid rgba(225, 6, 0, 0.5) !important;
+}
+body[data-sport="f1"] .sport-badge-btn,
+body[data-sport="f1"] .section-badge-btn,
+body[data-sport="f1"][data-theme="dark"] .sport-badge-btn,
+body[data-sport="f1"][data-theme="dark"] .section-badge-btn {
+  background: #ffffff !important;
+  color: #111114 !important;
+  border: 2px solid #ffffff !important;
+  border-bottom: 4px solid #cbd5e1 !important;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.25) !important;
+}
+body[data-sport="f1"] .sport-badge-btn .sport-title,
+body[data-sport="f1"] .section-badge-btn .section-title,
+body[data-sport="f1"][data-theme="dark"] .sport-badge-btn .sport-title,
+body[data-sport="f1"][data-theme="dark"] .section-badge-btn .section-title {
+  color: #111114 !important;
+  font-weight: 800 !important;
+}
+body[data-sport="f1"] .stat-item,
+body[data-sport="f1"][data-theme="dark"] .stat-item {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+body[data-sport="f1"] .comp-gems,
+body[data-sport="f1"][data-theme="dark"] .comp-gems {
+  color: #ffffff !important;
+}
+
+/* Hero Banner in F1 */
+body[data-sport="f1"] #heroBannerCard,
+body[data-sport="f1"][data-theme="dark"] #heroBannerCard {
+  background: linear-gradient(135deg, #14141c 0%, #260e12 50%, #e10600 100%) !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 16px 40px rgba(225, 6, 0, 0.4) !important;
+}
+body[data-sport="f1"] .hero-quick-btn,
+body[data-sport="f1"][data-theme="dark"] .hero-quick-btn {
+  background: #ffffff !important;
+  color: #e10600 !important;
+  border: 2px solid #ffffff !important;
+  border-bottom: 5px solid #cbd5e1 !important;
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.3) !important;
+  font-weight: 900 !important;
+}
+body[data-sport="f1"] .hero-quick-btn:hover,
+body[data-sport="f1"][data-theme="dark"] .hero-quick-btn:hover {
+  background: #f1f5f9 !important;
+  color: #b80500 !important;
+}
+
+/* Nodi Percorso in F1 (NO AZZURRO) */
+body[data-sport="f1"] .path-node-btn.current,
+body[data-sport="f1"][data-theme="dark"] .path-node-btn.current {
+  background: linear-gradient(180deg, #ff2a24 0%, #e10600 100%) !important;
+  border: 3px solid #ffffff !important;
+  border-bottom: 6px solid #850300 !important;
+  box-shadow: 0 8px 24px rgba(225, 6, 0, 0.6) !important;
+}
+body[data-sport="f1"] .path-node-btn.completed,
+body[data-sport="f1"][data-theme="dark"] .path-node-btn.completed {
+  background: linear-gradient(180deg, #850300 0%, #520200 100%) !important;
+  border: 3px solid #ff4d4d !important;
+  border-bottom: 5px solid #330000 !important;
+}
+body[data-sport="f1"] .path-node-btn.unlocked,
+body[data-sport="f1"][data-theme="dark"] .path-node-btn.unlocked {
+  background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%) !important;
+  border: 3px solid #ffffff !important;
+  border-bottom: 6px solid #cbd5e1 !important;
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.25) !important;
+  color: #e10600 !important;
+}
+body[data-sport="f1"] .start-bubble-tag,
+body[data-sport="f1"][data-theme="dark"] .start-bubble-tag {
+  background: #ffffff !important;
+  color: #e10600 !important;
+  border: 2px solid #e10600 !important;
+}
+body[data-sport="f1"] .start-bubble-tag::after,
+body[data-sport="f1"][data-theme="dark"] .start-bubble-tag::after {
+  background: #ffffff !important;
+}
+
+/* Unit Banner in F1 */
+body[data-sport="f1"] .unit-banner-card,
+body[data-sport="f1"][data-theme="dark"] .unit-banner-card {
+  background: linear-gradient(135deg, #181822 0%, #291014 60%, #e10600 100%) !important;
+  border: 2px solid rgba(255, 255, 255, 0.35) !important;
+  border-left: 6px solid #ffffff !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5) !important;
+}
+body[data-sport="f1"] .unit-banner-card small,
+body[data-sport="f1"][data-theme="dark"] .unit-banner-card small {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+body[data-sport="f1"] .unit-progress-pill,
+body[data-sport="f1"][data-theme="dark"] .unit-progress-pill {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+body[data-sport="f1"] .guidebook-btn,
+body[data-sport="f1"][data-theme="dark"] .guidebook-btn {
+  background: #ffffff !important;
+  color: #111114 !important;
+  border: 1.5px solid #ffffff !important;
+}
+
+/* Quiz UI in F1 (NO AZZURRO) */
+body[data-sport="f1"] .duo-quiz-overlay,
+body[data-sport="f1"][data-theme="dark"] .duo-quiz-overlay {
+  background: #101015 !important;
+}
+body[data-sport="f1"] .quiz-progress-track,
+body[data-sport="f1"][data-theme="dark"] .quiz-progress-track {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+body[data-sport="f1"] .quiz-progress-fill,
+body[data-sport="f1"][data-theme="dark"] .quiz-progress-fill {
+  background: linear-gradient(90deg, #e10600 0%, #ffffff 100%) !important;
+}
+body[data-sport="f1"] .speech-bubble,
+body[data-sport="f1"][data-theme="dark"] .speech-bubble {
+  background: #181822 !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+body[data-sport="f1"] .speech-bubble h2,
+body[data-sport="f1"][data-theme="dark"] .speech-bubble h2 {
+  color: #ffffff !important;
+}
+body[data-sport="f1"] .answer-card-btn,
+body[data-sport="f1"][data-theme="dark"] .answer-card-btn {
+  background: #181822 !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+body[data-sport="f1"] .answer-card-btn:hover:not(:disabled),
+body[data-sport="f1"][data-theme="dark"] .answer-card-btn:hover:not(:disabled) {
+  border-color: #ffffff !important;
+  background: #242432 !important;
+}
+body[data-sport="f1"] .answer-card-btn.selected,
+body[data-sport="f1"][data-theme="dark"] .answer-card-btn.selected {
+  background: #ffffff !important;
+  color: #111114 !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.3) !important;
+}
+body[data-sport="f1"] .answer-card-btn.selected .key-badge,
+body[data-sport="f1"][data-theme="dark"] .answer-card-btn.selected .key-badge {
+  background: #e10600 !important;
+  color: #ffffff !important;
+}
+body[data-sport="f1"] .btn-secondary,
+body[data-sport="f1"][data-theme="dark"] .btn-secondary {
+  background: #ffffff !important;
+  color: #111114 !important;
+  border-color: #ffffff !important;
+  border-bottom: 4px solid #cbd5e1 !important;
+}
+body[data-sport="f1"] .btn-primary,
+body[data-sport="f1"][data-theme="dark"] .btn-primary {
+  background: linear-gradient(180deg, #ff2620 0%, #e10600 100%) !important;
+  border-color: #ff4d4d !important;
+  border-bottom: 5px solid #850300 !important;
+  color: #ffffff !important;
+}
+
+/* Modals & Unit Jump in F1 */
+body[data-sport="f1"] .duo-modal-card,
+body[data-sport="f1"][data-theme="dark"] .duo-modal-card {
+  background: #161622 !important;
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+}
+body[data-sport="f1"] .unit-jump-item.active-mode-item,
+body[data-sport="f1"][data-theme="dark"] .unit-jump-item.active-mode-item {
+  border-color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* ==========================================================================
+   BASKET NBA SPECIFIC THEME (ROYAL BLUE, HARDWOOD ORANGE & ARENA MIDNIGHT)
+   ========================================================================== */
+body[data-sport="basket"],
+body[data-sport="basket"][data-theme="dark"] {
+  --bg-app: #0a1120 !important;
+  --bg-card: #111c33 !important;
+  --bg-soft: #192a4a !important;
+  --border-light: rgba(249, 115, 22, 0.3) !important;
+  --text-main: #f8fafc !important;
+  --text-muted: #cbd5e1 !important;
+  --text-light: #94a3b8 !important;
+
+  background-color: #0a1120 !important;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.25) 0%, transparent 60%),
+    radial-gradient(circle at 0% 30%, rgba(29, 66, 138, 0.3) 0%, transparent 45%),
+    linear-gradient(rgba(249, 115, 22, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29, 66, 138, 0.05) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px !important;
+  color: #f8fafc !important;
+}
+
+body[data-sport="basket"] .duo-topbar,
+body[data-sport="basket"][data-theme="dark"] .duo-topbar {
+  background: rgba(11, 18, 32, 0.96) !important;
+  border-bottom: 2px solid rgba(249, 115, 22, 0.5) !important;
+}
+
+body[data-sport="basket"] .nav-item.active,
+body[data-sport="basket"][data-theme="dark"] .nav-item.active {
+  background: linear-gradient(135deg, #1d428a 0%, #15326c 100%) !important;
+  color: #fb923c !important;
+  border: 2px solid #f97316 !important;
+  border-bottom: 4px solid #9a3412 !important;
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.3) !important;
+}
+body[data-sport="basket"] .nav-item.active .nav-label,
+body[data-sport="basket"][data-theme="dark"] .nav-item.active .nav-label {
+  color: #fb923c !important;
+  font-weight: 800 !important;
+}
+
+body[data-sport="basket"] .duo-mobile-nav .mobile-nav-btn.active,
+body[data-sport="basket"][data-theme="dark"] .duo-mobile-nav .mobile-nav-btn.active {
+  color: #fb923c !important;
+  text-shadow: 0 0 10px rgba(249, 115, 22, 0.5) !important;
+}
+
+body[data-sport="basket"] .home-pwa-login-banner,
+body[data-sport="basket"][data-theme="dark"] .home-pwa-login-banner {
+  background: linear-gradient(135deg, rgba(29, 66, 138, 0.25) 0%, rgba(249, 115, 22, 0.15) 100%) !important;
+  border: 2px solid #f97316 !important;
+}
+body[data-sport="basket"] .banner-top-badge .badge-accent,
+body[data-sport="basket"][data-theme="dark"] .banner-top-badge .badge-accent {
+  background: #f97316 !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+}
+
+body[data-sport="basket"] .macro-sport-btn[data-sport="basket"].active,
+body[data-theme="dark"] .macro-sport-btn[data-sport="basket"].active {
+  background: linear-gradient(135deg, #1d428a 0%, #0f244e 100%) !important;
+  border-color: #f97316 !important;
+  border-bottom: 4px solid #9a3412 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 18px rgba(249, 115, 22, 0.35) !important;
+}
+body[data-sport="basket"] .macro-sport-btn[data-sport="basket"].active .macro-btn-text b,
+body[data-theme="dark"] .macro-sport-btn[data-sport="basket"].active .macro-btn-text b {
+  color: #fb923c !important;
+}
+
+body[data-sport="basket"] #heroBannerCard,
+body[data-sport="basket"][data-theme="dark"] #heroBannerCard {
+  background: linear-gradient(135deg, #101c30 0%, #1d428a 50%, #ea580c 100%) !important;
+  border: 2px solid #f97316 !important;
+  box-shadow: 0 16px 40px rgba(249, 115, 22, 0.35) !important;
+}
+body[data-sport="basket"] .hero-quick-btn,
+body[data-sport="basket"][data-theme="dark"] .hero-quick-btn {
+  background: linear-gradient(180deg, #f97316 0%, #c2410c 100%) !important;
+  border-color: #ff9843 !important;
+  border-bottom: 5px solid #7c2d12 !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.5) !important;
+}
+
+body[data-sport="basket"] .path-node-btn.current,
+body[data-sport="basket"][data-theme="dark"] .path-node-btn.current {
+  background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%) !important;
+  border: 3px solid #ffffff !important;
+  border-bottom: 6px solid #9a3412 !important;
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.6) !important;
+}
+body[data-sport="basket"] .path-node-btn.completed,
+body[data-sport="basket"][data-theme="dark"] .path-node-btn.completed {
+  background: linear-gradient(180deg, #c2410c 0%, #7c2d12 100%) !important;
+  border-bottom: 5px solid #431407 !important;
+}
+body[data-sport="basket"] .path-node-btn.unlocked,
+body[data-sport="basket"][data-theme="dark"] .path-node-btn.unlocked {
+  background: linear-gradient(180deg, #ffedd5 0%, #fed7aa 100%) !important;
+  border: 3px solid #ffffff !important;
+  border-bottom: 6px solid #ea580c !important;
+  color: #7c2d12 !important;
+}
+
+body[data-sport="basket"] .unit-banner-card,
+body[data-sport="basket"][data-theme="dark"] .unit-banner-card {
+  background: linear-gradient(135deg, #132034 0%, #1e314e 100%) !important;
+  border-left: 6px solid #f97316 !important;
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.15) !important;
+}
+body[data-sport="basket"] .unit-banner-card small,
+body[data-sport="basket"][data-theme="dark"] .unit-banner-card small {
+  color: #fb923c !important;
+}
+body[data-sport="basket"] .unit-progress-pill,
+body[data-sport="basket"][data-theme="dark"] .unit-progress-pill {
+  background: rgba(249, 115, 22, 0.25) !important;
+  color: #ffc800 !important;
+  border-color: rgba(249, 115, 22, 0.5) !important;
+}
+
+body[data-sport="basket"] .duo-quiz-overlay,
+body[data-sport="basket"][data-theme="dark"] .duo-quiz-overlay {
+  background: #0a1120 !important;
+}
+body[data-sport="basket"] .quiz-progress-fill,
+body[data-sport="basket"][data-theme="dark"] .quiz-progress-fill {
+  background: linear-gradient(90deg, #ea580c 0%, #f97316 100%) !important;
+}
+body[data-sport="basket"] .answer-card-btn.selected,
+body[data-sport="basket"][data-theme="dark"] .answer-card-btn.selected {
+  background: #1d428a !important;
+  color: #ffffff !important;
+  border-color: #f97316 !important;
+}
+body[data-sport="basket"] .answer-card-btn.selected .key-badge,
+body[data-sport="basket"][data-theme="dark"] .answer-card-btn.selected .key-badge {
+  background: #f97316 !important;
+  color: #ffffff !important;
+}

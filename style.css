@@ -2926,6 +2926,133 @@ body[data-sport="f1"] .unit-progress-pill {
 }
 
 /* ========================================================
+   F1 OVERRIDES: NO AZZURRO / USA BIANCO PURO E ROSSO CORSA
+   ======================================================== */
+/* Sidebar Nav Item Active in F1: Bianco puro con testo rosso (NO AZZURRO) */
+body[data-sport="f1"] .nav-item.active {
+  background: #ffffff !important;
+  color: #e10600 !important;
+  border-color: #ffffff !important;
+  border-bottom: 4px solid #d1d5db !important;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.3) !important;
+}
+body[data-sport="f1"] .nav-item.active .nav-label {
+  color: #e10600 !important;
+}
+body[data-sport="f1"] .nav-item.active .nav-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+body[data-sport="f1"] .nav-item:not(.active) {
+  color: #cbd5e1 !important;
+}
+body[data-sport="f1"] .nav-item:not(.active):hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+/* Banner PWA / Login in F1: Bianco puro e Carbonio (NO AZZURRO) */
+body[data-sport="f1"] .home-pwa-login-banner {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(225, 6, 0, 0.16) 100%) !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+body[data-sport="f1"] .banner-top-badge .badge-accent {
+  background: #ffffff !important;
+  color: #e10600 !important;
+  font-weight: 900 !important;
+}
+body[data-sport="f1"] .banner-top-badge .badge-sub {
+  color: #f1f5f9 !important;
+}
+body[data-sport="f1"] .banner-text-content h3 {
+  color: #ffffff !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+}
+body[data-sport="f1"] .banner-text-content p {
+  color: #e2e8f0 !important;
+}
+body[data-sport="f1"] .banner-instructions-box .inst-line {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+body[data-sport="f1"] .inst-os-badge {
+  color: #ffffff !important;
+}
+
+/* Topbar Buttons in F1: Bianco puro */
+body[data-sport="f1"] .sport-badge-btn,
+body[data-sport="f1"] .section-badge-btn {
+  background: #ffffff !important;
+  color: #111114 !important;
+  border: 2px solid #ffffff !important;
+  border-bottom: 4px solid #d1d5db !important;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.2) !important;
+}
+body[data-sport="f1"] .sport-badge-btn .sport-title,
+body[data-sport="f1"] .section-badge-btn .section-title {
+  color: #111114 !important;
+}
+body[data-sport="f1"] .stat-item {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+/* Sidebar PromoCard in F1 */
+body[data-sport="f1"] .sidebar-PromoCard {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #f8fafc !important;
+}
+body[data-sport="f1"] .sidebar-PromoCard h4 {
+  color: #ffffff !important;
+}
+body[data-sport="f1"] .sidebar-PromoCard p {
+  color: #cbd5e1 !important;
+}
+body[data-sport="f1"] .sidebar-PromoCard .promo-badge {
+  background: #ffffff !important;
+  color: #e10600 !important;
+  font-weight: 900 !important;
+}
+
+/* Quiz questions in F1 (NO AZZURRO: USA BIANCO E ROSSO) */
+body[data-sport="f1"] .quiz-progress-fill {
+  background: linear-gradient(90deg, #ff3333 0%, #ffffff 100%) !important;
+}
+body[data-sport="f1"] .answer-card-btn.selected {
+  background: #ffffff !important;
+  color: #111114 !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.3) !important;
+}
+body[data-sport="f1"] .answer-card-btn.selected .key-badge {
+  background: #e10600 !important;
+  color: #ffffff !important;
+}
+
+body[data-sport="f1"] .path-node-btn.unlocked {
+  background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%) !important;
+  border: 3px solid #ffffff !important;
+  border-bottom: 6px solid #cbd5e1 !important;
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.25) !important;
+  color: #e10600 !important;
+}
+body[data-sport="f1"] .start-bubble-tag {
+  background: #ffffff !important;
+  color: #e10600 !important;
+  border: 2px solid #e10600 !important;
+}
+body[data-sport="f1"] .start-bubble-tag::after {
+  background: #ffffff !important;
+}
+body[data-sport="f1"] .duo-mobile-nav .mobile-nav-btn.active {
+  color: #ffffff !important;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.6) !important;
+}
+
+/* ========================================================
    TEMA SPECIFICO NBA BASKET (PARQUET & ARENA ROYAL/ORANGE)
    ======================================================== */
 body[data-sport="basket"] {
