@@ -1590,8 +1590,52 @@ const AMAZON_FOOTBALL_DEALS = [
   }
 ];
 
+const AMAZON_F1_DEALS = [
+  {
+    emoji: '🏎️',
+    title: "Modellini Formula 1 & Caschi Storici",
+    sub: "Ferrari, McLaren di Senna e leggende della pista",
+    url: `https://www.amazon.it/s?k=modellini+formula+1&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
+  },
+  {
+    emoji: '📚',
+    title: "Libri & Biografie F1 (Lauda, Senna, Schumi)",
+    sub: "I duelli e i segreti dell'era d'oro dei motori",
+    url: `https://www.amazon.it/s?k=libri+formula+1&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
+  },
+  {
+    emoji: '🎮',
+    title: "EA Sports F1 & Volanti da Corsa",
+    sub: "I videogiochi e le periferiche da simulazione pura",
+    url: `https://www.amazon.it/s?k=f1+videogioco+volante&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
+  }
+];
+
+const AMAZON_BASKET_DEALS = [
+  {
+    emoji: '🏀',
+    title: "Canotte NBA Vintage & Retro Jersey",
+    sub: "Bulls #23 Jordan, Lakers Kobe, Celtics Bird",
+    url: `https://www.amazon.it/s?k=canotte+nba+vintage&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
+  },
+  {
+    emoji: '📚',
+    title: "Libri & Biografie NBA (Jordan, Kobe, LeBron)",
+    sub: "The Last Dance, Mamba Mentality e la storia dell'anello",
+    url: `https://www.amazon.it/s?k=libri+basket+nba&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
+  },
+  {
+    emoji: '🎮',
+    title: "NBA 2K & Palloni Ufficiali Wilson",
+    sub: "Sfide virtuali e tiri a canestro sul campetto",
+    url: `https://www.amazon.it/s?k=nba+2k+pallone+wilson&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
+  }
+];
+
 function updateAmazonSponsorCard() {
-  const deal = AMAZON_FOOTBALL_DEALS[Math.floor(Math.random() * AMAZON_FOOTBALL_DEALS.length)];
+  const sp = state.activeSport || 'calcio';
+  const dealsPool = sp === 'f1' ? AMAZON_F1_DEALS : sp === 'basket' ? AMAZON_BASKET_DEALS : AMAZON_FOOTBALL_DEALS;
+  const deal = dealsPool[Math.floor(Math.random() * dealsPool.length)];
   const emojiEl = $('#amazonItemEmoji');
   const titleEl = $('#amazonItemTitle');
   const subEl = $('#amazonItemSub');
