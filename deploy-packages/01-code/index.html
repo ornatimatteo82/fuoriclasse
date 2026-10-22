@@ -1,0 +1,1213 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
+  <meta name="description" content="Fuoriclasse — Gael League (indovina il calciatore dalla carriera Anni '90 e 2000) & Quizzocampo (il grande quiz del calcio). 1.380+ sfide verificate." />
+  <meta name="theme-color" content="#101b24" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Fuoriclasse" />
+  <title>Fuoriclasse — Gael League &amp; Quizzocampo</title>
+
+  <link rel="manifest" href="manifest.webmanifest?v=34" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg?v=34" />
+  <link rel="apple-touch-icon" href="assets/mascot-coach.jpg?v=34" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="stylesheet" href="style.css?v=34" />
+  <link rel="stylesheet" href="mobile.css?v=34" />
+  <link rel="stylesheet" href="dark-theme.css?v=34" />
+  <script>
+    (function() {
+      try {
+        // Pulizia iniziale proattiva cache Service Worker per garantire aggiornamenti istantanei
+        if ('caches' in window) {
+          caches.keys().then(function(keys) {
+            return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+          });
+        }
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(regs) {
+            regs.forEach(function(r) {
+              var scriptUrl = (r.active && r.active.scriptURL) || (r.installing && r.installing.scriptURL) || '';
+              if (scriptUrl.indexOf('v=34') === -1) {
+                r.unregister();
+              } else {
+                r.update();
+              }
+            });
+          });
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- GOATCOUNTER PRIVACY ANALYTICS (ZERO COOKIE, 3.5KB) -->
+  <script data-goatcounter="https://fuoriclasse.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body data-theme="light">
+  <a class="skip-link" href="#mainStage">Vai al percorso di gioco</a>
+
+  <!-- TOP GAMIFICATION BAR -->
+  <header class="duo-topbar" role="banner">
+    <div class="topbar-inner">
+      <a href="#percorso" class="brand-pill" aria-label="Fuoriclasse Home" id="brandHomeLink">
+        <span class="brand-logo-wrap">
+          <img src="assets/mascot-coach.jpg" alt="Il Mister #10" class="brand-avatar-img" width="36" height="36" />
+          <span class="brand-online-dot" aria-hidden="true"></span>
+        </span>
+        <span class="brand-wordmark">FUORICLASSE</span>
+      </a>
+
+      <!-- Selettore Macro Sport (Calcio, F1 Boomer, Basket NBA) -->
+      <button class="sport-badge-btn" id="sportSelectorBtn" type="button" title="Scegli Categoria Sportiva (Calcio, F1 Boomer, Basket NBA)">
+        <span class="sport-emoji" id="currentSportEmoji" aria-hidden="true">⚽</span>
+        <span class="sport-title" id="currentSportText">CALCIO</span>
+        <span class="chevron-down" aria-hidden="true">▾</span>
+      </button>
+
+      <!-- Selettore rapido Unità -->
+      <button class="section-badge-btn" id="sectionDropdownBtn" type="button" title="Salta a un'Unità">
+        <span class="flag-icon" aria-hidden="true" id="currentUnitBadgeIcon">👕</span>
+        <span class="section-title" id="currentUnitBadgeText">GAEL LEAGUE • ANNI '90</span>
+        <span class="chevron-down" aria-hidden="true">▾</span>
+      </button>
+
+      <!-- Statistiche Giocatore (Streak, Calcio-Coins, Vite) -->
+      <div class="gamification-stats" role="status" aria-label="Statistiche giocatore">
+        <div class="stat-item stat-streak" id="topStreakPillBtn" title="Clicca per visualizzare la Fiamma e i premi Streak per Categoria" style="cursor:pointer;">
+          <span class="stat-emoji" aria-hidden="true">🔥</span>
+          <b id="streakCount">1</b>
+        </div>
+        <div class="stat-item stat-gems" title="Calcio-Coins (Gemme)">
+          <span class="stat-emoji" aria-hidden="true">💎</span>
+          <b id="gemsCount">250</b>
+        </div>
+        <div class="stat-item stat-hearts" id="topHeartsPillBtn" title="Clicca per ricaricare le Vite (Sistema Freemium)" style="cursor:pointer;">
+          <span class="stat-emoji" aria-hidden="true">❤️</span>
+          <b id="heartsCount">5</b>
+        </div>
+      </div>
+
+      <!-- Azioni rapide (Login / Username, Audio Stadio Disattivabile & Tema Notturno) -->
+      <div class="topbar-tools">
+        <button class="tool-btn user-pill-btn" id="topUserLoginBtn" type="button" title="Accedi con Google o cambia il tuo Username">
+          <span id="topUserIcon" aria-hidden="true">👤</span>
+          <span id="topUserNameText" class="user-pill-label">ACCEDI</span>
+        </button>
+        <button class="tool-btn audio-pill-btn" id="audioToggle" type="button" aria-pressed="true" title="Attiva/Disattiva Suoni Stadio (Goal &amp; Boato)">
+          <span id="audioIcon" aria-hidden="true">🔊</span>
+          <span id="audioLabelText" class="audio-pill-label">SUONI ON</span>
+        </button>
+        <button class="tool-btn" id="themeToggle" type="button" aria-label="Cambia tema chiaro/scuro" title="Modalità Notturna / Diurna">
+          <span id="themeIcon" aria-hidden="true">🌙</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- SHELL PRINCIPALE A 3 COLONNE -->
+  <div class="duo-shell">
+
+    <!-- SIDEBAR NAVIGAZIONE DESKTOP -->
+    <aside class="duo-sidebar" aria-label="Menu principale">
+      <nav class="sidebar-nav">
+        <a href="#quizzone" class="nav-item active" data-tab="path" data-gamemode="quizzone">
+          <span class="nav-icon" aria-hidden="true">⚡</span>
+          <span class="nav-label">QUIZZONE</span>
+        </a>
+        <a href="#gael-league" class="nav-item" data-tab="path" data-gamemode="gael">
+          <span class="nav-icon" aria-hidden="true">👕</span>
+          <span class="nav-label">GAEL LEAGUE</span>
+        </a>
+        <a href="#pastore-league" class="nav-item" data-tab="path" data-gamemode="pastore">
+          <span class="nav-icon" aria-hidden="true">🎯</span>
+          <span class="nav-label">PASTORE LEAGUE</span>
+        </a>
+        <a href="#classifica" class="nav-item" data-tab="league">
+          <span class="nav-icon" aria-hidden="true">🏆</span>
+          <span class="nav-label">CLASSIFICA</span>
+        </a>
+        <a href="#missioni" class="nav-item" data-tab="quests">
+          <span class="nav-icon" aria-hidden="true">🎯</span>
+          <span class="nav-label">MISSIONI</span>
+        </a>
+        <a href="#profilo" class="nav-item" data-tab="profile">
+          <span class="nav-icon" aria-hidden="true">👤</span>
+          <span class="nav-label">PROFILO</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-PromoCard">
+        <div class="promo-card-header">
+          <div style="display:flex;align-items:center;margin-right:6px;">
+            <img src="assets/trophy-quizzone.jpg?v=33" alt="Coppa Quizzone" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #1cb0f6;" />
+            <img src="assets/trophy-gael.jpg?v=33" alt="Coppa Gael League" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #58cc02;margin-left:-8px;" />
+            <img src="assets/trophy-pastore.jpg?v=33" alt="Coppa Pastore League" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #ffc800;margin-left:-8px;" />
+          </div>
+          <div>
+            <span class="promo-badge">3 TROFEI 16-BIT</span>
+            <h4>Coppe di Lega</h4>
+          </div>
+        </div>
+        <p><b>Quizzone</b> (15 Unità) + <b>Gael League</b> (10 Unità Hard &amp; PRO) + <b>Pastore League</b> (15 Unità sui marcatori di Serie A dal 1990 ad oggi).</p>
+        <div class="sidebar-promo-actions">
+          <button class="btn-secondary btn-sm w-full" id="sidebarSourcesBtn" type="button">📚 Fonti &amp; Archivio</button>
+          <button class="btn-outline btn-sm w-full" id="sidebarDeployBtn" type="button">👤 Spogliatoio &amp; Login</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- AREA CENTRALE PRINCIPALE -->
+    <main class="duo-main" id="mainStage">
+
+      <!-- =========================================================
+           TAB 1: PERCORSO DIVISO PER LE 3 TIPOLOGIE DI GIOCO
+           (QUIZZONE vs GAEL LEAGUE vs PASTORE LEAGUE)
+           ========================================================= -->
+      <section class="view-panel active" id="view-path" aria-label="Percorso di gioco">
+
+        <!-- BANNER ISTRUZIONI LOGIN & INSTALLAZIONE PWA (Scompare se in PWA o loggato) -->
+        <div class="home-pwa-login-banner" id="homeInstallLoginBanner" style="display:none;">
+          <div class="banner-top-badge">
+            <span class="badge-accent">⚡ ESPERIENZA COMPLETA</span>
+            <span class="badge-sub">SALVATAGGIO CLOUD &amp; PWA A SCHERMO INTERO</span>
+            <button class="banner-close-btn" id="btnBannerDismiss" type="button" aria-label="Chiudi avviso">✕</button>
+          </div>
+          <div class="banner-body-grid">
+            <div class="banner-text-content">
+              <h3>📱 Salva la tua Carriera &amp; Gioca a Schermo Intero!</h3>
+              <p>
+                Accedi con <b>Google</b> con 1 solo clic per non perdere mai vite, XP, streak e personalizzare il tuo Nickname nella Classifica.
+                Installa <b>Fuoriclasse PWA</b> sul tuo telefono o PC per giocare a schermo intero come una vera app!
+              </p>
+              <div class="banner-instructions-box">
+                <div class="inst-line">
+                  <span class="inst-os-badge">🍏 Su iPhone / iPad (Safari):</span>
+                  <span>Tocca l'icona <b>Condividi</b> <span class="inst-icon">⎘</span> in basso su Safari e premi <b>"Aggiungi a schermata Home" ➕</b>.</span>
+                </div>
+                <div class="inst-line">
+                  <span class="inst-os-badge">🤖 Su Android / Chrome / PC:</span>
+                  <span>Premi il pulsante verde qui sotto oppure apri il menu <span class="inst-icon">⋮</span> e seleziona <b>"Installa app" 📲</b>.</span>
+                </div>
+              </div>
+              <div class="banner-btn-group">
+                <button class="btn-primary btn-banner-action" id="btnBannerLoginGoogle" type="button">
+                  <svg width="18" height="18" viewBox="0 0 24 24" style="margin-right:7px;vertical-align:middle;"><path fill="#ffffff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#ffffff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#ffffff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#ffffff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                  <span>ACCEDI CON GOOGLE</span>
+                </button>
+                <button class="btn-outline btn-banner-action" id="btnBannerInstallPwa" type="button">
+                  <span>📲 INSTALLA PWA ORA</span>
+                </button>
+              </div>
+            </div>
+            <div class="banner-mascot-preview" aria-hidden="true">
+              <img src="assets/mascot-coach.jpg" alt="Fuoriclasse" class="banner-mascot-img" width="84" height="84" />
+            </div>
+          </div>
+        </div>
+
+        <!-- SWITCHER PRINCIPALE MODALITÀ DI GIOCO (QUIZZONE vs GAEL LEAGUE vs PASTORE LEAGUE) -->
+        <div class="game-mode-switcher mode-switcher-3" role="tablist" aria-label="Scegli la tipologia di gioco">
+          <button class="mode-switch-btn active" id="switchModeQuiz" data-mode="quizzone" type="button" role="tab" aria-selected="true">
+            <span class="mode-switch-icon">
+              <img src="assets/mascot-coach.jpg?v=33" alt="" width="32" height="32" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
+            </span>
+            <div class="mode-switch-text">
+              <b>QUIZZONE (15 UNITÀ)</b>
+              <small>Record, Scudetti, Notti di Champions, Derby ed Esame Finale!</small>
+            </div>
+          </button>
+          <button class="mode-switch-btn" id="switchModeGael" data-mode="gael" type="button" role="tab" aria-selected="false">
+            <span class="mode-switch-icon">
+              <img src="assets/gael-mascot.jpg?v=33" alt="" width="32" height="32" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
+            </span>
+            <div class="mode-switch-text">
+              <b>GAEL LEAGUE (10 UNITÀ HARD)</b>
+              <small>Cult heroes, bomber di provincia, meteore e livelli PRO con Club Misteriosi ❓</small>
+            </div>
+          </button>
+          <button class="mode-switch-btn" id="switchModePastore" data-mode="pastore" type="button" role="tab" aria-selected="false">
+            <span class="mode-switch-icon">
+              <img src="assets/pastore-mascot.jpg?v=33" alt="" width="32" height="32" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
+            </span>
+            <div class="mode-switch-text">
+              <b>PASTORE LEAGUE (15 UNITÀ)</b>
+              <small>2.000 sfide sui Marcatori di Serie A dal 1990 ad oggi con Giuseppe Pastore!</small>
+            </div>
+          </button>
+        </div>
+
+        <!-- HERO BANNER STADIO + IL MISTER #10 -->
+        <div class="path-header-banner" id="heroBannerCard">
+          <div class="hero-stadium-backdrop" aria-hidden="true"></div>
+          <div class="hero-content-grid">
+            <div class="path-header-copy">
+              <div class="hero-pills-row">
+                <span class="eyebrow-pill" id="heroModeBadge">👕 GAEL LEAGUE UFFICIALE</span>
+                <span class="eyebrow-pill pill-glass" id="heroPoolBadge">100+ CARRIERE ANNI '90 &amp; 2000</span>
+                <span class="eyebrow-pill pill-glass" id="heroProgressPill">1 / 60 TAPPE</span>
+              </div>
+              <h1 id="heroTitle">Gael League: Indovina chi è!</h1>
+              <p id="heroDescription">Osserva le maglie e gli anni di trasferimento dei campioni degli <b>Anni '90 e Primi 2000</b> e indovina il calciatore misterioso.</p>
+              <div class="hero-cta-row">
+                <button class="btn-primary btn-hero-play" id="heroQuickPlayBtn" type="button">
+                  <span id="heroQuickPlayText">GIOCA GAEL LEAGUE</span>
+                  <span aria-hidden="true">⚡</span>
+                </button>
+                <button class="btn-glass-light" id="heroJumpUnitBtn" type="button">
+                  <span>🗺️ Scegli Unità</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Il Mister #10 -->
+            <div class="hero-mascot-card">
+              <div class="hero-mascot-avatar-wrap">
+                <img src="assets/mascot-coach.jpg" alt="Il Mister #10 — Allenatore Giocatore" class="hero-mascot-img" width="96" height="96" />
+                <span class="mascot-role-tag">IL MISTER #10</span>
+              </div>
+              <div class="mascot-bubble" id="mascotGreeting">
+                "Da Baggio e Batistuta a Ronaldo, Hübner e Totti: riconosci la carriera dalle maglie!"
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTENITORE DINAMICO DELLE UNITÀ A SERPENTINA (FILTRATO PER GAEL LEAGUE O QUIZZOCAMPO) -->
+        <div id="unitsContainer" class="units-snake-container">
+          <!-- Popolato da app.js -->
+        </div>
+      </section>
+
+      <!-- =========================================================
+           TAB 2: CLASSIFICA / LEGA SETTIMANALE
+           ========================================================= -->
+      <section class="view-panel" id="view-league" hidden aria-label="Classifica Lega">
+        <div class="panel-card league-header-card">
+          <div class="league-trophy-showcase">
+            <img src="assets/trophy-quizzone.jpg?v=33" alt="Trofeo Divisione" class="league-hero-trophy" id="leagueHeroTrophy" width="96" height="96" />
+          </div>
+          <span class="eyebrow-pill pill-gold">DIVISIONE SCUDETTO</span>
+          <h2>Classifica Generale</h2>
+          <p>I punti XP guadagnati sia in <b>Gael League</b> sia in <b>Quizzocampo</b> ti fanno scalare la Divisione Scudetto!</p>
+          <div class="podium-section" id="leaguePodium">
+            <!-- Popolato dinamicamente da app.js solo con giocatori reali -->
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="leaderboard-list" id="leaderboardList">
+            <!-- Popolato da app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           TAB 3: MISSIONI DEL GIORNO & TROFEI
+           ========================================================= -->
+      <section class="view-panel" id="view-quests" hidden aria-label="Missioni del giorno">
+        <div class="panel-card quests-banner">
+          <div class="quests-banner-flex">
+            <div>
+              <span class="eyebrow-pill">OBIETTIVI GIORNALIERI</span>
+              <h2>Missioni &amp; Bauli Premio</h2>
+              <p>Completa le sfide in <b>Gael League</b> e <b>Quizzocampo</b> per accumulare Calcio-Coins 💎 e sbloccare i trofei.</p>
+            </div>
+            <img src="assets/chest-gold.jpg" alt="Baule del Campione" class="quests-banner-chest" width="84" height="84" />
+          </div>
+        </div>
+
+        <div class="quests-list" id="questsList">
+          <div class="quest-item-card">
+            <div class="quest-icon">👕</div>
+            <div class="quest-body">
+              <div class="quest-title-row">
+                <h4>Talento Gael League</h4>
+                <span class="quest-reward">💎 +20</span>
+              </div>
+              <p>Rispondi correttamente a 5 sfide oggi</p>
+              <div class="duo-progress-bar">
+                <div class="duo-progress-fill" id="quest1Fill" style="width: 0%"></div>
+              </div>
+              <span class="quest-progress-label" id="quest1Label">0 / 5 risposte esatte</span>
+            </div>
+          </div>
+
+          <div class="quest-item-card">
+            <div class="quest-icon">⚡</div>
+            <div class="quest-body">
+              <div class="quest-title-row">
+                <h4>Campione di Quizzocampo</h4>
+                <span class="quest-reward">💎 +50</span>
+              </div>
+              <p>Raggiungi almeno 50 XP complessivi</p>
+              <div class="duo-progress-bar">
+                <div class="duo-progress-fill" id="quest2Fill" style="width: 0%"></div>
+              </div>
+              <span class="quest-progress-label" id="quest2Label">0 / 50 XP guadagnati</span>
+            </div>
+          </div>
+
+          <div class="quest-item-card">
+            <div class="quest-icon">🌟</div>
+            <div class="quest-body">
+              <div class="quest-title-row">
+                <h4>Nostalgia Anni '90</h4>
+                <span class="quest-reward">💎 +100</span>
+              </div>
+              <p>Completa 3 tappe sul percorso principale</p>
+              <div class="duo-progress-bar">
+                <div class="duo-progress-fill" id="quest3Fill" style="width: 0%"></div>
+              </div>
+              <span class="quest-progress-label" id="quest3Label">0 / 3 tappe completate</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card mt-16">
+          <div class="card-header-flex">
+            <h3>🏅 Bacheca Trofei Sbloccabili</h3>
+            <span class="badge-counter-pill" id="badgesUnlockedCount">2 / 6 Sbloccati</span>
+          </div>
+          <div class="badges-grid" id="achievementsGrid">
+            <div class="badge-card unlocked" id="badge-esordiente">
+              <span class="badge-emoji">⚽</span>
+              <b>Esordiente</b>
+              <small>Prima partita giocata</small>
+            </div>
+            <div class="badge-card unlocked" id="badge-fantasista">
+              <span class="badge-emoji">🔟</span>
+              <b>Re Gael League</b>
+              <small>Indovina una carriera</small>
+            </div>
+            <div class="badge-card" id="badge-bandiera">
+              <span class="badge-emoji">📼</span>
+              <b>Mitici Anni '90</b>
+              <small>Completa l'Unità 1</small>
+            </div>
+            <div class="badge-card" id="badge-capocannoniere">
+              <span class="badge-emoji">👑</span>
+              <b>Maestro Quizzocampo</b>
+              <small>Raggiungi 200 XP</small>
+            </div>
+            <div class="badge-card" id="badge-champions">
+              <span class="badge-emoji">🌍</span>
+              <b>Sette Sorelle</b>
+              <small>Completa 5 tappe</small>
+            </div>
+            <div class="badge-card" id="badge-fuoriclasse">
+              <span class="badge-emoji">🐐</span>
+              <b>Fuoriclasse</b>
+              <small>Raggiungi 500 XP</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           TAB 4: ARENE RAPIDE DIVISE PER TIPOLOGIA (GAEL LEAGUE & QUIZZOCAMPO)
+           ========================================================= -->
+      <section class="view-panel" id="view-extra" hidden aria-label="Arene rapide per modalità">
+        <!-- SEZIONE 1: ARENE GAEL LEAGUE (CARRIERE ANNI '90 & 2000) -->
+        <div class="panel-card extra-hero-card">
+          <span class="eyebrow-pill">👕 MODALITÀ 1 • GAEL LEAGUE (CARRIERE)</span>
+          <h2>Arene Rapide Gael League</h2>
+          <p>Indovina il calciatore dalle squadre in cui ha militato! Ogni partita pesca <b>5 carriere casuali</b> senza consumare cuori.</p>
+        </div>
+
+        <div class="extra-modes-grid mb-12">
+          <button class="extra-card" data-gaelmode="anni90" type="button">
+            <div class="extra-card-top">
+              <span class="extra-card-icon">📼</span>
+              <span class="extra-pool-pill">200 Sfide</span>
+            </div>
+            <div class="extra-card-info">
+              <b>Gael League: Anni '90 Cult</b>
+              <p>Baggio, Batistuta, Signori, Vialli, Weah, Asprilla, Protti, Brolin e le Sette Sorelle.</p>
+            </div>
+            <div class="extra-card-footer">
+              <span class="extra-xp-tag">+50 XP</span>
+              <span class="extra-card-cta">INDOVINA CHI È ➔</span>
+            </div>
+          </button>
+
+          <button class="extra-card" data-gaelmode="anni2000" type="button">
+            <div class="extra-card-top">
+              <span class="extra-card-icon">💿</span>
+              <span class="extra-pool-pill">200 Sfide</span>
+            </div>
+            <div class="extra-card-info">
+              <b>Gael League: Primi Anni 2000</b>
+              <p>Ronaldo, Sheva, Kaká, Vieri, Adriano, Totti, Del Piero, Hübner, Toni, Miccoli e Milito.</p>
+            </div>
+            <div class="extra-card-footer">
+              <span class="extra-xp-tag">+50 XP</span>
+              <span class="extra-card-cta">INDOVINA CHI È ➔</span>
+            </div>
+          </button>
+
+          <button class="extra-card" data-gaelmode="allstars" type="button">
+            <div class="extra-card-top">
+              <span class="extra-card-icon">👕</span>
+              <span class="extra-pool-pill">200 Sfide</span>
+            </div>
+            <div class="extra-card-info">
+              <b>Gael League: Maratona All-Stars</b>
+              <p>Tutte le carriere mescolate: dalle bandiere storiche ai grandi giramondo internazionali.</p>
+            </div>
+            <div class="extra-card-footer">
+              <span class="extra-xp-tag">+50 XP</span>
+              <span class="extra-card-cta">INDOVINA CHI È ➔</span>
+            </div>
+          </button>
+
+          <button class="extra-card mode-pro" data-gaelmode="pro" type="button" style="border: 2px solid #ff4b4b; background: linear-gradient(135deg, rgba(255, 75, 75, 0.1), rgba(20, 25, 35, 0.9));">
+            <div class="extra-card-top">
+              <span class="extra-card-icon">❓</span>
+              <span class="extra-pool-pill" style="background: #ff4b4b; color: #fff;">150 Sfide PRO</span>
+            </div>
+            <div class="extra-card-info">
+              <b style="color: #ff7676;">Gael League PRO: Club Misterioso</b>
+              <p>Uno o due club sono oscurati con ❓ e le date sono nascoste. Solo per archivisti estremi!</p>
+            </div>
+            <div class="extra-card-footer">
+              <span class="extra-xp-tag" style="background: #ff4b4b;">+100 XP</span>
+              <span class="extra-card-cta">SFIDA PRO ➔</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- SEZIONE SPECIALE: MODALITÀ PASTORE (MARCATORI SERIE A 1990 - OGGI) -->
+        <div class="panel-card extra-hero-card mt-16" style="border: 2px solid #ffc800; background: linear-gradient(135deg, #132438, #0b192c);">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <img src="assets/pastore-mascot.jpg" alt="Giuseppe Pastore" style="width:72px;height:72px;border-radius:16px;border:2px solid #ffc800;object-fit:cover;box-shadow:0 4px 14px rgba(255,200,0,0.3);" />
+            <div style="flex:1;min-width:220px;">
+              <span class="eyebrow-pill pill-gold">🎯 NOVITÀ ASSOLUTA • MODALITÀ PASTORE</span>
+              <h2 style="margin:4px 0;color:#fff;">Il Grande Archivio Marcatori (2.000 Sfide)</h2>
+              <p style="margin:0;font-size:13px;color:#cbd5e1;">Riconosci i marcatori storici delle grandi partite di Serie A dagli anni '90 a oggi. Dalle doppiette scudetto ai gol decisivi al 93'!</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="extra-modes-grid mb-12">
+          <button class="extra-card" data-pastoremode="all" type="button" style="border: 2px solid #ffc800;">
+            <div class="extra-card-top">
+              <span class="extra-card-icon">🎯</span>
+              <span class="extra-pool-pill" style="background:#ffc800;color:#000;font-weight:900;">2.000 Partite</span>
+            </div>
+            <div class="extra-card-info">
+              <b>Modalità Pastore: Serie A Storica</b>
+              <p>Indovina chi ha segnato (o chi NON ha segnato) nei match leggendari dal 1990 al 2024!</p>
+            </div>
+            <div class="extra-card-footer">
+              <span class="extra-xp-tag" style="background:#ffc800;color:#000;">+75 XP</span>
+              <span class="extra-card-cta">ENTRA IN CAMPO ➔</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- SEZIONE 2: ARENE QUIZZOCAMPO (QUIZ TEMATICI) -->
+        <div class="panel-card extra-hero-card mt-16">
+          <span class="eyebrow-pill">⚡ MODALITÀ 3 • QUIZZOCAMPO (TRIVIA &amp; PARTITE)</span>
+          <h2>Arene Rapide Quizzocampo</h2>
+          <p>Mettiti alla prova con i quiz su tabellini storici, capocannonieri, derby e finali europee (750 sfide tematiche).</p>
+        </div>
+
+        <div class="extra-modes-grid">
+          <button class="extra-card mode-goals" data-mode="goals" type="button">
+            <div class="extra-card-top">
+              <span class="extra-card-icon">🥅</span>
+              <span class="extra-pool-pill">200 Quiz</span>
+            </div>
+            <div class="extra-card-info">
+              <b>Quizzocampo: Record &amp; Scudetti</b>
+              <p>Imbattibilità, scudetti all'ultima giornata, punti record e storia della Serie A.</p>
+            </div>
+            <div class="extra-card-footer">
+              <span class="extra-xp-tag">+50 XP</span>
+              <span class="extra-card-cta">GIOCA QUIZ ➔</span>
+            </div>
+          </button>
+
+          <button class="extra-card mode-scorers" data-mode="scorers" type="button">
+            <div class="extra-card-top">
+              <span class="extra-card-icon">👑</span>
+              <span class="extra-pool-pill">200 Quiz</span>
+            </div>
+            <div class="extra-card-info">
+              <b>Quizzocampo: Re dei Bomber</b>
+              <p>Classifiche marcatori, Scarpe d'Oro, chi ha segnato nei big match e notti azzurre.</p>
+            </div>
+            <div class="extra-card-footer">
+              <span class="extra-xp-tag">+50 XP</span>
+              <span class="extra-card-cta">GIOCA QUIZ ➔</span>
+            </div>
+          </button>
+
+          <button class="extra-card mode-derby" data-mode="derby" type="button">
+            <div class="extra-card-top">
+              <span class="extra-card-icon">⚔️</span>
+              <span class="extra-pool-pill">200 Quiz</span>
+            </div>
+            <div class="extra-card-info">
+              <b>Quizzocampo: Derby &amp; Rivalità</b>
+              <p>Madonnina, Capitale, Mole, Lanterna e Derby d'Italia tra rimonte ed esultanze iconiche.</p>
+            </div>
+            <div class="extra-card-footer">
+              <span class="extra-xp-tag">+50 XP</span>
+              <span class="extra-card-cta">GIOCA QUIZ ➔</span>
+            </div>
+          </button>
+
+          <button class="extra-card mode-champions" data-mode="champions" type="button">
+            <div class="extra-card-top">
+              <span class="extra-card-icon">🌟</span>
+              <span class="extra-pool-pill">150 Quiz</span>
+            </div>
+            <div class="extra-card-info">
+              <b>Quizzocampo: Notti Europee</b>
+              <p>Le grandi finali di Champions League, Coppa UEFA ed Europa League dei club italiani.</p>
+            </div>
+            <div class="extra-card-footer">
+              <span class="extra-xp-tag">+50 XP</span>
+              <span class="extra-card-cta">GIOCA QUIZ ➔</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           TAB 5: PROFILO GIOCATORE & STEP PER ANDARE ONLINE
+           ========================================================= -->
+      <section class="view-panel" id="view-profile" hidden aria-label="Profilo Giocatore">
+        <div class="panel-card profile-hero-card">
+          <div class="profile-avatar-big">
+            <img src="assets/mascot-coach.jpg" alt="Avatar Profilo" class="profile-hero-img" width="76" height="76" />
+            <span class="profile-level-pill" id="profileLevelBadge">LIV. 1</span>
+          </div>
+          <div class="profile-meta">
+            <h2 id="profileName">Mister Fuoriclasse</h2>
+            <p id="profileSub">Gael League &amp; Quizzocampo • Stagione 2026</p>
+            <div class="profile-badges-inline">
+              <span class="mini-tag">👕 Gael League (100+ Carriere)</span>
+              <span class="mini-tag">⚡ Quizzocampo (1.380 Sfide)</span>
+              <span class="mini-tag" id="profileCompletedTag">✅ 1 Tappa</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-stats-grid">
+          <div class="stat-box">
+            <span class="stat-box-icon">⚡</span>
+            <b id="profileTotalXp">0</b>
+            <small>XP Totali</small>
+          </div>
+          <div class="stat-box">
+            <span class="stat-box-icon">🔥</span>
+            <b id="profileStreak">1</b>
+            <small>Giorni Streak</small>
+          </div>
+          <div class="stat-box">
+            <span class="stat-box-icon">💎</span>
+            <b id="profileGems">250</b>
+            <small>Calcio-Coins</small>
+          </div>
+          <div class="stat-box">
+            <span class="stat-box-icon">❤️</span>
+            <b id="profileHearts">5 / 5</b>
+            <small>Cuori Attivi</small>
+          </div>
+        </div>
+
+        <div class="panel-card mt-16">
+          <div class="card-header-flex">
+            <h3>👤 Account &amp; Nome Maglia</h3>
+            <span class="badge-counter-pill" id="cloudStatusBadge">Pronto al Login</span>
+          </div>
+          <p class="text-muted" id="cloudStatusText">Accedi con Google o Email per salvare i tuoi progressi nel cloud e comparire nella Classifica Globale su tutti i tuoi dispositivi.</p>
+
+          <!-- Form Nickname Rapido + Pulsante Login Cloud -->
+          <div class="cloud-profile-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+            <input type="text" id="profileNicknameInput" class="duo-input" placeholder="Il tuo Username (es. BomberMatteo10)" maxlength="24" style="flex:1;min-width:200px;" />
+            <button class="btn-secondary btn-sm" id="saveNicknameBtn" type="button">💾 Salva Username</button>
+          </div>
+
+          <div class="auth-demo-buttons">
+            <button class="btn-primary" id="openAuthModalBtn" type="button">🌐 Accedi con Google / Cambia Account</button>
+            <button class="btn-secondary" id="syncCloudNowBtn" type="button">☁️ Sincronizza Progressi</button>
+            <button class="btn-secondary" id="clearLocalWikiCacheBtn" type="button">🔄 Svuota Cache Wikidata</button>
+            <button class="btn-outline" id="resetProgressBtn" type="button">🗑️ Azzera Progressi</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- COLONNA DESTRA (WIDGET DESKTOP) -->
+    <aside class="duo-rail-right" aria-label="Statistiche e Obiettivi">
+      <div class="rail-widget">
+        <div class="widget-head">
+          <h4>🎮 Modalità Attiva</h4>
+          <span class="widget-badge" id="railActiveModeBadge">GAEL LEAGUE</span>
+        </div>
+        <p class="widget-desc">Passa in qualsiasi momento da <b>Gael League</b> (carriere) a <b>Quizzocampo</b> (quiz storici).</p>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-secondary btn-sm w-full" type="button" onclick="setGameMode('gael')">👕 Gael</button>
+          <button class="btn-secondary btn-sm w-full" type="button" onclick="setGameMode('quizzocampo')">⚡ Quiz</button>
+        </div>
+      </div>
+
+      <div class="rail-widget">
+        <div class="widget-head">
+          <h4>🎯 Obiettivo del Giorno</h4>
+          <span class="widget-badge" id="railGoalPct">0%</span>
+        </div>
+        <div class="widget-goal-row">
+          <img src="assets/chest-gold.jpg" alt="Baule" class="widget-chest-thumb" width="46" height="46" />
+          <div class="widget-goal-bar-wrap">
+            <div class="duo-progress-bar">
+              <div class="duo-progress-fill" id="railGoalFill" style="width: 0%"></div>
+            </div>
+            <small id="railGoalText">0 / 5 sfide completate oggi</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="rail-widget">
+        <div class="widget-head">
+          <h4>❤️ Stato Forma (Vite)</h4>
+          <span class="widget-badge" id="railHeartsCount">5/5</span>
+        </div>
+        <p class="widget-desc">Allenati gratis in Gael League o Quizzocampo per recuperare cuori!</p>
+        <button class="btn-secondary btn-sm w-full" id="practiceHeartsBtn" type="button">⚡ Allenati (+1 ❤️ Gratis)</button>
+      </div>
+
+      <div class="rail-widget">
+        <div class="widget-head">
+          <h4>🔥 Serie di Vittorie</h4>
+          <span class="widget-badge"><span id="railStreakCount">1</span> gg</span>
+        </div>
+        <div class="streak-week-row" id="railStreakDays">
+          <span class="day-dot active" data-day="1">L</span>
+          <span class="day-dot" data-day="2">M</span>
+          <span class="day-dot" data-day="3">M</span>
+          <span class="day-dot" data-day="4">G</span>
+          <span class="day-dot" data-day="5">V</span>
+          <span class="day-dot" data-day="6">S</span>
+          <span class="day-dot" data-day="0">D</span>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- BOTTOM NAVIGATION BAR (MOBILE-FIRST) -->
+  <nav class="duo-mobile-nav" aria-label="Navigazione mobile">
+    <button class="mobile-nav-btn active" data-tab="path" data-gamemode="quizzone" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">⚡</span>
+      <span class="nav-btn-text">Quizzone</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="path" data-gamemode="gael" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">👕</span>
+      <span class="nav-btn-text">Gael</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="path" data-gamemode="pastore" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">🎯</span>
+      <span class="nav-btn-text">Pastore</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="league" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">🏆</span>
+      <span class="nav-btn-text">Lega</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="profile" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">👤</span>
+      <span class="nav-btn-text">Profilo</span>
+    </button>
+  </nav>
+
+  <!-- =========================================================
+       MODALE DI GIOCO FULL-SCREEN (GAEL LEAGUE & QUIZZOCAMPO)
+       ========================================================= -->
+  <div class="duo-quiz-overlay" id="quizOverlay" role="dialog" aria-modal="true" aria-labelledby="quizPrompt" hidden>
+    <canvas id="confettiCanvas" class="confetti-canvas" aria-hidden="true"></canvas>
+
+    <div class="quiz-topbar">
+      <button class="quiz-close-btn" id="quizClose" type="button" aria-label="Esci dalla partita">✕</button>
+      <div class="quiz-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="20">
+        <div class="quiz-progress-fill" id="quizProgressFill" style="width: 20%">
+          <div class="progress-shine"></div>
+        </div>
+      </div>
+      <div class="quiz-combo-pill" id="quizComboPill" hidden>
+        <span>🔥</span> <b id="quizComboNum">2x</b>
+      </div>
+      <div class="quiz-hearts-pill" title="Vite rimaste">
+        <span aria-hidden="true">❤️</span>
+        <b id="quizHeartsNum">5</b>
+      </div>
+    </div>
+
+    <div class="quiz-body">
+      <!-- VISTA 1: DOMANDA ATTIVA -->
+      <div id="quizQuestionView" class="quiz-question-view">
+        <div class="quiz-meta-row">
+          <div class="quiz-type-badge" id="quizTag">👕 GAEL LEAGUE • CARRIERA</div>
+          <div class="quiz-archive-pill" id="quizArchivePill" hidden>ANNI '90 &amp; 2000</div>
+        </div>
+
+        <div class="quiz-prompt-row">
+          <div class="quiz-mascot-wrap">
+            <img src="assets/mascot-coach.jpg" alt="Il Mister #10" class="quiz-mascot-avatar" id="quizMascotImg" width="72" height="72" />
+            <span class="quiz-mascot-mood" id="quizMascotMood">🎯</span>
+          </div>
+          <div class="speech-bubble">
+            <div class="speech-header">
+              <button class="audio-speak-btn" id="listenButton" type="button" title="Ascolta la domanda">🔊</button>
+              <h2 id="quizPrompt">Quale calciatore ha vestito queste maglie in carriera?</h2>
+            </div>
+            <p class="quiz-clue-sub" id="quizSubprompt"></p>
+          </div>
+        </div>
+
+        <!-- Percorso Club (Maglie Vettoriali per Gael League / Indizi per Quizzocampo) -->
+        <div class="career-jerseys-stage" id="careerRoute" aria-label="Tappe della carriera o indizi"></div>
+
+        <!-- Scelte (4 Card Tattili 3D) -->
+        <div class="quiz-options-grid" id="answers" role="group" aria-label="Opzioni di risposta"></div>
+      </div>
+
+      <!-- VISTA 2: SCHERMATA BIVIO "INCASSA O VAI ALLA DIFFICOLTÀ SUCCESSIVA" -->
+      <div id="quizCompletionView" class="quiz-completion-view" hidden>
+        <div class="completion-card">
+          <div class="completion-trophy-wrap">
+            <img src="assets/trophy-fuoriclasse.jpg" alt="Trofeo Vittoria" class="completion-trophy-img" id="completionTrophyImg" width="116" height="116" />
+          </div>
+          <span class="eyebrow-pill pill-gold" id="completionBadgeText">ROUND 1 COMPLETATO!</span>
+          <h2 class="completion-title" id="completionTitle">INCASSI O RILANCI?</h2>
+          <p class="completion-sub" id="completionSub">Scegli se mettere in banca il bottino o sfidare il livello di difficoltà successivo finché hai vite!</p>
+
+          <div class="completion-stats-grid">
+            <div class="comp-stat-card comp-xp">
+              <span class="comp-stat-label" id="compXpLabel">BOTTINO XP</span>
+              <b class="comp-stat-val" id="compXpVal">+90 XP</b>
+            </div>
+            <div class="comp-stat-card comp-acc">
+              <span class="comp-stat-label">VITE RIMASTE</span>
+              <b class="comp-stat-val" id="compAccVal">❤️ 5</b>
+            </div>
+            <div class="comp-stat-card comp-gems">
+              <span class="comp-stat-label">BOTTINO GEMME</span>
+              <b class="comp-stat-val" id="compGemsVal">+15 💎</b>
+            </div>
+          </div>
+
+          <div id="cashOutDecisionBox" class="cashout-decision-box">
+            <button type="button" class="btn-next-diff-arcade" id="btnNextDifficulty" onclick="advanceToNextDifficultyRound()">
+              <span class="next-diff-top" id="nextDiffBtnTitle">🔥 VAI ALLA DIFFICOLTÀ SUCCESSIVA (LIV. 2)</span>
+              <small class="next-diff-sub" id="nextDiffBtnSub">5 nuove domande più difficili • Moltiplicatore Premio x1.5 • Rischia il bottino!</small>
+            </button>
+            <button type="button" class="btn-cashout-bank" id="btnCashOutBank" onclick="cashOutQuizRun()">
+              💰 INCASSA IL BOTTINO E TORNA AL CAMPO
+            </button>
+            <button type="button" class="btn-share-run" id="btnShareRun" onclick="shareQuizRunResult()">
+              📲 SFIDA GLI AMICI SU WHATSAPP (COPIA RISULTATO)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="quiz-bottom-drawer" id="quizBottomDrawer">
+      <div class="drawer-inner">
+        <div class="feedback-message" id="feedback" aria-live="polite"></div>
+        <button class="btn-primary btn-lg continue-btn" id="continueBtn" type="button" disabled>VERIFICA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE MAPPA VELOCE UNITÀ (DIVISA TRA GAEL LEAGUE E QUIZZOCAMPO) -->
+  <div class="duo-modal-backdrop" id="unitJumpModal" role="dialog" aria-modal="true" aria-labelledby="unitJumpTitle" hidden>
+    <div class="duo-modal-card modal-lg">
+      <div class="modal-head">
+        <h2 id="unitJumpTitle">🗺️ Mappa Unità: Quizzone, Gael League &amp; Pastore League</h2>
+        <button class="modal-close-x" id="unitJumpClose" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <p class="text-muted mb-12">Scegli qualsiasi Unità di <b>Quizzone</b>, <b>Gael League</b> o <b>Pastore League</b> per saltare direttamente alle sue tappe.</p>
+      <div class="unit-jump-grid" id="unitJumpList">
+        <!-- Popolato da app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE GUIDA UNITÀ & SCHEDA WIKIDATA LIVE -->
+  <div class="duo-modal-backdrop" id="guidebookModal" role="dialog" aria-modal="true" aria-labelledby="guidebookTitle" hidden>
+    <div class="duo-modal-card">
+      <div class="modal-head">
+        <h2 id="guidebookTitle">📖 Guida dell'Unità</h2>
+        <button class="modal-close-x" id="guidebookClose" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body" id="guidebookBody"></div>
+      <div class="modal-foot">
+        <button class="btn-primary w-full" id="guidebookOkBtn" type="button">HO CAPITO!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE INFERMERIA & RICARICA VITE (ARCHITETTURA FREEMIUM) -->
+  <div class="duo-modal-backdrop" id="heartsEmptyModal" role="dialog" aria-modal="true" aria-labelledby="heartsEmptyTitle" hidden>
+    <div class="duo-modal-card text-center">
+      <div class="modal-head" style="justify-content:space-between;margin-bottom:8px;">
+        <span class="eyebrow-pill pill-gold">🏥 INFERMERIA &amp; RICARICA VITE</span>
+        <button class="modal-close-x" id="heartsModalClose" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-big-emoji" id="heartsModalEmoji">❤️</div>
+      <h2 id="heartsEmptyTitle">Gestione Vite (<span id="freemiumHeartsNow">0</span>/5 ❤️)</h2>
+      <p id="heartsRegenTimerText" style="font-size:13px;font-weight:800;color:var(--duo-blue-dark);margin:6px 0 14px;">
+        ⏱️ Rigenerazione gratuita automatica: +1 ❤️ ogni 15 minuti
+      </p>
+
+      <div class="modal-stack-btns" style="display:flex;flex-direction:column;gap:10px;text-align:left;">
+        <button class="btn-primary w-full" id="practiceToRegainHeartBtn" type="button">
+          ⚡ Allenamento Ripasso in Campo (+1 ❤️ Gratis)
+        </button>
+        <button class="btn-secondary w-full" id="refillHeartsCoinsBtn" type="button">
+          💎 Ricarica Completa 5/5 ❤️ (Usa 50 Gemme • Hai <span id="freemiumGemsNow">250</span> 💎)
+        </button>
+        <!-- SPONSOR AMAZON AFFILIATE PER RICARICA VITE (+1 ❤️) -->
+        <div class="amazon-sponsor-box" id="amazonSponsorBox" style="background:var(--bg-card);border:2px solid #ff9900;border-radius:14px;padding:12px;margin:4px 0;text-align:left;box-shadow:0 4px 12px rgba(255,153,0,0.12);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:900;background:#232f3e;color:#ff9900;padding:4px 8px;border-radius:6px;letter-spacing:0.04em;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M.7 18.2C5.9 22 13.8 24 19.8 20.3c.9-.6 1.8-1.2 2.6-1.9.5-.4.4-.8-.1-.9-.7-.1-1.4-.3-2-.5-6.5-2.2-12.8-1.6-18.7 1.2-.5.2-.6.7-.2.9zM22.8 17.5c-.3-.4-1.8-.4-2.7-.2-1 .2-1.9.6-2.8.9-.3.1-.3.4 0 .5.7.3 1.5.5 2.3.4.9-.1 2.3-.3 2.9-.8.4-.3.5-.6.3-.8zM15.4 3.7c-4.1.3-8 2.5-10 6-.5.9-.9 2-.9 3.1 0 1.9 1 3.5 2.8 4.2 2.3.9 4.9.4 7.2-.5 2.5-1 4.7-2.6 6.5-4.5.3-.3.1-.7-.3-.7-2.2.3-4.5.8-6.7.4-1.2-.2-2.3-.7-3.1-1.6-.7-.8-1-1.8-.8-2.8.3-1.6 1.8-2.8 3.4-3.1 1.7-.3 3.4.2 4.9 1 .3.2.6 0 .6-.3l.1-.4c.1-.4-.2-.6-.5-.8-1.1-.6-2.4-.8-3.7-.8z"/></svg>
+              PARTNER UFFICIALE • AMAZON
+            </span>
+            <span style="font-size:11px;font-weight:800;color:var(--duo-green);">+1 ❤️ GRATIS</span>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+            <div style="font-size:30px;background:rgba(255,153,0,0.15);border-radius:10px;width:48px;height:48px;display:grid;place-items:center;flex-shrink:0;">
+              <span id="amazonItemEmoji">📚</span>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div id="amazonItemTitle" style="font-size:13.5px;font-weight:900;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                Libri &amp; Biografie Calcio Serie A Anni '90
+              </div>
+              <div id="amazonItemSub" style="font-size:11.5px;color:var(--text-muted);font-weight:700;">
+                I capolavori nostalgici consigliati da Fuoriclasse
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;">
+            <button class="btn-primary btn-sm" id="watchAdForHeartBtn" type="button" style="flex:1;background:#ff9900;border-bottom-color:#d47e00;color:#111;font-weight:900;">
+              ❤️ Guarda 5s (+1 Vita)
+            </button>
+            <a id="amazonShopLink" href="https://www.amazon.it/s?k=libri+calcio+serie+a&tag=matteornati0d-21&linkCode=ll2&ref_=as_li_ss_tl" target="_blank" rel="noopener sponsored" class="btn-outline btn-sm" style="border-color:#ff9900;color:#ff9900;font-weight:900;display:inline-flex;align-items:center;gap:4px;text-decoration:none;">
+              <span>Apri Offerta</span> ↗
+            </a>
+          </div>
+        </div>
+        <div class="pro-freemium-banner" id="fuoriclasseProBanner" style="background:linear-gradient(135deg,#1e1b4b,#0f172a);border:2px solid #ffc800;border-radius:14px;padding:12px 14px;color:#fff;margin-top:4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div>
+              <span style="font-size:10px;font-weight:900;color:#ffc800;letter-spacing:0.06em;">👑 PASS STAGIONALE • PROSSIMAMENTE</span>
+              <h4 style="font-size:14.5px;font-weight:900;margin:2px 0;color:#fff;">Fuoriclasse PRO: Vite Infinite ∞</h4>
+              <p style="font-size:11.5px;color:#cbd5e1;margin:0;">Zero attese, Vite Infinite ∞ e Indizi del Mister illimitati.</p>
+            </div>
+            <span style="font-size:24px;">♾️</span>
+          </div>
+        </div>
+      </div>
+      <div id="freemiumActionFeedback" style="margin-top:10px;font-size:13px;font-weight:800;color:var(--duo-green);"></div>
+    </div>
+  </div>
+
+  <!-- MODALE LOGIN UTENTI SUPABASE & SCELTA USERNAME DA SUBITO -->
+  <div class="duo-modal-backdrop" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle" hidden>
+    <div class="duo-modal-card modal-lg">
+      <div class="modal-head">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <img src="assets/mascot-coach.jpg" alt="Il Mister #10" style="width:48px;height:48px;border-radius:12px;border:2px solid #ffc800;" />
+          <div>
+            <span class="eyebrow-pill">SPOGLIATOIO UFFICIALE • 16-BIT</span>
+            <h2 id="authModalTitle">⚽ Entra in Campo: Login &amp; Username</h2>
+          </div>
+        </div>
+        <button class="modal-close-x" id="authClose" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body deploy-guide-content">
+
+        <!-- STEP 1: LOGIN GOOGLE CON UN CLICK -->
+        <div class="deploy-section" id="supabaseAuthBox">
+          <span class="eyebrow-pill pill-gold">ACCESSO RAPIDO GOOGLE</span>
+          <h3 id="authUserHeadline">Accedi con il tuo Account Google</h3>
+          <p id="authUserSub">Sincronizza in automatico i tuoi progressi, cuori, gemme e scalata in classifica su qualsiasi dispositivo con un solo tap:</p>
+
+          <div id="authLoggedOutView" style="display:flex;flex-direction:column;gap:12px;margin-top:14px;">
+            <button class="btn-outline w-full" id="btnSupabaseGoogle" type="button" style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 18px;font-size:16px;font-weight:900;border:2px solid #e2e8f0;background:#ffffff;color:#1e293b;border-radius:14px;box-shadow:0 3px 10px rgba(0,0,0,0.06);cursor:pointer;">
+              <svg width="22" height="22" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span>Continua con Google</span>
+            </button>
+          </div>
+
+          <div id="authLoggedInView" hidden style="margin-top:10px;">
+            <p style="margin-bottom:10px;">✅ Connesso al Cloud con Google: <b id="authCurrentUserEmail">-</b></p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn-primary btn-sm" id="btnForceCloudPush" type="button">☁️ Sincronizza Progressi</button>
+              <button class="btn-outline btn-sm" id="btnSupabaseLogout" type="button">🚪 Disconnetti</button>
+            </div>
+          </div>
+
+          <div id="authFeedbackMsg" style="margin-top:8px;font-size:13px;font-weight:800;"></div>
+        </div>
+
+        <!-- STEP 2: SCEGLI IL TUO USERNAME DA GIOCATORE -->
+        <div class="deploy-section" id="usernamePickerBox">
+          <span class="eyebrow-pill pill-gold">NICKNAME PERSONALIZZATO</span>
+          <h3>Come vuoi chiamarti sulla maglia e in Classifica?</h3>
+          <p>Scegli il tuo soprannome ufficiale da Bomber (es. <em>DivinMatteo10</em>, <em>BomberHubner</em>): compare in classifica e sui trofei!</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+            <input type="text" id="onboardingUsernameInput" class="duo-input" placeholder="Il tuo Nickname (es. BomberMatteo10)" maxlength="24" style="flex:1;min-width:210px;font-weight:900;" />
+            <button class="btn-primary" id="saveOnboardingUsernameBtn" type="button">💾 SALVA NICKNAME</button>
+          </div>
+          <div id="usernameFeedbackMsg" style="margin-top:8px;font-size:13px;font-weight:800;color:var(--duo-green);"></div>
+        </div>
+
+      </div>
+      <div class="modal-foot">
+        <button class="btn-secondary w-full" id="authOkBtn" type="button">GIOCA SUBITO ➔</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE SELETTORE SPORT & ONBOARDING -->
+  <div class="duo-modal-backdrop" id="sportModal" role="dialog" aria-modal="true" aria-labelledby="sportModalTitle" hidden>
+    <div class="duo-modal-card" style="max-width:580px;">
+      <div class="modal-head">
+        <h2 id="sportModalTitle">🏆 Scegli la tua Passione Sportiva</h2>
+        <button class="modal-close-x" id="sportModalClose" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted);font-size:14px;margin-bottom:12px;">Seleziona lo sport in cui vuoi cimentarti oggi. Ogni categoria ha il suo <b>percorso dedicato</b> e la sua <b>Fiamma Streak indipendente</b> 🔥!</p>
+        
+        <div class="sport-picker-grid">
+          <!-- CARD CALCIO -->
+          <div class="sport-card-choice active" id="chooseSportCalcio" data-sport="calcio">
+            <div class="sport-card-head">
+              <div class="sport-avatar-wrap" style="border-color:#58cc02;">
+                <img src="assets/mascot-coach.jpg?v=33" alt="Calcio" />
+              </div>
+              <span class="eyebrow-pill pill-green">5.000+ SFIDE</span>
+            </div>
+            <h3 class="sport-card-title">⚽ Calcio (Fuoriclasse)</h3>
+            <p class="sport-card-desc">Quizzone (Serie A &amp; Champions), Gael League (Carriere Anni '90 &amp; 2000) e Pastore League (Marcatori).</p>
+            <div class="sport-streak-pill" id="calcioStreakPill">🔥 Streak: <b id="calcioModalStreakVal">1</b> giorni</div>
+            <button class="btn-primary btn-sm w-full" type="button">GIOCA A CALCIO ➔</button>
+          </div>
+
+          <!-- CARD F1 BOOMER -->
+          <div class="sport-card-choice" id="chooseSportF1" data-sport="f1">
+            <div class="sport-card-head">
+              <div class="sport-avatar-wrap" style="border-color:#ff4b4b;">
+                <img src="assets/f1-mascot.jpg?v=33" alt="F1 Boomer" onerror="this.onerror=null;this.parentElement.innerHTML='🏎️';" />
+              </div>
+              <span class="eyebrow-pill" style="background:#fee2e2;color:#b91c1c;border-color:#fca5a5;">4.100+ QUIZ</span>
+            </div>
+            <h3 class="sport-card-title">🏎️ F1: Quiz like a Boomer</h3>
+            <p class="sport-card-desc">Dal 1970 al 2024: ruggiti V10 e V12, Lauda vs Hunt, Senna, Schumi, curve mitiche e segreti dei box.</p>
+            <div class="sport-streak-pill" id="f1StreakPill" style="color:#b91c1c;background:#fef2f2;border-color:#fecaca;">🔥 Streak: <b id="f1ModalStreakVal">0</b> giorni</div>
+            <button class="btn-secondary btn-sm w-full" type="button" style="background:#ef4444;border-color:#b91c1c;">ACCENDI I MOTORI ➔</button>
+          </div>
+
+          <!-- CARD BASKET NBA -->
+          <div class="sport-card-choice" id="chooseSportBasket" data-sport="basket">
+            <div class="sport-card-head">
+              <div class="sport-avatar-wrap" style="border-color:#ff9600;">
+                <img src="assets/basket-mascot.jpg?v=33" alt="Basket NBA" onerror="this.onerror=null;this.parentElement.innerHTML='🏀';" />
+              </div>
+              <span class="eyebrow-pill pill-gold">4.100+ QUIZ</span>
+            </div>
+            <h3 class="sport-card-title">🏀 Basket: Buzzer Beater</h3>
+            <p class="sport-card-desc">Dal 1980 ad oggi: Showtime Lakers-Celtics, l'era Jordan, Kobe, LeBron, Curry e canestri sulla sirena.</p>
+            <div class="sport-streak-pill" id="basketStreakPill" style="color:#c2410c;background:#fff7ed;border-color:#fed7aa;">🔥 Streak: <b id="basketModalStreakVal">0</b> giorni</div>
+            <button class="btn-secondary btn-sm w-full" type="button" style="background:#f97316;border-color:#c2410c;">SCENDI SUL PARQUET ➔</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE DETTAGLIO STREAK PER CATEGORIA & PREMI DUOLINGO RETENTION -->
+  <div class="duo-modal-backdrop" id="streakDetailModal" role="dialog" aria-modal="true" aria-labelledby="streakDetailTitle" hidden>
+    <div class="duo-modal-card" style="max-width:520px;">
+      <div class="modal-head">
+        <h2 id="streakDetailTitle">🔥 Fiamma Giornaliera &amp; Premi</h2>
+        <button class="modal-close-x" id="streakDetailClose" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="streak-header-hero">
+          <span class="streak-flame-icon-large" aria-hidden="true">🔥</span>
+          <div class="streak-days-counter-hero" id="streakDetailCounterHero">1 GIORNO</div>
+          <p style="color:var(--text-muted);font-weight:800;font-size:13.5px;margin:0;">Gioca almeno 1 sfida al giorno in ogni sport per far crescere la fiamma!</p>
+        </div>
+
+        <!-- STREAK INDIPENDENTI PER SPORT -->
+        <div class="category-streak-cards-row">
+          <div class="cat-streak-card active-sport" id="catCardCalcio">
+            <div class="cat-streak-title">⚽ Calcio</div>
+            <div class="cat-streak-val">🔥 <span id="catValCalcio">1</span></div>
+            <small style="font-size:11px;font-weight:800;color:var(--text-muted);" id="catSubCalcio">Oggi giocato</small>
+          </div>
+          <div class="cat-streak-card" id="catCardF1">
+            <div class="cat-streak-title">🏎️ F1 Boomer</div>
+            <div class="cat-streak-val">🔥 <span id="catValF1">0</span></div>
+            <small style="font-size:11px;font-weight:800;color:var(--text-muted);" id="catSubF1">Non ancora</small>
+          </div>
+          <div class="cat-streak-card" id="catCardBasket">
+            <div class="cat-streak-title">🏀 Basket NBA</div>
+            <div class="cat-streak-val">🔥 <span id="catValBasket">0</span></div>
+            <small style="font-size:11px;font-weight:800;color:var(--text-muted);" id="catSubBasket">Non ancora</small>
+          </div>
+        </div>
+
+        <!-- CALENDARIO SETTIMANALE -->
+        <div class="weekly-streak-strip" id="modalWeeklyStreakStrip">
+          <div class="weekday-bubble"><span class="weekday-label">L</span><div class="weekday-dot" data-wday="1">✓</div></div>
+          <div class="weekday-bubble"><span class="weekday-label">M</span><div class="weekday-dot" data-wday="2">✓</div></div>
+          <div class="weekday-bubble"><span class="weekday-label">M</span><div class="weekday-dot" data-wday="3">✓</div></div>
+          <div class="weekday-bubble"><span class="weekday-label">G</span><div class="weekday-dot" data-wday="4">✓</div></div>
+          <div class="weekday-bubble"><span class="weekday-label">V</span><div class="weekday-dot" data-wday="5">✓</div></div>
+          <div class="weekday-bubble"><span class="weekday-label">S</span><div class="weekday-dot" data-wday="6">✓</div></div>
+          <div class="weekday-bubble"><span class="weekday-label">D</span><div class="weekday-dot" data-wday="0">✓</div></div>
+        </div>
+
+        <!-- PROTEZIONE GELO FIAMMA (STREAK FREEZE) -->
+        <div class="streak-freeze-banner">
+          <div style="font-size:32px;">🧊</div>
+          <div class="freeze-info-text">
+            <b>Gelo Fiamma: <span id="freezeCountSpan">1</span> attivo</b>
+            <p>Se salti un giorno, protegge la tua fiamma senza azzerare lo streak!</p>
+          </div>
+          <button class="btn-equip-freeze" id="btnBuyFreeze" type="button">🛒 +1 per 100 💎</button>
+        </div>
+
+        <!-- TABELLA RICOMPENSE MILESTONE -->
+        <div style="margin-top:14px;">
+          <h4 style="font-size:14px;font-weight:900;margin-bottom:8px;">🎁 Ricompense di Costanza (per Categoria)</h4>
+          <div class="milestone-rewards-list">
+            <div class="milestone-reward-row">
+              <div class="milestone-reward-badge">
+                <span>🥉</span>
+                <div>
+                  <div>3 Giorni di Fila</div>
+                  <small style="color:var(--text-muted);">Traguardo Bronzo</small>
+                </div>
+              </div>
+              <div class="milestone-reward-pills">
+                <span class="reward-tag-gems">+50 💎</span>
+                <span class="reward-tag-freeze">❤️ Full Vite</span>
+              </div>
+            </div>
+            <div class="milestone-reward-row">
+              <div class="milestone-reward-badge">
+                <span>🥈</span>
+                <div>
+                  <div>7 Giorni di Fila</div>
+                  <small style="color:var(--text-muted);">Settimana di Fuoco</small>
+                </div>
+              </div>
+              <div class="milestone-reward-pills">
+                <span class="reward-tag-gems">+150 💎</span>
+                <span class="reward-tag-freeze">🧊 1 Gelo Omaggio</span>
+              </div>
+            </div>
+            <div class="milestone-reward-row">
+              <div class="milestone-reward-badge">
+                <span>🥇</span>
+                <div>
+                  <div>14 Giorni di Fila</div>
+                  <small style="color:var(--text-muted);">Veterano Quotidiano</small>
+                </div>
+              </div>
+              <div class="milestone-reward-pills">
+                <span class="reward-tag-gems">+300 💎</span>
+                <span class="reward-tag-freeze">👑 Titolo Pro</span>
+              </div>
+            </div>
+            <div class="milestone-reward-row">
+              <div class="milestone-reward-badge">
+                <span>🏆</span>
+                <div>
+                  <div>30 Giorni di Fila</div>
+                  <small style="color:var(--text-muted);">Leggenda Assoluta</small>
+                </div>
+              </div>
+              <div class="milestone-reward-pills">
+                <span class="reward-tag-gems">+1.000 💎</span>
+                <span class="reward-tag-freeze">⭐ Trofeo d'Oro</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE POPUP CELEBRAZIONE STREAK -->
+  <div class="duo-modal-backdrop" id="streakCelebrationModal" role="dialog" aria-modal="true" aria-labelledby="streakCelebrationTitle" hidden>
+    <div class="duo-modal-card" style="max-width:440px;text-align:center;">
+      <div class="modal-body" style="padding:28px 20px;">
+        <div class="streak-flame-icon-large" style="font-size:72px;" aria-hidden="true">🔥</div>
+        <h2 id="streakCelebrationTitle" style="font-size:26px;font-weight:900;color:#ff6a00;margin:10px 0 4px;">FIAMMA ACCESA!</h2>
+        <div style="font-size:42px;font-weight:900;color:var(--text-main);" id="streakCelebrationNum">2 GIORNI</div>
+        <p style="font-size:15px;font-weight:800;color:var(--text-muted);margin:8px 0 16px;" id="streakCelebrationMsg">Hai completato la sfida quotidiana! Mantieni vivo il ritmo anche domani.</p>
+        <div id="streakCelebrationRewardBox" hidden style="background:rgba(255,150,0,0.12);border:2px dashed #ff9600;border-radius:14px;padding:12px;margin-bottom:16px;">
+          <b style="color:#d97706;display:block;margin-bottom:4px;" id="streakRewardTitle">🎁 PREMIO SBLOCCATO!</b>
+          <span style="font-size:14px;font-weight:800;" id="streakRewardDesc">+50 Gemme 💎</span>
+        </div>
+        <button class="btn-primary w-full" id="streakCelebrationOkBtn" type="button" style="background:#ff7700;border-bottom-color:#c25e00;">CONTINUA A GIOCARE ➔</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE FONTI & LICENZE -->
+  <div class="duo-modal-backdrop" id="sourcesModal" role="dialog" aria-modal="true" aria-labelledby="sourcesTitle" hidden>
+    <div class="duo-modal-card">
+      <div class="modal-head">
+        <h2 id="sourcesTitle">📚 Fonti Dati &amp; Modalità</h2>
+        <button class="modal-close-x" id="sourcesClose" type="button" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body" id="sourcesModalBody">
+        <p><strong>👕 Gael League (Carriere Hard &amp; Club Misteriosi):</strong> 10 Unità senza superstar scontate: fantasisti ribelli, bomber di provincia, meteore dimenticate e livelli PRO con club misteriosi.</p>
+        <p><strong>🎯 Modalità Pastore (Marcatori Serie A):</strong> 2.000 partite storiche dal 1990 al 2024 per indovinare i protagonisti del tabellino.</p>
+        <p><strong>⚡ Quizzocampo (Il Grande Quiz del Calcio):</strong> 1.500 sfide tra scudetti, finali europee, derby e record della Serie A.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST AGGIORNAMENTO AUTOMATICO / FORCED REFRESH DEPLOY -->
+  <div id="updateToast" class="update-toast" hidden role="status" aria-live="polite">
+    <span class="update-toast-icon">🚀</span>
+    <div class="update-toast-text">
+      <b>Nuovo aggiornamento disponibile!</b>
+      <span>Installazione e riavvio automatico...</span>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js?v=34"></script>
+</body>
+</html>

@@ -820,6 +820,9 @@
             <button type="button" class="btn-share-run" id="btnShareRun" onclick="shareQuizRunResult()">
               📲 SFIDA GLI AMICI SU WHATSAPP (COPIA RISULTATO)
             </button>
+            <button type="button" class="btn-share-story" id="btnShareStory" onclick="generateAndShareStoryCard()">
+              📸 CONDIVIDI NELLE STORIE (INSTAGRAM &amp; STATO)
+            </button>
           </div>
         </div>
       </div>
@@ -1197,6 +1200,32 @@
       </div>
     </div>
   </div>
+
+  <!-- MODALE ANTEPRIMA STORY CARD (PER DESKTOP O BROWSER SENZA NATIVE SHARE) -->
+  <div class="duo-modal-backdrop" id="storyPreviewModal" role="dialog" aria-modal="true" aria-labelledby="storyPreviewTitle" hidden>
+    <div class="duo-modal-card" style="max-width: 440px; text-align: center;">
+      <div class="modal-head">
+        <h2 id="storyPreviewTitle">📸 La tua Story Card</h2>
+        <button class="modal-close-x" id="storyPreviewClose" type="button" aria-label="Chiudi" onclick="$('#storyPreviewModal').hidden=true">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px;">
+        <p style="font-size: 13.5px; color: var(--text-sub); margin-bottom: 12px;">Ecco la card verticale HD per le tue <b>Storie Instagram</b>, <b>Facebook</b> o <b>Stato WhatsApp</b>:</p>
+        <div style="border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.3); max-width: 260px; margin: 0 auto 16px;">
+          <img id="storyPreviewImg" src="" alt="Anteprima Story Fuoriclasse" style="width: 100%; height: auto; display: block;" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <a id="storyDownloadBtn" href="#" download="fuoriclasse-story.png" class="btn-primary w-full" style="background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045); border-bottom-color: #833ab4; text-align: center; text-decoration: none; padding: 12px; font-weight: 900;">
+            📥 SCARICA IMMAGINE HD PER LE STORIE
+          </a>
+          <button type="button" class="btn-ghost w-full" id="storyCopyLinkBtn" onclick="copyStoryLink()">
+            🔗 Copia Link da incollare come Sticker
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="storyCanvas" width="1080" height="1920" style="display:none;"></canvas>
 
   <!-- TOAST AGGIORNAMENTO AUTOMATICO / FORCED REFRESH DEPLOY -->
   <div id="updateToast" class="update-toast" hidden role="status" aria-live="polite">

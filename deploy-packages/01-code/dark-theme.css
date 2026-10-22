@@ -1,0 +1,184 @@
+/* ==========================================================================
+   FUORICLASSE — TEMA SCURO (STADIO DI NOTTE / SUPER DUOLINGO DARK MODE)
+   ========================================================================== */
+
+body[data-theme="dark"] {
+  --bg-app: #0f1922;
+  --bg-card: #162430;
+  --bg-soft: #1d2f3e;
+  --border-light: #2a4052;
+  --border-shadow: #0a1118;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-light: #64748b;
+
+  --duo-green-tint: #163822;
+  --duo-blue-tint: #13334c;
+  --duo-red-tint: #3d191e;
+  --duo-yellow-tint: #3b3012;
+}
+
+body[data-theme="dark"] .duo-topbar {
+  background: rgba(15, 25, 34, 0.94);
+  border-bottom-color: var(--border-light);
+}
+
+body[data-theme="dark"] .section-badge-btn {
+  background: var(--bg-soft);
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .tool-btn:hover {
+  background: var(--bg-soft);
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .nav-item:hover {
+  background: var(--bg-soft);
+  color: #ffffff;
+}
+body[data-theme="dark"] .nav-item.active {
+  background: var(--duo-blue-tint);
+  border-color: #1e5a85;
+  box-shadow: 0 3px 0 #1e5a85;
+  color: #5ec4ff;
+}
+
+body[data-theme="dark"] .mascot-bubble {
+  background: #162430;
+  color: #f8fafc;
+  border: 1.5px solid var(--border-light);
+}
+
+body[data-theme="dark"] .start-bubble-tag {
+  background: #162430;
+  color: #72f218;
+}
+body[data-theme="dark"] .start-bubble-tag::after {
+  background: #162430;
+}
+
+body[data-theme="dark"] .duo-quiz-overlay {
+  background: #0f1922;
+}
+
+body[data-theme="dark"] .quiz-progress-track {
+  background: #2a4052;
+}
+
+body[data-theme="dark"] .speech-bubble {
+  background: var(--bg-card);
+  border-color: var(--border-light);
+}
+body[data-theme="dark"] .speech-bubble h2 {
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .answer-card-btn {
+  background: var(--bg-card);
+  border-color: var(--border-light);
+  border-bottom-color: #0a1118;
+  color: #ffffff;
+}
+body[data-theme="dark"] .answer-card-btn:hover:not(:disabled) {
+  background: var(--bg-soft);
+}
+body[data-theme="dark"] .answer-card-btn.selected {
+  color: #7dd3fc;
+}
+body[data-theme="dark"] .answer-card-btn.correct {
+  color: #86efac;
+}
+body[data-theme="dark"] .answer-card-btn.wrong {
+  color: #fca5a5;
+}
+
+body[data-theme="dark"] .quiz-bottom-drawer {
+  background: #121e28;
+  border-top-color: var(--border-light);
+}
+body[data-theme="dark"] .quiz-bottom-drawer.state-correct {
+  background: #132f1e;
+  border-top-color: #2e7a00;
+}
+body[data-theme="dark"] .quiz-bottom-drawer.state-correct .feedback-message {
+  color: #8be64e;
+}
+body[data-theme="dark"] .quiz-bottom-drawer.state-wrong {
+  background: #331519;
+  border-top-color: #8f1f20;
+}
+body[data-theme="dark"] .quiz-bottom-drawer.state-wrong .feedback-message {
+  color: #ff8585;
+}
+
+body[data-theme="dark"] .btn-secondary {
+  background-color: var(--bg-card);
+  color: #5ec4ff;
+  border-color: var(--border-light);
+  border-bottom-color: #0a1118;
+}
+
+body[data-theme="dark"] .duo-modal-card {
+  background: var(--bg-card);
+  border-color: var(--border-light);
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .duo-mobile-nav {
+  background: rgba(15, 25, 34, 0.96);
+  border-top-color: var(--border-light);
+}
+
+body[data-theme="dark"] .path-node-btn.locked {
+  background: #233444;
+  box-shadow: 0 8px 0 #15212b;
+  border-color: #2c4154;
+  color: #526c82;
+}
+
+body[data-theme="dark"] .podium-step.step-1 {
+  background: linear-gradient(180deg, #3b3012 0%, #29200b 100%);
+}
+
+body[data-theme="dark"] .mode-switch-btn {
+  background: var(--bg-card);
+  border-color: var(--border-light);
+  border-bottom-color: #0a1118;
+}
+body[data-theme="dark"] .mode-switch-btn.active[data-mode="gael"] {
+  background: var(--duo-green-tint);
+  border-color: var(--duo-green);
+}
+body[data-theme="dark"] .mode-switch-btn.active[data-mode="quizzone"],
+body[data-theme="dark"] .mode-switch-btn.active[data-mode="quizzocampo"] {
+  background: var(--duo-blue-tint);
+  border-color: var(--duo-blue);
+}
+body[data-theme="dark"] .mode-switch-btn.active[data-mode="pastore"] {
+  background: rgba(255, 200, 0, 0.16);
+  border-color: #ffc800;
+}
+body[data-theme="dark"] .mode-switch-btn.active .mode-switch-icon {
+  background: rgba(15, 25, 34, 0.65);
+}
+
+body[data-theme="dark"] .home-pwa-login-banner {
+  background: linear-gradient(135deg, rgba(28, 176, 246, 0.15) 0%, rgba(88, 204, 2, 0.1) 100%);
+  border-color: #0284c7;
+}
+
+body[data-theme="dark"] .banner-instructions-box {
+  background: rgba(18, 26, 42, 0.85);
+  border-color: #27374d;
+}
+
+body[data-theme="dark"] .comp-xp { color: #fde047; }
+body[data-theme="dark"] .comp-acc { color: #86efac; }
+body[data-theme="dark"] .comp-gems { color: #7dd3fc; }
+
+body[data-theme="dark"] .duo-input {
+  background: var(--bg-soft);
+  border-color: var(--border-light);
+  color: #ffffff;
+}

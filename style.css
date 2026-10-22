@@ -2743,6 +2743,33 @@ body {
   border-bottom-width: 2px;
 }
 
+.btn-share-story {
+  width: 100%;
+  background: linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%);
+  color: #ffffff;
+  border: 2px solid #6b21a8;
+  border-bottom: 5px solid #581c87;
+  border-radius: 14px;
+  padding: 13px 16px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.1s, filter 0.15s;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+.btn-share-story:hover {
+  filter: brightness(1.08);
+}
+.btn-share-story:active {
+  transform: translateY(3px);
+  border-bottom-width: 2px;
+}
+
 /* ============================================================
    MULTI-SPORT EXPANSION & CATEGORY STREAKS (RETENTION ENGINE)
    ============================================================ */

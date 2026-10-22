@@ -2141,6 +2141,334 @@ Mettiti alla prova su: https://fuoriclasse.cloud`;
   }
 };
 
+// ============================================================================
+// GENERATORE & CONDIVISIONE STORY CARD 9:16 (INSTAGRAM, TIKTOK, STATO WHATSAPP)
+// ============================================================================
+function loadStoryImage(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+async function renderStoryCardToCanvas() {
+  const canvas = document.getElementById('storyCanvas');
+  if (!canvas) return null;
+  const ctx = canvas.getContext('2d');
+  const W = 1080;
+  const H = 1920;
+  canvas.width = W;
+  canvas.height = H;
+
+  const sp = state.activeSport || 'calcio';
+  const isF1 = sp === 'f1';
+  const isBasket = sp === 'basket';
+  const isPastore = state.sessionGameType === 'pastore' || state.activeGameMode === 'pastore';
+  const isGael = state.sessionGameType === 'gael' || state.activeGameMode === 'gael';
+
+  const sportTitle = isF1
+    ? 'QUIZ LIKE A BOOMER 🏎️'
+    : isBasket
+      ? 'BASKET NBA LEGENDS 🏀'
+      : isPastore
+        ? 'PASTORE LEAGUE 🎯'
+        : isGael
+          ? 'GAEL LEAGUE 👕'
+          : 'IL GRANDE QUIZZONE ⚡';
+
+  const sportThemeColor = isF1 ? '#e10600' : (isBasket ? '#ff7700' : '#00b06f');
+  const streakDays = state.categoryStreaks?.[sp]?.streak || 1;
+  const level = state.currentDiffLevel || 1;
+  const heartsLeft = state.hearts || 5;
+  const xpGained = state.pendingXp || 90;
+
+  // 1. Sfondo gradiente scuro moderno
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, '#090e14');
+  bgGrad.addColorStop(0.3, '#101c29');
+  bgGrad.addColorStop(0.7, '#152436');
+  bgGrad.addColorStop(1, '#080d13');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // 2. Bagliori stadio / riflettori diagonali
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  const radGrad1 = ctx.createRadialGradient(W / 2, 450, 50, W / 2, 450, 600);
+  radGrad1.addColorStop(0, sportThemeColor);
+  radGrad1.addColorStop(1, 'transparent');
+  ctx.fillStyle = radGrad1;
+  ctx.fillRect(0, 0, W, H);
+
+  const radGrad2 = ctx.createRadialGradient(W / 2, 1200, 100, W / 2, 1200, 700);
+  radGrad2.addColorStop(0, '#ffc800');
+  radGrad2.addColorStop(1, 'transparent');
+  ctx.fillStyle = radGrad2;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  // 3. Cornice elegante Card centrale
+  const cardX = 60;
+  const cardY = 120;
+  const cardW = W - 120;
+  const cardH = H - 240;
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(17, 28, 41, 0.88)';
+  ctx.strokeStyle = '#ffc800';
+  ctx.lineWidth = 6;
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+  ctx.shadowBlur = 40;
+  
+  // Rettangolo arrotondato
+  ctx.beginPath();
+  ctx.roundRect(cardX, cardY, cardW, cardH, 44);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  // 4. Logo e Header Superiore
+  ctx.textAlign = 'center';
+  ctx.font = '900 48px "Nunito", sans-serif';
+  ctx.fillStyle = '#ffc800';
+  ctx.fillText('⚽  F U O R I C L A S S E  ⚽', W / 2, cardY + 90);
+
+  ctx.font = '800 32px "Nunito", sans-serif';
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText('SFIDA QUOTIDIANA DI CULTURA SPORTIVA', W / 2, cardY + 145);
+
+  // Pillola Categoria Sport
+  ctx.save();
+  ctx.font = '900 34px "Nunito", sans-serif';
+  const pillText = sportTitle;
+  const pillW = ctx.measureText(pillText).width + 80;
+  const pillX = (W - pillW) / 2;
+  const pillY = cardY + 185;
+  ctx.fillStyle = sportThemeColor;
+  ctx.beginPath();
+  ctx.roundRect(pillX, pillY, pillW, 64, 32);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(pillText, W / 2, pillY + 44);
+  ctx.restore();
+
+  // 5. Mascotte e Trofeo Centrali
+  const mascotSrc = isF1
+    ? 'assets/f1-mascot.jpg'
+    : isBasket
+      ? 'assets/basket-mascot.jpg'
+      : isPastore
+        ? 'assets/pastore-mascot.jpg'
+        : isGael
+          ? 'assets/gael-mascot.jpg'
+          : 'assets/mascot-coach.jpg';
+
+  const trophySrc = isF1
+    ? 'assets/trophy-f1.jpg'
+    : isBasket
+      ? 'assets/trophy-basket.jpg'
+      : isPastore
+        ? 'assets/trophy-pastore.jpg'
+        : isGael
+          ? 'assets/trophy-gael.jpg'
+          : 'assets/trophy-quizzone.jpg';
+
+  const [mascotImg, trophyImg] = await Promise.all([
+    loadStoryImage(mascotSrc),
+    loadStoryImage(trophySrc)
+  ]);
+
+  const mascotBoxSize = 360;
+  const mascotX = (W - mascotBoxSize) / 2;
+  const mascotY = cardY + 290;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(mascotX, mascotY, mascotBoxSize, mascotBoxSize, 36);
+  ctx.clip();
+  if (mascotImg) {
+    ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
+  } else {
+    ctx.fillStyle = '#22384e';
+    ctx.fillRect(mascotX, mascotY, mascotBoxSize, mascotBoxSize);
+  }
+  ctx.restore();
+
+  // Bordo dorato mascotte
+  ctx.save();
+  ctx.strokeStyle = '#ffc800';
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.roundRect(mascotX, mascotY, mascotBoxSize, mascotBoxSize, 36);
+  ctx.stroke();
+  ctx.restore();
+
+  // Trofeo sovrapposto in basso a destra della mascotte
+  if (trophyImg) {
+    const trophySize = 150;
+    const trophyX = mascotX + mascotBoxSize - 90;
+    const trophyY = mascotY + mascotBoxSize - 90;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(trophyX + trophySize / 2, trophyY + trophySize / 2, trophySize / 2 + 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#111b24';
+    ctx.fill();
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.clip();
+    ctx.drawImage(trophyImg, trophyX, trophyY, trophySize, trophySize);
+    ctx.restore();
+  }
+
+  // 6. Testo del Risultato
+  const infoY = mascotY + mascotBoxSize + 70;
+
+  ctx.font = '900 64px "Nunito", sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('ROUND SUPERATO! 🏆', W / 2, infoY);
+
+  ctx.font = '800 40px "Nunito", sans-serif';
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillText(`Difficoltà: Livello ${level}/10 • Bottino +${xpGained} XP`, W / 2, infoY + 65);
+
+  // 7. Griglia 5/5 Corrette in stile Arcade
+  const squaresY = infoY + 125;
+  const squareW = 76;
+  const squareGap = 20;
+  const totalGridW = 5 * squareW + 4 * squareGap;
+  const startGridX = (W - totalGridW) / 2;
+
+  for (let i = 0; i < 5; i++) {
+    const sqX = startGridX + i * (squareW + squareGap);
+    ctx.save();
+    ctx.fillStyle = '#58cc02';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.roundRect(sqX, squaresY, squareW, squareW, 16);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.font = '900 38px "Nunito", sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('✓', sqX + squareW / 2, squaresY + 52);
+    ctx.restore();
+  }
+
+  // 8. Box Grande Streak
+  const streakBoxY = squaresY + 130;
+  const streakBoxW = cardW - 120;
+  const streakBoxX = (W - streakBoxW) / 2;
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(255, 119, 0, 0.16)';
+  ctx.strokeStyle = '#ff7700';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.roundRect(streakBoxX, streakBoxY, streakBoxW, 130, 26);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.font = '900 48px "Nunito", sans-serif';
+  ctx.fillStyle = '#ff9500';
+  ctx.fillText(`🔥 STREAK: ${streakDays} GIORNI CONSECUTIVI`, W / 2, streakBoxY + 62);
+
+  ctx.font = '800 30px "Nunito", sans-serif';
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillText(`Mister: ${state.username || 'Fuoriclasse'} • ❤️ ${heartsLeft}/${state.maxHearts || 5} Vite Rimaste`, W / 2, streakBoxY + 105);
+  ctx.restore();
+
+  // 9. Sticker Bottom Call To Action per Storie
+  const ctaY = streakBoxY + 180;
+  ctx.save();
+  ctx.fillStyle = '#ffc800';
+  ctx.beginPath();
+  ctx.roundRect((W - 680) / 2, ctaY, 680, 80, 40);
+  ctx.fill();
+
+  ctx.font = '900 34px "Nunito", sans-serif';
+  ctx.fillStyle = '#0f172a';
+  ctx.fillText('🔗 GIOCA SU FUORICLASSE.CLOUD', W / 2, ctaY + 52);
+  ctx.restore();
+
+  ctx.font = '800 28px "Nunito", sans-serif';
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText('Metti alla prova la tua cultura sportiva!', W / 2, ctaY + 130);
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), 'image/png');
+  });
+}
+
+window.generateAndShareStoryCard = async () => {
+  const btn = $('#btnShareStory');
+  const oldText = btn ? btn.textContent : '';
+  if (btn) {
+    btn.textContent = '⏳ GENERAZIONE STORY HD...';
+    btn.disabled = true;
+  }
+
+  try {
+    const blob = await renderStoryCardToCanvas();
+    if (!blob) throw new Error('Impossibile generare la Story Card');
+
+    const file = new File([blob], 'fuoriclasse-story.png', { type: 'image/png' });
+    const filesArray = [file];
+
+    trackEvent('share_story_generate', { sport: state.activeSport, round: state.survivalRound });
+
+    // Se il browser supporta la condivisione nativa di file (iOS Safari, Android Chrome)
+    if (navigator.canShare && navigator.canShare({ files: filesArray })) {
+      await navigator.share({
+        files: filesArray,
+        title: 'Fuoriclasse Story',
+        text: 'Ho completato il round su Fuoriclasse! Riuscirai a battermi? https://fuoriclasse.cloud'
+      });
+      trackEvent('share_story_native_success', { sport: state.activeSport });
+    } else {
+      // Fallback per Desktop / browser senza file share: mostra anteprima e download HD
+      const previewImg = document.getElementById('storyPreviewImg');
+      const downloadBtn = document.getElementById('storyDownloadBtn');
+      const previewUrl = URL.createObjectURL(blob);
+      if (previewImg) previewImg.src = previewUrl;
+      if (downloadBtn) downloadBtn.href = previewUrl;
+      const modal = document.getElementById('storyPreviewModal');
+      if (modal) modal.hidden = false;
+      trackEvent('share_story_fallback_modal', { sport: state.activeSport });
+    }
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      console.warn('Errore condivisione story:', err);
+      // Mostra modale di fallback
+      const modal = document.getElementById('storyPreviewModal');
+      if (modal) modal.hidden = false;
+    }
+  } finally {
+    if (btn) {
+      btn.textContent = oldText;
+      btn.disabled = false;
+    }
+  }
+};
+
+window.copyStoryLink = async () => {
+  const linkBtn = document.getElementById('storyCopyLinkBtn');
+  const url = 'https://fuoriclasse.cloud';
+  try {
+    await navigator.clipboard.writeText(url);
+    if (linkBtn) {
+      linkBtn.textContent = '✅ LINK COPIATO! INCOLLALO COME STICKER';
+      setTimeout(() => { if (linkBtn) linkBtn.textContent = '🔗 Copia Link da incollare come Sticker'; }, 2500);
+    }
+  } catch (_) {}
+};
+
 window.advanceToNextDifficultyRound = () => {
   if (state.hearts <= 0) {
     failQuizSessionByNoHearts();

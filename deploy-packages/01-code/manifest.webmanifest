@@ -1,0 +1,29 @@
+{
+  "id": "fuoriclasse-app",
+  "name": "Fuoriclasse — Quizzone, Gael League & Pastore League",
+  "short_name": "Fuoriclasse",
+  "description": "Quizzone (1.500 quiz Serie A & Champions), Gael League (1.500 carriere & club misteriosi PRO) e Pastore League (2.000 marcatori Serie A).",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b192c",
+  "theme_color": "#0b192c",
+  "lang": "it",
+  "dir": "ltr",
+  "categories": ["sports", "games", "education"],
+  "icons": [
+    {
+      "src": "./assets/mascot-coach.jpg?v=33",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon.svg?v=33",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
