@@ -1,6 +1,14 @@
 <!doctype html>
 <html lang="it">
 <head>
+  <script>
+    // Salvaguardia Dominio: Se l'utente atterra sul vecchio dominio matteornati.com
+    // (o dopo un redirect OAuth di Google/Supabase), reindirizza istantaneamente su fuoriclasse.cloud
+    // preservando intatti token di autenticazione (#access_token) e parametri di sessione!
+    if (window.location.hostname.includes('matteornati.com')) {
+      window.location.replace('https://www.fuoriclasse.cloud/' + window.location.search + window.location.hash);
+    }
+  </script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
   <meta name="description" content="Fuoriclasse — Gael League (indovina il calciatore dalla carriera Anni '90 e 2000) & Quizzocampo (il grande quiz del calcio). 1.380+ sfide verificate." />

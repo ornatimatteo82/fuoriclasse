@@ -8,6 +8,11 @@
  * ============================================================================
  */
 
+// Se l'utente si trova su matteornati.com (es. redirect OAuth legacy), rimanda a fuoriclasse.cloud preservando token!
+if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('matteornati.com')) {
+  window.location.replace('https://www.fuoriclasse.cloud/' + window.location.search + window.location.hash);
+}
+
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 const esc = (str = '') => String(str).replace(/[&<>"']/g, (m) => ({
@@ -3696,13 +3701,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initSupabase();
 
   const getAppRedirectUrl = () => {
+    // Reindirizza sempre e solo a fuoriclasse.cloud (mai più a matteornati.com)
     if (window.location.hostname.includes('fuoriclasse.cloud')) {
       return `${window.location.origin}/`;
     }
-    if (window.location.hostname.includes('matteornati.com')) {
-      return 'https://www.matteornati.com/Fuoriclasse/index.html';
-    }
-    return window.location.origin + window.location.pathname;
+    return 'https://www.fuoriclasse.cloud/';
   };
 
   // UNICO ACCESSO UFFICIALE: LOGIN CON GOOGLE
