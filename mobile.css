@@ -96,6 +96,34 @@
     padding: 6px 9px;
   }
 
+  /* Macro Sport Switcher su Mobile */
+  .macro-sport-switcher {
+    gap: 6px;
+    padding: 6px;
+    border-radius: 16px;
+    margin-bottom: 14px;
+  }
+  .macro-sport-btn {
+    padding: 8px 6px;
+    flex-direction: column;
+    text-align: center;
+    gap: 4px;
+    border-radius: 12px;
+  }
+  .macro-btn-icon {
+    font-size: 24px;
+  }
+  .macro-btn-text b {
+    font-size: 12.5px;
+  }
+  .macro-btn-text small {
+    display: none;
+  }
+  .macro-btn-streak {
+    font-size: 10.5px;
+    padding: 2px 6px;
+  }
+
   /* Modale Quiz mobile full screen */
   .quiz-topbar {
     padding: 12px 14px;

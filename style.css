@@ -2770,6 +2770,214 @@ body {
   border-bottom-width: 2px;
 }
 
+/* ========================================================
+   MACRO SPORT SWITCHER (CALCIO | F1 BOOMER | BASKET NBA)
+   ======================================================== */
+.macro-sport-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+  background: var(--bg-card);
+  padding: 8px;
+  border-radius: 20px;
+  border: 2px solid var(--border-light);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+.macro-sport-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 2px solid transparent;
+  border-bottom: 4px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: all 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.macro-sport-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+  transform: translateY(-2px);
+}
+.macro-sport-btn.active {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+.macro-btn-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+.macro-btn-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.macro-btn-text b {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+}
+.macro-btn-text small {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.macro-btn-streak {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: rgba(255, 119, 0, 0.12);
+  color: #ff7700;
+  border: 1px solid rgba(255, 119, 0, 0.25);
+  white-space: nowrap;
+}
+
+/* Stili per Sport Attivo nel Macro Switcher */
+.macro-sport-btn[data-sport="calcio"].active {
+  background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #58cc02;
+  border-bottom-color: #3b8a00;
+  color: #166534;
+}
+.macro-sport-btn[data-sport="calcio"].active .macro-btn-text b {
+  color: #15803d;
+}
+
+.macro-sport-btn[data-sport="f1"].active {
+  background: linear-gradient(180deg, #fff5f5 0%, #fee2e2 100%);
+  border-color: #e10600;
+  border-bottom-color: #990000;
+  color: #991b1b;
+}
+.macro-sport-btn[data-sport="f1"].active .macro-btn-text b {
+  color: #e10600;
+}
+
+.macro-sport-btn[data-sport="basket"].active {
+  background: linear-gradient(180deg, #fffaf0 0%, #ffedd5 100%);
+  border-color: #f97316;
+  border-bottom-color: #c2410c;
+  color: #9a3412;
+}
+.macro-sport-btn[data-sport="basket"].active .macro-btn-text b {
+  color: #ea580c;
+}
+
+/* ========================================================
+   TEMA SPECIFICO F1 BOOMER (RACING PATTERN & SCARLET)
+   ======================================================== */
+body[data-sport="f1"] {
+  background-color: #101015 !important;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(225, 6, 0, 0.25) 0%, transparent 60%),
+    radial-gradient(circle at 100% 30%, rgba(255, 30, 0, 0.15) 0%, transparent 40%),
+    linear-gradient(rgba(225, 6, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(225, 6, 0, 0.04) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px !important;
+  color: #f8fafc !important;
+}
+body[data-sport="f1"] .duo-topbar {
+  background: rgba(18, 16, 20, 0.95) !important;
+  border-bottom-color: rgba(225, 6, 0, 0.4) !important;
+}
+body[data-sport="f1"] #heroBannerCard {
+  background: linear-gradient(135deg, #181115 0%, #2e0f17 45%, #e10600 100%) !important;
+  border: 2px solid #e10600 !important;
+  box-shadow: 0 16px 40px rgba(225, 6, 0, 0.35) !important;
+}
+body[data-sport="f1"] .hero-quick-btn {
+  background: linear-gradient(180deg, #e10600 0%, #b80500 100%) !important;
+  border-color: #ff3333 !important;
+  border-bottom: 5px solid #7a0300 !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(225, 6, 0, 0.5) !important;
+}
+body[data-sport="f1"] .path-node-btn.current {
+  background: linear-gradient(180deg, #ff3333 0%, #e10600 100%) !important;
+  border: 3px solid #ffffff !important;
+  border-bottom: 6px solid #850300 !important;
+  box-shadow: 0 8px 24px rgba(225, 6, 0, 0.6) !important;
+}
+body[data-sport="f1"] .path-node-btn.completed {
+  background: linear-gradient(180deg, #b80500 0%, #7a0300 100%) !important;
+  border-bottom: 5px solid #4a0200 !important;
+}
+body[data-sport="f1"] .unit-banner-card {
+  background: linear-gradient(135deg, #1c1417 0%, #2b1116 100%) !important;
+  border-left: 6px solid #e10600 !important;
+  box-shadow: 0 8px 20px rgba(225, 6, 0, 0.15) !important;
+}
+body[data-sport="f1"] .unit-banner-card small {
+  color: #ff6b6b !important;
+}
+body[data-sport="f1"] .unit-progress-pill {
+  background: rgba(225, 6, 0, 0.25) !important;
+  color: #ffc800 !important;
+  border-color: rgba(225, 6, 0, 0.5) !important;
+}
+
+/* ========================================================
+   TEMA SPECIFICO NBA BASKET (PARQUET & ARENA ROYAL/ORANGE)
+   ======================================================== */
+body[data-sport="basket"] {
+  background-color: #0c1422 !important;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.25) 0%, transparent 60%),
+    radial-gradient(circle at 0% 30%, rgba(29, 66, 138, 0.3) 0%, transparent 45%),
+    linear-gradient(rgba(249, 115, 22, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29, 66, 138, 0.05) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px !important;
+  color: #f8fafc !important;
+}
+body[data-sport="basket"] .duo-topbar {
+  background: rgba(14, 21, 35, 0.95) !important;
+  border-bottom-color: rgba(249, 115, 22, 0.4) !important;
+}
+body[data-sport="basket"] #heroBannerCard {
+  background: linear-gradient(135deg, #101c30 0%, #1d428a 50%, #ea580c 100%) !important;
+  border: 2px solid #f97316 !important;
+  box-shadow: 0 16px 40px rgba(249, 115, 22, 0.35) !important;
+}
+body[data-sport="basket"] .hero-quick-btn {
+  background: linear-gradient(180deg, #f97316 0%, #c2410c 100%) !important;
+  border-color: #ff9843 !important;
+  border-bottom: 5px solid #7c2d12 !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.5) !important;
+}
+body[data-sport="basket"] .path-node-btn.current {
+  background: linear-gradient(180deg, #fb923c 0%, #ea580c 100%) !important;
+  border: 3px solid #ffffff !important;
+  border-bottom: 6px solid #9a3412 !important;
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.6) !important;
+}
+body[data-sport="basket"] .path-node-btn.completed {
+  background: linear-gradient(180deg, #c2410c 0%, #7c2d12 100%) !important;
+  border-bottom: 5px solid #431407 !important;
+}
+body[data-sport="basket"] .unit-banner-card {
+  background: linear-gradient(135deg, #132034 0%, #1e314e 100%) !important;
+  border-left: 6px solid #f97316 !important;
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.15) !important;
+}
+body[data-sport="basket"] .unit-banner-card small {
+  color: #fb923c !important;
+}
+body[data-sport="basket"] .unit-progress-pill {
+  background: rgba(249, 115, 22, 0.25) !important;
+  color: #ffc800 !important;
+  border-color: rgba(249, 115, 22, 0.5) !important;
+}
+
 /* ============================================================
    MULTI-SPORT EXPANSION & CATEGORY STREAKS (RETENTION ENGINE)
    ============================================================ */

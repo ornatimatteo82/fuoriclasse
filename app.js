@@ -53,14 +53,20 @@ const state = {
   completedLessons: ['u1-l1', 'u11-l1'],
   claimedChests: [],
   dailyGoalDone: 1,
+  dailyGoalMax: 3,
+  activeUnitIdx: 0,
+  activeLessonIdx: 0,
+  quizOpen: false,
+  survivalRound: 1,
+  currentDiffLevel: 1,
+  pendingXp: 0,
+  pendingGems: 0,
+  hintRevealed: false,
   dailyGoalTarget: 5,
   todayCorrect: 2,
 
   // Stato Partita attiva
-  quizOpen: false,
   quizMode: 'path',
-  activeUnitIdx: 0,
-  activeLessonIdx: 0,
   currentQuestions: [],
   questionIndex: 0,
   selectedAnswer: null,
@@ -69,6 +75,7 @@ const state = {
   sessionCorrect: 0,
   comboStreak: 0
 };
+window.state = state;
 
 let catalog = {
   units: [],
@@ -515,58 +522,78 @@ function updateSportBadgeUI() {
 
 function updateSportUITheme() {
   const sp = state.activeSport || 'calcio';
+  document.body.setAttribute('data-sport', sp);
+
   const brandImg = document.querySelector('.brand-avatar-img');
   const mascotImg = document.querySelector('.hero-mascot-img');
   const roleTag = document.querySelector('.mascot-role-tag');
   const leagueTrophy = $('#leagueHeroTrophy');
   const modeSwitcher = document.querySelector('.game-mode-switcher');
 
+  // Aggiorna pulsanti Macro Switcher
+  $$('.macro-sport-btn').forEach(btn => {
+    const isCur = btn.dataset.sport === sp;
+    btn.classList.toggle('active', isCur);
+    btn.setAttribute('aria-selected', String(isCur));
+  });
+
+  // Aggiorna badge streak nel macro switcher
+  const cStreak = state.categoryStreaks?.calcio?.streak || 0;
+  const fStreak = state.categoryStreaks?.f1?.streak || 0;
+  const bStreak = state.categoryStreaks?.basket?.streak || 0;
+  if ($('#streakBadgeCalcio')) $('#streakBadgeCalcio').textContent = `🔥 ${cStreak}`;
+  if ($('#streakBadgeF1')) $('#streakBadgeF1').textContent = `🔥 ${fStreak}`;
+  if ($('#streakBadgeBasket')) $('#streakBadgeBasket').textContent = `🔥 ${bStreak}`;
+
   if (sp === 'f1') {
-    if (brandImg) brandImg.src = 'assets/f1-mascot.jpg?v=32';
+    if (brandImg) brandImg.src = 'assets/f1-mascot.jpg?v=34';
     if (mascotImg) {
-      mascotImg.src = 'assets/f1-mascot.jpg?v=32';
+      mascotImg.src = 'assets/f1-mascot.jpg?v=34';
       mascotImg.alt = 'Il Pilota Boomer 16-Bit';
     }
-    if (roleTag) roleTag.textContent = 'IL PILOTA BOOMER';
+    if (roleTag) roleTag.textContent = 'IL PILOTA BOOMER 🏎️';
     if ($('#mascotGreeting')) {
       $('#mascotGreeting').textContent = '"Senti il rombo dei V12 e l\'odore di gomma bruciata? Da Lauda e Senna a Schumi, qui conta la vera conoscenza dei motori!"';
     }
     if (leagueTrophy) {
-      leagueTrophy.src = 'assets/trophy-f1.jpg?v=32';
+      leagueTrophy.src = 'assets/trophy-f1.jpg?v=34';
       leagueTrophy.alt = 'Coppa dei Motori / Pistone d\'Oro';
     }
     if ($('#heroModeBadge')) $('#heroModeBadge').textContent = '🏎️ F1 • 1970 - 2024';
-    if ($('#heroPoolBadge')) $('#heroPoolBadge').textContent = '4.100+ SFIDE STORICHE';
+    if ($('#heroPoolBadge')) $('#heroPoolBadge').textContent = '10 UNITÀ GP • 4.100 SFIDE';
     if ($('#heroTitle')) $('#heroTitle').textContent = 'Quiz like a Boomer: Formula 1';
     if ($('#heroDescription')) $('#heroDescription').innerHTML = 'Ruggiti V10 e V12, Lauda vs Hunt, Senna a Donington, l\'era Schumi, curve mitiche e segreti dei box!';
-    if ($('#heroQuickPlayText')) $('#heroQuickPlayText').textContent = 'SCENDI IN PISTA';
+    if ($('#heroQuickPlayText')) $('#heroQuickPlayText').textContent = 'SCENDI IN PISTA 🏁';
     if ($('#currentUnitBadgeText')) $('#currentUnitBadgeText').textContent = 'F1 BOOMER • 10 UNITÀ GP';
+    if ($('#currentUnitBadgeIcon')) $('#currentUnitBadgeIcon').textContent = '🏎️';
     if (modeSwitcher) modeSwitcher.style.display = 'none';
   } else if (sp === 'basket') {
-    if (brandImg) brandImg.src = 'assets/basket-mascot.jpg?v=32';
+    if (brandImg) brandImg.src = 'assets/basket-mascot.jpg?v=34';
     if (mascotImg) {
-      mascotImg.src = 'assets/basket-mascot.jpg?v=32';
+      mascotImg.src = 'assets/basket-mascot.jpg?v=34';
       mascotImg.alt = 'Il Campione NBA 16-Bit';
     }
-    if (roleTag) roleTag.textContent = 'IL CAMPIONE NBA #23';
+    if (roleTag) roleTag.textContent = 'IL CAMPIONE NBA #23 🏀';
     if ($('#mascotGreeting')) {
       $('#mascotGreeting').textContent = '"Mancano 5 secondi sul cronometro dei 24: hai il sangue freddo per infilare il tiro sulla sirena come Jordan, Kobe o Curry?"';
     }
     if (leagueTrophy) {
-      leagueTrophy.src = 'assets/trophy-basket.jpg?v=32';
+      leagueTrophy.src = 'assets/trophy-basket.jpg?v=34';
       leagueTrophy.alt = 'Trofeo Larry O\'Brien / Anello NBA';
     }
     if ($('#heroModeBadge')) $('#heroModeBadge').textContent = '🏀 NBA • 1980 - 2024';
-    if ($('#heroPoolBadge')) $('#heroPoolBadge').textContent = '4.100+ SFIDE STORICHE';
+    if ($('#heroPoolBadge')) $('#heroPoolBadge').textContent = '10 UNITÀ FINALS • 4.100 SFIDE';
     if ($('#heroTitle')) $('#heroTitle').textContent = 'Buzzer Beater: NBA Legends';
     if ($('#heroDescription')) $('#heroDescription').innerHTML = 'Showtime Lakers vs Celtics, i Bulls di Jordan, Kobe & Shaq, LeBron, Steph Curry e i canestri a fil di sirena!';
-    if ($('#heroQuickPlayText')) $('#heroQuickPlayText').textContent = 'PALLA A DUE';
+    if ($('#heroQuickPlayText')) $('#heroQuickPlayText').textContent = 'PALLA A DUE 🏀';
     if ($('#currentUnitBadgeText')) $('#currentUnitBadgeText').textContent = 'BASKET NBA • 10 UNITÀ FINALS';
+    if ($('#currentUnitBadgeIcon')) $('#currentUnitBadgeIcon').textContent = '🏀';
     if (modeSwitcher) modeSwitcher.style.display = 'none';
   } else {
     // CALCIO
-    if (brandImg) brandImg.src = 'assets/mascot-coach.jpg?v=32';
+    if (brandImg) brandImg.src = 'assets/mascot-coach.jpg?v=34';
     if (modeSwitcher) modeSwitcher.style.display = 'grid';
+    if ($('#currentUnitBadgeIcon')) $('#currentUnitBadgeIcon').textContent = '⚽';
   }
 }
 
@@ -576,7 +603,7 @@ window.switchSport = async (targetSport) => {
   state.activeSport = targetSport;
 
   if (targetSport === 'calcio') {
-    state.activeGameMode = 'quizzocampo';
+    state.activeGameMode = (state.activeGameMode === 'f1' || state.activeGameMode === 'basket') ? 'quizzocampo' : (state.activeGameMode || 'quizzocampo');
   } else if (targetSport === 'f1') {
     state.activeGameMode = 'f1';
   } else if (targetSport === 'basket') {
@@ -592,7 +619,9 @@ window.switchSport = async (targetSport) => {
   await loadSportCurriculum(targetSport);
 
   updateSportUITheme();
-  setGameMode(state.activeGameMode, false);
+  if (targetSport === 'calcio') {
+    setGameMode(state.activeGameMode, false);
+  }
   renderUnitJumpModal();
   renderSnakePath();
   persistState();
@@ -608,7 +637,9 @@ async function loadCurriculum() {
   updateHomeInstallBannerVisibility();
   updateSportBadgeUI();
   updateSportUITheme();
-  setGameMode(state.activeGameMode, false);
+  if (state.activeSport === 'calcio') {
+    setGameMode(state.activeGameMode, false);
+  }
   renderUnitJumpModal();
   renderLeaderboard();
   renderQuests();
@@ -838,6 +869,7 @@ window.updateHomeInstallBannerVisibility = updateHomeInstallBannerVisibility;
 // 5. SWITCHER 3 MODALITÀ DI GIOCO: QUIZZONE, GAEL LEAGUE, PASTORE LEAGUE
 // -------------------------------------------------------------
 window.setGameMode = (mode, scroll = true) => {
+  if (state.activeSport !== 'calcio') return; // Se siamo in F1 o Basket, ignora
   if (mode === 'quizzone' || mode === 'quiz') mode = 'quizzocampo';
   if (mode !== 'gael' && mode !== 'pastore' && mode !== 'quizzocampo') {
     mode = 'quizzocampo';
@@ -1095,8 +1127,8 @@ function renderSnakePath() {
           <span class="node-caption">${esc(lesson.title)}</span>
           ${isCurrent ? `
             <div class="node-mascot-companion" aria-hidden="true">
-              <img src="${uMode === 'pastore' ? 'assets/pastore-mascot.jpg' : uMode === 'gael' ? 'assets/gael-mascot.jpg' : 'assets/mascot-coach.jpg'}" alt="" class="node-companion-img" width="52" height="52" />
-              <div class="node-mascot-bubble">${uMode === 'pastore' ? 'Chi ha segnato? 🎯' : uMode === 'gael' ? 'Chi è il bomber? 👕' : 'Pronto al quiz? ⚡'}</div>
+              <img src="${state.activeSport === 'f1' ? 'assets/f1-mascot.jpg' : state.activeSport === 'basket' ? 'assets/basket-mascot.jpg' : (uMode === 'pastore' ? 'assets/pastore-mascot.jpg' : uMode === 'gael' ? 'assets/gael-mascot.jpg' : 'assets/mascot-coach.jpg')}" alt="" class="node-companion-img" width="52" height="52" />
+              <div class="node-mascot-bubble">${state.activeSport === 'f1' ? 'Accendi i motori! 🏎️' : state.activeSport === 'basket' ? 'Canestro o ferro? 🏀' : (uMode === 'pastore' ? 'Chi ha segnato? 🎯' : uMode === 'gael' ? 'Chi è il bomber? 👕' : 'Pronto al quiz? ⚡')}</div>
             </div>
           ` : ''}
         </div>
@@ -1165,15 +1197,24 @@ window.jumpToUnit = (uIdx) => {
   const unit = catalog.units[uIdx];
   if (!unit) return;
 
-  const uMode = unit.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
-  setGameMode(uMode, false);
-  switchTab('path', uMode);
+  if (state.activeSport === 'calcio') {
+    const uMode = unit.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
+    setGameMode(uMode, false);
+    switchTab('path', uMode);
+  }
 
   const unitTitle = unit.title || unit.name || '';
   const badgeText = $('#currentUnitBadgeText');
   if (badgeText) {
-    const shortMode = uMode === 'pastore' ? 'PASTORE' : uMode === 'gael' ? 'GAEL' : 'QUIZ';
-    badgeText.textContent = `${shortMode} • ${unitTitle.toUpperCase().slice(0, 18)}`;
+    if (state.activeSport === 'f1') {
+      badgeText.textContent = `F1 • ${unitTitle.toUpperCase().slice(0, 18)}`;
+    } else if (state.activeSport === 'basket') {
+      badgeText.textContent = `NBA • ${unitTitle.toUpperCase().slice(0, 18)}`;
+    } else {
+      const uMode = unit.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
+      const shortMode = uMode === 'pastore' ? 'PASTORE' : uMode === 'gael' ? 'GAEL' : 'QUIZ';
+      badgeText.textContent = `${shortMode} • ${unitTitle.toUpperCase().slice(0, 18)}`;
+    }
   }
 
   setTimeout(() => {
@@ -1454,7 +1495,9 @@ function startQuizSession(mode, questionsList) {
   const isGael = Boolean(firstQ.name && Array.isArray(firstQ.clubs));
 
   state.quizMode = mode;
-  state.sessionGameType = isGael ? 'gael' : 'quizzocampo';
+  state.sessionGameType = isGael
+    ? 'gael'
+    : (state.activeSport === 'f1' ? 'f1' : state.activeSport === 'basket' ? 'basket' : (state.activeGameMode || 'quizzocampo'));
   state.survivalRound = 1;
   state.currentDiffLevel = Math.min(10, Math.max(1, Number(firstQ.difficultyLevel) || ((state.activeUnitIdx % 10) + 1) || 1));
   state.pendingXp = 0;

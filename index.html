@@ -21,9 +21,9 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="style.css?v=34" />
-  <link rel="stylesheet" href="mobile.css?v=34" />
-  <link rel="stylesheet" href="dark-theme.css?v=34" />
+  <link rel="stylesheet" href="style.css?v=35" />
+  <link rel="stylesheet" href="mobile.css?v=35" />
+  <link rel="stylesheet" href="dark-theme.css?v=35" />
   <script>
     (function() {
       try {
@@ -212,6 +212,34 @@
               <img src="assets/mascot-coach.jpg" alt="Fuoriclasse" class="banner-mascot-img" width="84" height="84" />
             </div>
           </div>
+        </div>
+
+        <!-- SUPER SWITCHER SPORT MACRO (CALCIO | F1 BOOMER | BASKET NBA) -->
+        <div class="macro-sport-switcher" role="tablist" aria-label="Scegli Categoria Sportiva">
+          <button class="macro-sport-btn active" id="sportTabCalcio" data-sport="calcio" type="button" role="tab" aria-selected="true" onclick="switchSport('calcio')">
+            <span class="macro-btn-icon">⚽</span>
+            <div class="macro-btn-text">
+              <b>CALCIO</b>
+              <small>5.000+ Sfide • Quizzone, Gael, Pastore</small>
+            </div>
+            <span class="macro-btn-streak" id="streakBadgeCalcio">🔥 1</span>
+          </button>
+          <button class="macro-sport-btn" id="sportTabF1" data-sport="f1" type="button" role="tab" aria-selected="false" onclick="switchSport('f1')">
+            <span class="macro-btn-icon">🏎️</span>
+            <div class="macro-btn-text">
+              <b>F1 BOOMER</b>
+              <small>4.100+ Quiz • Dal 1970 a oggi</small>
+            </div>
+            <span class="macro-btn-streak" id="streakBadgeF1">🔥 0</span>
+          </button>
+          <button class="macro-sport-btn" id="sportTabBasket" data-sport="basket" type="button" role="tab" aria-selected="false" onclick="switchSport('basket')">
+            <span class="macro-btn-icon">🏀</span>
+            <div class="macro-btn-text">
+              <b>BASKET NBA</b>
+              <small>4.100+ Quiz • Dal 1980 a oggi</small>
+            </div>
+            <span class="macro-btn-streak" id="streakBadgeBasket">🔥 0</span>
+          </button>
         </div>
 
         <!-- SWITCHER PRINCIPALE MODALITÀ DI GIOCO (QUIZZONE vs GAEL LEAGUE vs PASTORE LEAGUE) -->
@@ -1237,6 +1265,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=34"></script>
+  <script src="app.js?v=35"></script>
 </body>
 </html>
