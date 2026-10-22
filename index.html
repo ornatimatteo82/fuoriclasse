@@ -208,17 +208,17 @@
         <div class="home-pwa-login-banner" id="homeInstallLoginBanner">
           <div class="banner-top-badge">
             <span class="badge-accent">⚡ ESPERIENZA COMPLETA</span>
-            <span class="badge-sub">SALVATAGGIO CLOUD &amp; PWA A SCHERMO INTERO</span>
+            <span class="badge-sub" id="bannerBadgeSub">SALVATAGGIO CLOUD &amp; PWA A SCHERMO INTERO</span>
             <button class="banner-close-btn" id="btnBannerDismiss" type="button" aria-label="Chiudi avviso">✕</button>
           </div>
           <div class="banner-body-grid">
             <div class="banner-text-content">
-              <h3>📱 Salva la tua Carriera &amp; Gioca a Schermo Intero!</h3>
-              <p>
+              <h3 id="bannerTitle">📱 Salva la tua Carriera &amp; Gioca a Schermo Intero!</h3>
+              <p id="bannerDescription">
                 Accedi con <b>Google</b> con 1 solo clic per non perdere mai vite, XP e streak.
                 Installa <b>Fuoriclasse PWA</b> sul tuo telefono o PC e attiva le notifiche per non perdere la serie 🔥!
               </p>
-              <div class="banner-instructions-box">
+              <div class="banner-instructions-box" id="bannerInstructionsBox">
                 <div class="inst-line">
                   <span class="inst-os-badge">🍏 Su iPhone / iPad (Safari):</span>
                   <span>Tocca l'icona <b>Condividi</b> <span class="inst-icon">⎘</span> in basso su Safari e premi <b>"Aggiungi a schermata Home" ➕</b>.</span>
@@ -1384,6 +1384,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=39"></script>
+  <script src="app.js?v=40"></script>
 </body>
 </html>

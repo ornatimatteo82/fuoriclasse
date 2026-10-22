@@ -1069,6 +1069,7 @@ function getDailyHeartRefillsInfo() {
 function isRunningStandalonePwa() {
   return (
     window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches ||
     window.navigator.standalone === true ||
     Boolean(document.referrer && document.referrer.includes('android-app://'))
   );
@@ -1077,20 +1078,66 @@ function isRunningStandalonePwa() {
 function updateHomeInstallBannerVisibility() {
   const banner = $('#homeInstallLoginBanner');
   if (!banner) return;
-  // Banner sempre visibile come richiesto dall'utente
-  banner.hidden = false;
-  banner.style.display = 'block';
 
+  const isPwa = isRunningStandalonePwa();
+  const instBox = $('#bannerInstructionsBox');
+  const installBtn = $('#btnBannerInstallPwa');
   const loginBtn = $('#btnBannerLoginGoogle');
+  const notifBtn = $('#btnBannerNotifications');
+  const bannerTitle = $('#bannerTitle');
+  const bannerDesc = $('#bannerDescription');
+  const bannerBadgeSub = $('#bannerBadgeSub');
+
+  if (isPwa) {
+    // Utente GIÀ IN PWA: Non mostrare mai la guida né il tasto di installazione
+    if (instBox) instBox.style.display = 'none';
+    if (installBtn) installBtn.style.display = 'none';
+    if (bannerBadgeSub) bannerBadgeSub.textContent = 'APP PWA A SCHERMO INTERO';
+
+    const hasNotif = ('Notification' in window && Notification.permission === 'granted');
+
+    if (currentCloudUser && hasNotif) {
+      // Già in PWA, già autenticato e con notifiche attive: nascondi del tutto il banner per non rubare spazio
+      banner.hidden = true;
+      banner.style.display = 'none';
+      return;
+    }
+
+    if (currentCloudUser && !hasNotif) {
+      // Già in PWA e autenticato, ma senza notifiche attive
+      if (bannerTitle) bannerTitle.innerHTML = '🔔 Salva la tua Streak ogni sera!';
+      if (bannerDesc) bannerDesc.innerHTML = 'Attiva le notifiche per ricevere un promemoria la sera prima di mezzanotte ed evitare di azzerare la tua serie di vittorie 🔥!';
+      banner.hidden = false;
+      banner.style.display = 'block';
+    } else {
+      // In PWA ma non ancora collegato con Google
+      if (bannerTitle) bannerTitle.innerHTML = '☁️ Salva i tuoi progressi nel Cloud';
+      if (bannerDesc) bannerDesc.innerHTML = 'Sei nell\'app Fuoriclasse! Accedi con <b>Google</b> con 1 clic per sincronizzare XP, vite e streak nel Cloud.';
+      banner.hidden = false;
+      banner.style.display = 'block';
+    }
+  } else {
+    // Navigazione da normale browser web: mostra guida installazione e opzioni complete
+    if (instBox) instBox.style.display = 'flex';
+    if (installBtn) installBtn.style.display = 'inline-flex';
+    if (bannerBadgeSub) bannerBadgeSub.textContent = 'SALVATAGGIO CLOUD & PWA A SCHERMO INTERO';
+    if (bannerTitle) bannerTitle.innerHTML = '📱 Salva la tua Carriera &amp; Gioca a Schermo Intero!';
+    if (bannerDesc) bannerDesc.innerHTML = 'Accedi con <b>Google</b> con 1 solo clic per non perdere mai vite, XP e streak. Installa <b>Fuoriclasse PWA</b> sul tuo telefono o PC e attiva le notifiche per non perdere la serie 🔥!';
+    banner.hidden = false;
+    banner.style.display = 'block';
+  }
+
   if (loginBtn) {
     if (currentCloudUser) {
       loginBtn.innerHTML = `<span>👤 CONNESSO: ${esc(sanitizeUsername(state.username || 'CAMPIONE'))}</span>`;
       loginBtn.onclick = () => switchTab('profile');
+    } else {
+      loginBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" style="margin-right:7px;vertical-align:middle;"><path fill="#ffffff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#ffffff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#ffffff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#ffffff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg><span>ACCEDI CON GOOGLE</span>`;
+      loginBtn.onclick = null;
     }
   }
 
   // Notifiche status sul banner
-  const notifBtn = $('#btnBannerNotifications');
   if (notifBtn && 'Notification' in window) {
     if (Notification.permission === 'granted') {
       notifBtn.innerHTML = '<span>🔔 NOTIFICHE ATTIVE ✅</span>';
@@ -3933,6 +3980,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (error) {
       openModal('Errore Google Login', `<p>${esc(error.message)}</p>`);
     }
+  });
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.deferredPrompt = e;
+    updateHomeInstallBannerVisibility();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    window.deferredPrompt = null;
+    updateHomeInstallBannerVisibility();
   });
 
   $('#btnBannerInstallPwa')?.addEventListener('click', async () => {
