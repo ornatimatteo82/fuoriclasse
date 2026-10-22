@@ -1698,7 +1698,43 @@ function renderQuizQuestion() {
   if (fill) fill.style.width = `${pct}%`;
 
   $('#quizHeartsNum').textContent = state.hearts;
-  $('#quizMascotMood').textContent = state.comboStreak >= 2 ? '🔥' : '🎯';
+
+  // Aggiornamento mascotte e mood del quiz in base allo sport / modalità
+  const mascotImg = $('#quizMascotImg');
+  const sp = state.activeSport || 'calcio';
+  const gm = state.sessionGameType || state.activeGameMode || 'quizzocampo';
+
+  if (mascotImg) {
+    if (sp === 'f1' || gm === 'f1') {
+      mascotImg.src = 'assets/f1-mascot.jpg?v=36';
+      mascotImg.alt = 'Il Pilota Boomer 16-Bit';
+    } else if (sp === 'basket' || gm === 'basket') {
+      mascotImg.src = 'assets/basket-mascot.jpg?v=36';
+      mascotImg.alt = 'Il Campione NBA 16-Bit';
+    } else if (gm === 'pastore') {
+      mascotImg.src = 'assets/pastore-mascot.jpg?v=36';
+      mascotImg.alt = 'Giuseppe Pastore 16-Bit';
+    } else if (gm === 'gael' || Boolean(q.name && Array.isArray(q.clubs))) {
+      mascotImg.src = 'assets/gael-mascot.jpg?v=36';
+      mascotImg.alt = 'Gael 16-Bit';
+    } else {
+      mascotImg.src = 'assets/mascot-coach.jpg?v=36';
+      mascotImg.alt = 'Il Mister #10';
+    }
+  }
+
+  const moodEl = $('#quizMascotMood');
+  if (moodEl) {
+    if (state.comboStreak >= 2) {
+      moodEl.textContent = '🔥';
+    } else if (sp === 'f1' || gm === 'f1') {
+      moodEl.textContent = '🏎️';
+    } else if (sp === 'basket' || gm === 'basket') {
+      moodEl.textContent = '🏀';
+    } else {
+      moodEl.textContent = '🎯';
+    }
+  }
 
   const drawer = $('#quizBottomDrawer');
   drawer.className = 'quiz-bottom-drawer';

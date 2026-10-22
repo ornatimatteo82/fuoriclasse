@@ -3052,6 +3052,50 @@ body[data-sport="f1"] .duo-mobile-nav .mobile-nav-btn.active {
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.6) !important;
 }
 
+/* Quiz Avatar & Badges in F1 (NO AZZURRO) */
+body[data-sport="f1"] .quiz-mascot-avatar {
+  border: 3px solid #ffffff !important;
+  box-shadow: 0 5px 0 #cbd5e1, 0 8px 24px rgba(225, 6, 0, 0.4) !important;
+}
+body[data-sport="f1"] .audio-speak-btn {
+  background: #ffffff !important;
+  color: #e10600 !important;
+  box-shadow: 0 4px 0 #cbd5e1 !important;
+}
+body[data-sport="f1"] .quiz-archive-pill {
+  background: #ffffff !important;
+  color: #e10600 !important;
+  border: 1.5px solid #ffffff !important;
+  font-weight: 900 !important;
+}
+body[data-sport="f1"] .quiz-type-badge {
+  background: rgba(225, 6, 0, 0.15) !important;
+  color: #ff4d4d !important;
+  border: 1.5px solid rgba(225, 6, 0, 0.45) !important;
+}
+
+/* Quiz Avatar & Badges in Basket */
+body[data-sport="basket"] .quiz-mascot-avatar {
+  border: 3px solid #f97316 !important;
+  box-shadow: 0 5px 0 #c2410c, 0 8px 24px rgba(249, 115, 22, 0.4) !important;
+}
+body[data-sport="basket"] .audio-speak-btn {
+  background: #f97316 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 0 #c2410c !important;
+}
+body[data-sport="basket"] .quiz-archive-pill {
+  background: #1d428a !important;
+  color: #ffffff !important;
+  border: 1.5px solid #f97316 !important;
+  font-weight: 900 !important;
+}
+body[data-sport="basket"] .quiz-type-badge {
+  background: rgba(249, 115, 22, 0.15) !important;
+  color: #fb923c !important;
+  border: 1.5px solid rgba(249, 115, 22, 0.45) !important;
+}
+
 /* ========================================================
    TEMA SPECIFICO NBA BASKET (PARQUET & ARENA ROYAL/ORANGE)
    ======================================================== */
