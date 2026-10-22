@@ -1978,13 +1978,26 @@ function verifyAnswer() {
     state.pendingXp = (state.pendingXp || 0) + earnedNow;
     const goalVariant = playTone('correct');
 
-    const goalBanners = [
+    const goalBannersCalcio = [
       '⚽ GOOOOL! BOATO DELLA CURVA!',
       '🔥 EUROGOL ALL\'INCROCIO DEI PALI!',
       '⚡ TIRO DELLA TIGRE IN RETE!',
       '🎺 STADIO IN DELIRIO! RETEEEE!'
     ];
-    const shoutText = goalBanners[(goalVariant || 0) % goalBanners.length];
+    const goalBannersF1 = [
+      '🏎️ SORPASSO ALL\'ESTERNO IN STACCATA!',
+      '🏁 GIRO RECORD IN PISTA! VELOCITÀ PURA!',
+      '🔥 V12 A LIMITATORE! TRAIETTORIA PERFETTA!',
+      '🍾 BANDIERA A SCACCHI! PRIMO SUL PODIO!'
+    ];
+    const goalBannersBasket = [
+      '🏀 BUZZER BEATER SULLA SIRENA! TRIPLISSIMA!',
+      '🔥 SCHIACCIATA DA POSTER IN TRANSIZIONE!',
+      '⚡ SOLO RETE! SWISH DALL\'ARCO!',
+      '🏆 AND ONE! CANESTRO CON FALLO!'
+    ];
+    const activeBanners = state.activeSport === 'f1' ? goalBannersF1 : state.activeSport === 'basket' ? goalBannersBasket : goalBannersCalcio;
+    const shoutText = activeBanners[(goalVariant || 0) % activeBanners.length];
 
     $('#quizMascotMood').textContent = '🥳';
     if (state.comboStreak >= 2) {
