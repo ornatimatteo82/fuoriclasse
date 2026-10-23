@@ -1,5 +1,5 @@
-// Fuoriclasse Service Worker v41 — Auto-Refresh, PWA & Streak Notifications
-const SW_VERSION = 'fuoriclasse-v41';
+// Fuoriclasse Service Worker v46 — Auto-Refresh, PWA & Streak Notifications
+const SW_VERSION = 'fuoriclasse-v46';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

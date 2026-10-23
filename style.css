@@ -1209,6 +1209,8 @@ body {
   position: relative;
   z-index: 1;
   transition: transform 0.2s;
+  scroll-margin-top: 100px;
+  scroll-margin-bottom: 100px;
 }
 
 /* Offset orizzontali per creare l'onda sinusoidale Duolingo */
@@ -2145,6 +2147,12 @@ body {
   border-bottom-color: var(--duo-yellow-dark);
   transform: translateY(-10px);
 }
+.podium-step.step-1 b {
+  color: #451a03;
+}
+.podium-step.step-1 .podium-xp {
+  color: #92400e;
+}
 .podium-crown {
   position: absolute;
   top: -18px;
@@ -2190,6 +2198,14 @@ body {
 .rank-row.is-user {
   background: var(--duo-green-tint);
   border-color: var(--duo-green);
+}
+.rank-row.is-user .rank-name {
+  color: #14532d;
+  font-weight: 900;
+}
+.rank-row.is-user .rank-xp {
+  color: #15803d;
+  font-weight: 900;
 }
 .rank-pos {
   width: 28px;
@@ -2890,6 +2906,9 @@ body {
   font-weight: 900;
   letter-spacing: 0.3px;
 }
+.macro-hide-narrow {
+  display: inline;
+}
 .macro-btn-text small {
   font-size: 11.5px;
   font-weight: 700;
@@ -2938,6 +2957,12 @@ body {
 }
 .macro-sport-btn[data-sport="basket"].active .macro-btn-text b {
   color: #ea580c;
+}
+
+/* Modalità Quizzone, Gael e Pastore visibili ESCLUSIVAMENTE in Calcio */
+body[data-sport="f1"] .game-mode-switcher,
+body[data-sport="basket"] .game-mode-switcher {
+  display: none !important;
 }
 
 /* Sidebar Nav Item per Sport & Sottomodalità */

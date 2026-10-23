@@ -46,6 +46,11 @@ const state = {
   theme: 'light',
   activeTab: 'path',
   activeSport: 'calcio', // 'calcio' | 'f1' | 'basket'
+  categoryXp: {
+    calcio: 120,
+    f1: 0,
+    basket: 0
+  },
   categoryStreaks: {
     calcio: { streak: 3, lastDay: null, freezeCount: 1 },
     f1: { streak: 0, lastDay: null, freezeCount: 0 },
@@ -65,6 +70,9 @@ const state = {
   dailyGoalMax: 3,
   activeUnitIdx: 0,
   activeLessonIdx: 0,
+  lastActiveUnit: 0,
+  lastActiveLesson: 0,
+  recentQuestionKeys: [],
   quizOpen: false,
   survivalRound: 1,
   currentDiffLevel: 1,
@@ -218,6 +226,19 @@ function loadState() {
       if (saved.activeSport && ['calcio', 'f1', 'basket'].includes(saved.activeSport)) {
         state.activeSport = saved.activeSport;
       }
+      if (saved.categoryXp && typeof saved.categoryXp === 'object') {
+        state.categoryXp = {
+          calcio: Number(saved.categoryXp.calcio) || 0,
+          f1: Number(saved.categoryXp.f1) || 0,
+          basket: Number(saved.categoryXp.basket) || 0
+        };
+      } else {
+        state.categoryXp = {
+          calcio: state.xp || 120,
+          f1: 0,
+          basket: 0
+        };
+      }
       if (saved.categoryStreaks && typeof saved.categoryStreaks === 'object') {
         state.categoryStreaks = {
           calcio: {
@@ -261,6 +282,17 @@ function loadState() {
       if (Array.isArray(saved.claimedChests)) {
         state.claimedChests = saved.claimedChests;
       }
+      if (Number.isFinite(saved.lastActiveUnit)) {
+        state.lastActiveUnit = saved.lastActiveUnit;
+        state.activeUnitIdx = saved.lastActiveUnit;
+      }
+      if (Number.isFinite(saved.lastActiveLesson)) {
+        state.lastActiveLesson = saved.lastActiveLesson;
+        state.activeLessonIdx = saved.lastActiveLesson;
+      }
+      if (Array.isArray(saved.recentQuestionKeys)) {
+        state.recentQuestionKeys = saved.recentQuestionKeys.slice(-30);
+      }
       state.dailyGoalDone = Number.isFinite(saved.dailyGoalDone) ? saved.dailyGoalDone : 1;
       state.todayCorrect = Number.isFinite(saved.todayCorrect) ? saved.todayCorrect : 2;
     }
@@ -275,6 +307,7 @@ function persistState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       username: state.username,
       xp: state.xp,
+      categoryXp: state.categoryXp,
       streak: activeStreak,
       activeSport: state.activeSport,
       categoryStreaks: state.categoryStreaks,
@@ -290,6 +323,9 @@ function persistState() {
       activeGameMode: state.activeGameMode,
       completedLessons: state.completedLessons,
       claimedChests: state.claimedChests,
+      lastActiveUnit: state.lastActiveUnit,
+      lastActiveLesson: state.lastActiveLesson,
+      recentQuestionKeys: (state.recentQuestionKeys || []).slice(-30),
       dailyGoalDone: state.dailyGoalDone,
       todayCorrect: state.todayCorrect
     }));
@@ -563,6 +599,9 @@ function updateSportUITheme() {
   const roleTag = document.querySelector('.mascot-role-tag');
   const leagueTrophy = $('#leagueHeroTrophy');
   const modeSwitcher = document.querySelector('.game-mode-switcher');
+  if (modeSwitcher) {
+    modeSwitcher.style.display = (sp === 'calcio') ? '' : 'none';
+  }
 
   // Aggiorna pulsanti Macro Switcher, Sidebar Desktop e Mobile Nav
   $$('.macro-sport-btn, .sidebar-nav .nav-item[data-sport], .duo-mobile-nav .mobile-nav-btn[data-sport], .profile-sport-item').forEach(btn => {
@@ -772,12 +811,14 @@ window.switchSport = async (targetSport) => {
     setGameMode(state.activeGameMode, false);
   }
   switchTab('path', state.activeGameMode);
+  currentLeagueSport = targetSport;
+  renderLeaderboard(targetSport);
   renderUnitJumpModal();
   renderSnakePath();
   persistState();
 
   trackEvent('sport_switch', { from_sport: previousSport, to_sport: targetSport });
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  scrollToCurrentProgress({ smooth: true, delay: 120 });
 };
 
 async function loadCurriculum() {
@@ -797,6 +838,11 @@ async function loadCurriculum() {
   renderQuests();
   updateTopStats();
   renderSnakePath();
+
+  // Ripristina e centra automaticamente i progressi dell'utente proprio come Duolingo
+  scrollToCurrentProgress({ smooth: false, delay: 50 });
+  setTimeout(() => scrollToCurrentProgress({ smooth: false }), 250);
+  setTimeout(() => scrollToCurrentProgress({ smooth: true }), 650);
 
   trackEvent('page_view', { sport: state.activeSport, is_logged_in: Boolean(currentCloudUser) });
 
@@ -1541,7 +1587,7 @@ function renderSnakePath() {
         : '';
 
       return `
-        <div class="node-row ${offsetClass}">
+        <div class="node-row ${offsetClass}" ${isCurrent ? 'id="currentNodeAnchor"' : ''}>
           ${isCompleted ? '<div class="node-stars-crown" aria-label="3 stelle"><span>★</span><span>★</span><span>★</span></div>' : ''}
           ${isCurrent ? '<div class="start-bubble-tag">INIZIA ⚡</div>' : ''}
           <button
@@ -1592,6 +1638,55 @@ function renderSnakePath() {
 
   container.innerHTML = html;
 }
+
+// Centra i progressi dell'utente nel percorso (stile Duolingo)
+function scrollToCurrentProgress(options = {}) {
+  const { smooth = false, delay = 0 } = options;
+
+  const performScroll = () => {
+    // 1. Cerca il nodo con ancoraggio attivo o classe current
+    let target = document.getElementById('currentNodeAnchor')
+      || document.querySelector('.path-node-btn.current')?.closest('.node-row')
+      || document.querySelector('.path-node-btn.current')
+      || document.querySelector('.start-bubble-tag')?.closest('.node-row')
+      || document.querySelector('.node-mascot-companion')?.closest('.node-row');
+
+    // 2. Se non presente a schermo, cerca per coordinate dell'ultima lezione salvata
+    if (!target && Number.isFinite(state.lastActiveUnit)) {
+      target = document.querySelector(`.path-node-btn[data-unit="${state.lastActiveUnit}"][data-lesson="${state.lastActiveLesson || 0}"]`)?.closest('.node-row');
+    }
+
+    // 3. Fallback: ultimo nodo completato
+    if (!target) {
+      const completed = document.querySelectorAll('.path-node-btn.completed');
+      if (completed.length) {
+        target = completed[completed.length - 1]?.closest('.node-row') || completed[completed.length - 1];
+      }
+    }
+
+    // 4. Ultimo fallback: primo nodo
+    if (!target) {
+      target = document.querySelector('.path-node-btn')?.closest('.node-row');
+    }
+
+    if (target) {
+      target.scrollIntoView({
+        behavior: smooth ? 'smooth' : 'auto',
+        block: 'center',
+        inline: 'nearest'
+      });
+    }
+  };
+
+  if (delay > 0) {
+    setTimeout(performScroll, delay);
+  } else {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(performScroll);
+    });
+  }
+}
+window.scrollToCurrentProgress = scrollToCurrentProgress;
 
 // -------------------------------------------------------------
 // 7. MAPPA VELOCE UNITÀ, BAULI E GUIDA WIKIDATA LIVE
@@ -1707,8 +1802,11 @@ window.forceStartNode = (uIdx, lIdx) => {
 
   state.activeUnitIdx = uIdx;
   state.activeLessonIdx = lIdx;
-  const lesson = catalog?.units?.[uIdx]?.lessons?.[lIdx];
-  const questions = lesson?.questions || lesson?.players || [];
+  state.lastActiveUnit = uIdx;
+  state.lastActiveLesson = lIdx;
+  persistState();
+
+  const questions = getDynamicLessonQuestions(uIdx, lIdx);
   startQuizSession('path', questions);
 };
 
@@ -1816,16 +1914,92 @@ window.loadWikidataFact = async (qid, playerName) => {
 };
 
 // -------------------------------------------------------------
-// 8. MOTORE DI GIOCO INTERATTIVO (GAEL LEAGUE & QUIZZOCAMPO)
+// 8. MOTORE DI GIOCO INTERATTIVO (RANDOMIZZATORE AVANZATO & POOL MULTI-SPORT)
 // -------------------------------------------------------------
-function sampleQuestions(pool, count = 5) {
-  const arr = [...pool];
-  for (let i = arr.length - 1; i > 0; i--) {
+function shuffleArray(arr) {
+  if (!Array.isArray(arr)) return [];
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return arr.slice(0, count);
+  return a;
 }
+window.shuffleArray = shuffleArray;
+
+function sampleQuestions(pool, count = 5) {
+  return shuffleArray(pool).slice(0, count);
+}
+
+function getDynamicLessonQuestions(uIdx, lIdx) {
+  const sp = state.activeSport || 'calcio';
+  const curCat = loadedSportCatalogs[sp] || catalog;
+  const unit = curCat?.units?.[uIdx];
+  const lesson = unit?.lessons?.[lIdx];
+
+  const getQKey = (q) => q ? (q.id || q.name || q.question || '') : '';
+  if (!Array.isArray(state.recentQuestionKeys)) state.recentQuestionKeys = [];
+  const recentSet = new Set(state.recentQuestionKeys);
+
+  // 1. Domande base della tappa specifica
+  const baseQuestions = (lesson?.questions || lesson?.players || []).map(q => ({ ...q }));
+
+  // 2. Domande dell'intera unità tematica (altre tappe della stessa unità)
+  const unitQuestions = [];
+  if (unit && Array.isArray(unit.lessons)) {
+    unit.lessons.forEach(l => {
+      (l.questions || l.players || []).forEach(q => unitQuestions.push({ ...q }));
+    });
+  }
+
+  // 3. Pool di riserva dal mega-archivio dello sport
+  const sportPool = [];
+  if (sp === 'f1' && Array.isArray(curCat?.f1Pool)) {
+    const targetDiff = (uIdx % 3) + 1;
+    const match = curCat.f1Pool.filter(q => Number(q.difficultyLevel) === targetDiff);
+    sportPool.push(...(match.length >= 10 ? match : curCat.f1Pool));
+  } else if (sp === 'basket' && Array.isArray(curCat?.basketPool)) {
+    const targetDiff = (uIdx % 3) + 1;
+    const match = curCat.basketPool.filter(q => Number(q.difficultyLevel) === targetDiff);
+    sportPool.push(...(match.length >= 10 ? match : curCat.basketPool));
+  } else if (sp === 'calcio') {
+    if (uIdx >= 25 && Array.isArray(curCat?.pastoreMode)) {
+      sportPool.push(...curCat.pastoreMode);
+    } else if (uIdx < 10 && curCat?.gaelModes) {
+      Object.values(curCat.gaelModes).forEach(arr => { if (Array.isArray(arr)) sportPool.push(...arr); });
+    } else if (curCat?.extraModes) {
+      Object.values(curCat.extraModes).forEach(arr => { if (Array.isArray(arr)) sportPool.push(...arr); });
+    }
+  }
+
+  // Costruisci pool combinato deduplicato
+  const uniqueMap = new Map();
+  [...baseQuestions, ...unitQuestions, ...sportPool].forEach(q => {
+    const k = getQKey(q);
+    if (k && !uniqueMap.has(k)) {
+      uniqueMap.set(k, q);
+    }
+  });
+
+  const allAvailable = Array.from(uniqueMap.values());
+  // Anti-fatica: escludi quelle affrontate nelle ultime sessioni
+  const unseen = allAvailable.filter(q => !recentSet.has(getQKey(q)));
+  const chosenPool = unseen.length >= 5 ? unseen : allAvailable;
+
+  // Estrai 5 sfide randomiche
+  const picked = sampleQuestions(chosenPool, 5);
+
+  picked.forEach(q => {
+    const k = getQKey(q);
+    if (k) state.recentQuestionKeys.push(k);
+  });
+  if (state.recentQuestionKeys.length > 30) {
+    state.recentQuestionKeys = state.recentQuestionKeys.slice(-30);
+  }
+
+  return picked.length >= 3 ? picked : (baseQuestions.length ? baseQuestions : picked);
+}
+window.getDynamicLessonQuestions = getDynamicLessonQuestions;
 
 function parseCleanQuestionText(rawText = '') {
   const match = rawText.match(/^\[([^\]]+)\]\s*(.*)$/);
@@ -1845,20 +2019,53 @@ function getRoundMultiplier(round = 1) {
 
 function getQuestionsForDifficulty(gameType, diffLevel, count = 5) {
   const targetDiff = Math.max(1, Number(diffLevel) || 1);
-  const units = catalog?.units || [];
+  const sp = state.activeSport || 'calcio';
+  const curCat = loadedSportCatalogs[sp] || catalog;
+  const units = curCat?.units || [];
   let pool = [];
 
-  const actualMode = (gameType === 'quiz' || gameType === 'quizzone') ? 'quizzocampo' : (gameType || 'gael');
-  const modeUnits = units.filter(u => (u.mode || '') === actualMode);
-  const targetUnit = modeUnits[Math.min(modeUnits.length - 1, targetDiff - 1)] || modeUnits[0];
+  if (sp === 'f1') {
+    const targetUnit = units[Math.min(units.length - 1, targetDiff - 1)] || units[0];
+    if (targetUnit && Array.isArray(targetUnit.lessons)) {
+      targetUnit.lessons.forEach(l => {
+        if (Array.isArray(l.questions)) pool.push(...l.questions);
+      });
+    }
+    if (Array.isArray(curCat?.f1Pool)) {
+      const matchPool = curCat.f1Pool.filter(q => Number(q.difficultyLevel) === ((targetDiff - 1) % 3) + 1);
+      pool.push(...(matchPool.length ? matchPool : curCat.f1Pool));
+    }
+  } else if (sp === 'basket') {
+    const targetUnit = units[Math.min(units.length - 1, targetDiff - 1)] || units[0];
+    if (targetUnit && Array.isArray(targetUnit.lessons)) {
+      targetUnit.lessons.forEach(l => {
+        if (Array.isArray(l.questions)) pool.push(...l.questions);
+      });
+    }
+    if (Array.isArray(curCat?.basketPool)) {
+      const matchPool = curCat.basketPool.filter(q => Number(q.difficultyLevel) === ((targetDiff - 1) % 3) + 1);
+      pool.push(...(matchPool.length ? matchPool : curCat.basketPool));
+    }
+  } else {
+    const actualMode = (gameType === 'quiz' || gameType === 'quizzone') ? 'quizzocampo' : (gameType || 'gael');
+    const modeUnits = units.filter(u => (u.mode || '') === actualMode);
+    const targetUnit = modeUnits[Math.min(modeUnits.length - 1, targetDiff - 1)] || modeUnits[0] || units[0];
 
-  if (targetUnit && Array.isArray(targetUnit.lessons)) {
-    targetUnit.lessons.forEach(l => {
-      if (Array.isArray(l.questions)) pool.push(...l.questions);
-    });
+    if (targetUnit && Array.isArray(targetUnit.lessons)) {
+      targetUnit.lessons.forEach(l => {
+        if (Array.isArray(l.questions || l.players)) pool.push(...(l.questions || l.players));
+      });
+    }
+    if (actualMode === 'pastore' && Array.isArray(curCat?.pastoreMode)) {
+      pool.push(...curCat.pastoreMode);
+    } else if (actualMode === 'gael' && curCat?.gaelModes) {
+      Object.values(curCat.gaelModes).forEach(arr => { if (Array.isArray(arr)) pool.push(...arr); });
+    } else if (curCat?.extraModes) {
+      Object.values(curCat.extraModes).forEach(arr => { if (Array.isArray(arr)) pool.push(...arr); });
+    }
   }
 
-  // Deduplica per nome/domanda
+  // Deduplica per nome/domanda/id
   const uniqueMap = new Map();
   pool.forEach(q => {
     const key = q.name || q.question || q.id;
@@ -2063,10 +2270,12 @@ function startQuizSession(mode, questionsList) {
   state.pendingGems = 0;
   state.usedQuestionIds = new Set(safeQuestions.map(q => q.name || q.question || q.id));
 
-  state.currentQuestions = safeQuestions.map(q => ({
+  // Randomizza sia l'ordine delle domande sia l'ordine delle opzioni di ogni singola domanda
+  const sessionQuestions = shuffleArray(safeQuestions).slice(0, Math.min(5, safeQuestions.length));
+  state.currentQuestions = sessionQuestions.map(q => ({
     ...q,
     difficultyLevel: state.currentDiffLevel,
-    options: [...(q.options || [])]
+    options: shuffleArray(q.options || [])
   }));
   state.questionIndex = 0;
   state.selectedAnswer = null;
@@ -2089,6 +2298,9 @@ function startQuizSession(mode, questionsList) {
 function closeQuizSession() {
   // Se l'utente chiude mentre è nella schermata di fine round con bottino attivo e vite > 0, incassa automaticamente
   if (state.sessionFinished && state.hearts > 0 && (state.pendingXp > 0 || state.pendingGems > 0)) {
+    const curSport = state.activeSport || 'calcio';
+    if (!state.categoryXp) state.categoryXp = { calcio: 120, f1: 0, basket: 0 };
+    state.categoryXp[curSport] = (state.categoryXp[curSport] || 0) + state.pendingXp;
     state.xp += state.pendingXp;
     state.gems += state.pendingGems;
     state.pendingXp = 0;
@@ -2109,6 +2321,7 @@ function closeQuizSession() {
   renderQuests();
   renderLeaderboard();
   updateTopStats();
+  scrollToCurrentProgress({ smooth: true, delay: 100 });
 }
 
 function renderQuizQuestion() {
@@ -2716,6 +2929,9 @@ function completeQuizSession() {
 window.cashOutQuizRun = () => {
   const bankedXp = state.pendingXp || 0;
   const bankedGems = state.pendingGems || 0;
+  const curSport = state.activeSport || 'calcio';
+  if (!state.categoryXp) state.categoryXp = { calcio: 120, f1: 0, basket: 0 };
+  state.categoryXp[curSport] = (state.categoryXp[curSport] || 0) + bankedXp;
   state.xp += bankedXp;
   state.gems += bankedGems;
   state.pendingXp = 0;
@@ -3156,7 +3372,7 @@ window.advanceToNextDifficultyRound = () => {
   state.currentQuestions = nextQuestions.map(q => ({
     ...q,
     difficultyLevel: state.currentDiffLevel,
-    options: [...(q.options || [])]
+    options: shuffleArray(q.options || [])
   }));
 
   state.questionIndex = 0;
@@ -3233,21 +3449,75 @@ function stopConfetti() {
 }
 
 // -------------------------------------------------------------
-// 10. CLASSIFICA UFFICIALE (SOLO GIOCATORI REALI CLOUD SUPABASE)
+// 10. CLASSIFICHE SEPARATE PER SPORT (CALCIO, F1 BOOMER, BASKET NBA)
 // -------------------------------------------------------------
-async function renderLeaderboard() {
+let currentLeagueSport = 'calcio';
+
+async function renderLeaderboard(targetSport) {
+  const sport = targetSport || currentLeagueSport || state.activeSport || 'calcio';
+  currentLeagueSport = sport;
+
   const list = $('#leaderboardList');
   const podiumEl = $('#leaguePodium');
   if (!list) return;
 
+  // Aggiorna grafica, trofeo e testi della Classifica per lo Sport selezionato
+  const trophyImg = $('#leagueHeroTrophy');
+  const badgeEl = $('#leagueDivisionBadge');
+  const titleEl = $('#leagueTitle');
+  const descEl = $('#leagueDesc');
+
+  if (sport === 'f1') {
+    if (trophyImg) trophyImg.src = 'assets/trophy-f1.jpg?v=44';
+    if (badgeEl) badgeEl.textContent = 'CAMPIONATO MONDIALE COSTRUTTORI 🏎️';
+    if (titleEl) titleEl.textContent = 'Classifica Mondiale F1';
+    if (descEl) descEl.innerHTML = 'Punti Gran Premio e sfide storiche F1: scala la griglia dei migliori piloti!';
+  } else if (sport === 'basket') {
+    if (trophyImg) trophyImg.src = 'assets/trophy-basket.jpg?v=44';
+    if (badgeEl) badgeEl.textContent = 'ANELLO DEI CAMPIONI NBA 🏀';
+    if (titleEl) titleEl.textContent = 'Classifica Basket NBA';
+    if (descEl) descEl.innerHTML = 'Punti canestro e record NBA: porta il tuo quintetto sul tetto del mondo!';
+  } else {
+    if (trophyImg) trophyImg.src = 'assets/trophy-quizzone.jpg?v=44';
+    if (badgeEl) badgeEl.textContent = 'DIVISIONE SCUDETTO 🏆';
+    if (titleEl) titleEl.textContent = 'Classifica Calcio';
+    if (descEl) descEl.innerHTML = 'I punti XP guadagnati tra Quizzone, Gael League e Pastore League ti fanno vincere lo Scudetto!';
+  }
+
+  // Aggiorna stato attivo dei tab della Classifica
+  $$('#leagueSportSwitcher .macro-sport-btn').forEach(btn => {
+    const isCur = btn.dataset.sport === sport;
+    btn.classList.toggle('active', isCur);
+    btn.setAttribute('aria-selected', String(isCur));
+  });
+
   let competitors = [];
+
+  // Calcolo XP per lo specifico sport per ogni concorrente reale
+  const getCompetitorSportXp = (r, sp) => {
+    const lessons = Array.isArray(r.completed_lessons) ? r.completed_lessons : [];
+    if (sp === 'f1') {
+      const f1Count = lessons.filter(id => id.startsWith('f1-')).length;
+      if (f1Count > 0) return f1Count * 30;
+      return Math.max(0, Math.round((Number(r.xp) || 0) * 0.28));
+    }
+    if (sp === 'basket') {
+      const bCount = lessons.filter(id => id.startsWith('b-') || id.startsWith('nba-')).length;
+      if (bCount > 0) return bCount * 30;
+      return Math.max(0, Math.round((Number(r.xp) || 0) * 0.25));
+    }
+    // Calcio
+    const cCount = lessons.filter(id => !id.startsWith('f1-') && !id.startsWith('b-') && !id.startsWith('nba-')).length;
+    if (cCount > 0) return cCount * 30;
+    return Number(r.xp) || 0;
+  };
 
   // Se Supabase è attivo, carica ESCLUSIVAMENTE i giocatori reali registrati nel Cloud
   if (supabaseClient) {
     try {
       const { data, error } = await supabaseClient
         .from('profiles')
-        .select('id, username, avatar_letter, xp')
+        .select('id, username, avatar_letter, xp, completed_lessons')
         .order('xp', { ascending: false })
         .limit(50);
 
@@ -3256,7 +3526,7 @@ async function renderLeaderboard() {
           .filter(r => !currentCloudUser || r.id !== currentCloudUser.id)
           .map(r => ({
             name: r.username || 'Giocatore',
-            xp: Number(r.xp) || 0,
+            xp: getCompetitorSportXp(r, sport),
             av: (r.avatar_letter || r.username || 'G').trim().charAt(0).toUpperCase()
           }));
       }
@@ -3265,10 +3535,16 @@ async function renderLeaderboard() {
     }
   }
 
+  // XP dell'utente corrente nello sport attivo
+  if (!state.categoryXp) {
+    state.categoryXp = { calcio: state.xp || 120, f1: 0, basket: 0 };
+  }
+  const userSportXp = state.categoryXp[sport] ?? (sport === 'calcio' ? state.xp : 0);
   const userAvatar = (state.username || 'M').trim().charAt(0).toUpperCase();
+
   const full = [
     ...competitors,
-    { name: `${state.username} (Tu)`, xp: state.xp, av: userAvatar, isUser: true }
+    { name: `${state.username} (Tu)`, xp: userSportXp, av: userAvatar, isUser: true }
   ].sort((a, b) => b.xp - a.xp);
 
   // Rendering dinamico del Podio (#leaguePodium) SOLO con giocatori reali
@@ -3343,20 +3619,26 @@ async function renderLeaderboard() {
       </div>
     `);
     if (i === 2 && full.length > 3) {
-      rowsHtml.push(`<div class="promotion-divider">▲ ZONA PROMOZIONE LEGA FUORICLASSE ▲</div>`);
+      const zoneName = sport === 'f1' ? 'ZONA PODIO MONDIALE' : sport === 'basket' ? 'ZONA PLAYOFFS NBA' : 'ZONA PROMOZIONE LEGA';
+      rowsHtml.push(`<div class="promotion-divider">▲ ${zoneName} ▲</div>`);
     }
   });
 
   if (full.length === 1) {
+    const cheer = sport === 'f1' ? '🏎️ <b>Sei in Pole Position!</b>' : sport === 'basket' ? '🏀 <b>Sei il Top Scorer!</b>' : '⚽ <b>Sei al 1° posto!</b>';
     rowsHtml.push(`
       <div style="text-align:center;padding:16px 12px;font-size:13px;color:var(--text-muted);line-height:1.4;">
-        ⚽ <b>Sei al 1° posto!</b> Condividi Fuoriclasse con gli amici per sfidarli in classifica generale.
+        ${cheer} Condividi Fuoriclasse con gli amici per sfidarli in pista.
       </div>
     `);
   }
 
   list.innerHTML = rowsHtml.join('');
 }
+
+window.switchLeagueSport = (sport) => {
+  renderLeaderboard(sport);
+};
 
 function renderQuests() {
   const m1 = Math.min(5, state.todayCorrect);
@@ -3474,9 +3756,15 @@ function switchTab(tabId, forcedGameMode = null) {
 
   if (tabId === 'path' && state.activeSport === 'calcio') {
     setGameMode(state.activeGameMode, false);
+  } else if (tabId === 'league') {
+    renderLeaderboard(currentLeagueSport || state.activeSport || 'calcio');
   }
 
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (tabId === 'path') {
+    scrollToCurrentProgress({ smooth: true, delay: 80 });
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 window.switchTab = switchTab;
 
@@ -4391,6 +4679,18 @@ document.addEventListener('DOMContentLoaded', () => {
     renderQuests();
     updateTopStats();
     openModal('✅ Progressi Azzerati', '<p>Il tuo profilo locale è stato riportato all\'inizio della stagione.</p>');
+  });
+
+  // Ripristino e centraggio progressi su riapertura PWA e ritorno in primo piano
+  window.addEventListener('pageshow', () => {
+    if (state.activeTab === 'path' && !state.quizOpen) {
+      scrollToCurrentProgress({ smooth: false, delay: 50 });
+    }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && state.activeTab === 'path' && !state.quizOpen) {
+      scrollToCurrentProgress({ smooth: false, delay: 50 });
+    }
   });
 });
 

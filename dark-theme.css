@@ -684,3 +684,256 @@ body[data-sport="basket"][data-theme="dark"] .answer-card-btn.selected .key-badg
   background: #f97316 !important;
   color: #ffffff !important;
 }
+
+/* ==========================================================================
+   CLASSIFICA & PODIO BASKET NBA (LEGGIBILITÀ TOTALE HIGH CONTRAST)
+   ========================================================================== */
+body[data-sport="basket"] .league-header-card,
+body[data-sport="basket"][data-theme="dark"] .league-header-card {
+  background: #111c33 !important;
+  border-color: rgba(249, 115, 22, 0.4) !important;
+  color: #f8fafc !important;
+}
+
+body[data-sport="basket"] .league-header-card h2,
+body[data-sport="basket"][data-theme="dark"] .league-header-card h2 {
+  color: #ffffff !important;
+}
+
+body[data-sport="basket"] .league-header-card p,
+body[data-sport="basket"][data-theme="dark"] .league-header-card p {
+  color: #cbd5e1 !important;
+}
+
+body[data-sport="basket"] .podium-step,
+body[data-sport="basket"][data-theme="dark"] .podium-step {
+  background: #15223c !important;
+  border-color: rgba(249, 115, 22, 0.35) !important;
+  border-bottom: 5px solid rgba(194, 65, 12, 0.6) !important;
+  color: #ffffff !important;
+}
+
+body[data-sport="basket"] .podium-step b,
+body[data-sport="basket"][data-theme="dark"] .podium-step b {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+body[data-sport="basket"] .podium-step .podium-xp,
+body[data-sport="basket"][data-theme="dark"] .podium-step .podium-xp {
+  color: #cbd5e1 !important;
+  font-weight: 900 !important;
+}
+
+/* 1° Posto Podio Basket NBA: Larry O'Brien Oro Puro su Midnight Arena */
+body[data-sport="basket"] .podium-step.step-1,
+body[data-sport="basket"][data-theme="dark"] .podium-step.step-1 {
+  background: linear-gradient(180deg, #2e1d0c 0%, #1a1006 100%) !important;
+  border: 2px solid #f59e0b !important;
+  border-bottom: 5px solid #b45309 !important;
+  box-shadow: 0 0 24px rgba(245, 158, 11, 0.45), 0 8px 20px rgba(0, 0, 0, 0.6) !important;
+}
+
+body[data-sport="basket"] .podium-step.step-1 b,
+body[data-sport="basket"][data-theme="dark"] .podium-step.step-1 b {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+body[data-sport="basket"] .podium-step.step-1 .podium-xp,
+body[data-sport="basket"][data-theme="dark"] .podium-step.step-1 .podium-xp {
+  color: #fbbf24 !important;
+  font-weight: 900 !important;
+  font-size: 12px !important;
+}
+
+/* Righe Classifica Basket NBA */
+body[data-sport="basket"] .rank-row,
+body[data-sport="basket"][data-theme="dark"] .rank-row {
+  background: #111c33 !important;
+  border: 2px solid rgba(249, 115, 22, 0.25) !important;
+  color: #f8fafc !important;
+}
+
+body[data-sport="basket"] .rank-row .rank-pos,
+body[data-sport="basket"][data-theme="dark"] .rank-row .rank-pos {
+  color: #cbd5e1 !important;
+  font-weight: 900 !important;
+}
+
+body[data-sport="basket"] .rank-row .rank-name,
+body[data-sport="basket"][data-theme="dark"] .rank-row .rank-name {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+body[data-sport="basket"] .rank-row .rank-xp,
+body[data-sport="basket"][data-theme="dark"] .rank-row .rank-xp {
+  color: #fb923c !important;
+  font-weight: 900 !important;
+}
+
+/* Riga Giocatore Evidenziata in Basket NBA (Royal Blue & Hardwood Orange) */
+body[data-sport="basket"] .rank-row.is-user,
+body[data-sport="basket"][data-theme="dark"] .rank-row.is-user {
+  background: linear-gradient(135deg, rgba(29, 66, 138, 0.55) 0%, rgba(249, 115, 22, 0.3) 100%) !important;
+  border: 2px solid #f97316 !important;
+  border-bottom: 4px solid #c2410c !important;
+  box-shadow: 0 4px 18px rgba(249, 115, 22, 0.3) !important;
+}
+
+body[data-sport="basket"] .rank-row.is-user .rank-pos,
+body[data-sport="basket"][data-theme="dark"] .rank-row.is-user .rank-pos {
+  color: #ffedd5 !important;
+  font-weight: 900 !important;
+}
+
+body[data-sport="basket"] .rank-row.is-user .rank-name,
+body[data-sport="basket"][data-theme="dark"] .rank-row.is-user .rank-name {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+body[data-sport="basket"] .rank-row.is-user .rank-xp,
+body[data-sport="basket"][data-theme="dark"] .rank-row.is-user .rank-xp {
+  color: #ffedd5 !important;
+  font-weight: 900 !important;
+  font-size: 15px !important;
+  text-shadow: 0 0 10px rgba(249, 115, 22, 0.6) !important;
+}
+
+body[data-sport="basket"] .promotion-divider,
+body[data-sport="basket"][data-theme="dark"] .promotion-divider {
+  background: rgba(249, 115, 22, 0.18) !important;
+  color: #fb923c !important;
+  border: 1px solid rgba(249, 115, 22, 0.35) !important;
+}
+
+/* ==========================================================================
+   CLASSIFICA & PODIO F1 BOOMER (RACING RED & CHECKERED FLAG CONTRAST)
+   ========================================================================== */
+body[data-sport="f1"] .league-header-card,
+body[data-sport="f1"][data-theme="dark"] .league-header-card {
+  background: #181115 !important;
+  border-color: rgba(225, 6, 0, 0.4) !important;
+  color: #f8fafc !important;
+}
+
+body[data-sport="f1"] .league-header-card h2,
+body[data-sport="f1"][data-theme="dark"] .league-header-card h2 {
+  color: #ffffff !important;
+}
+
+body[data-sport="f1"] .league-header-card p,
+body[data-sport="f1"][data-theme="dark"] .league-header-card p {
+  color: #cbd5e1 !important;
+}
+
+body[data-sport="f1"] .podium-step,
+body[data-sport="f1"][data-theme="dark"] .podium-step {
+  background: #1e1317 !important;
+  border-color: rgba(225, 6, 0, 0.35) !important;
+  border-bottom: 5px solid rgba(184, 5, 0, 0.6) !important;
+  color: #ffffff !important;
+}
+
+body[data-sport="f1"] .podium-step b,
+body[data-sport="f1"][data-theme="dark"] .podium-step b {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+body[data-sport="f1"] .podium-step .podium-xp,
+body[data-sport="f1"][data-theme="dark"] .podium-step .podium-xp {
+  color: #cbd5e1 !important;
+  font-weight: 900 !important;
+}
+
+/* 1° Posto Podio F1: Trofeo Gran Premio Oro & Racing Red */
+body[data-sport="f1"] .podium-step.step-1,
+body[data-sport="f1"][data-theme="dark"] .podium-step.step-1 {
+  background: linear-gradient(180deg, #2d1114 0%, #19080a 100%) !important;
+  border: 2px solid #e10600 !important;
+  border-bottom: 5px solid #990000 !important;
+  box-shadow: 0 0 24px rgba(225, 6, 0, 0.45), 0 8px 20px rgba(0, 0, 0, 0.6) !important;
+}
+
+body[data-sport="f1"] .podium-step.step-1 b,
+body[data-sport="f1"][data-theme="dark"] .podium-step.step-1 b {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+body[data-sport="f1"] .podium-step.step-1 .podium-xp,
+body[data-sport="f1"][data-theme="dark"] .podium-step.step-1 .podium-xp {
+  color: #ffc800 !important;
+  font-weight: 900 !important;
+  font-size: 12px !important;
+}
+
+/* Righe Classifica F1 */
+body[data-sport="f1"] .rank-row,
+body[data-sport="f1"][data-theme="dark"] .rank-row {
+  background: #181115 !important;
+  border: 2px solid rgba(225, 6, 0, 0.25) !important;
+  color: #f8fafc !important;
+}
+
+body[data-sport="f1"] .rank-row .rank-pos,
+body[data-sport="f1"][data-theme="dark"] .rank-row .rank-pos {
+  color: #cbd5e1 !important;
+  font-weight: 900 !important;
+}
+
+body[data-sport="f1"] .rank-row .rank-name,
+body[data-sport="f1"][data-theme="dark"] .rank-row .rank-name {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+body[data-sport="f1"] .rank-row .rank-xp,
+body[data-sport="f1"][data-theme="dark"] .rank-row .rank-xp {
+  color: #ff4d4d !important;
+  font-weight: 900 !important;
+}
+
+/* Riga Giocatore Evidenziata in F1 */
+body[data-sport="f1"] .rank-row.is-user,
+body[data-sport="f1"][data-theme="dark"] .rank-row.is-user {
+  background: linear-gradient(135deg, rgba(225, 6, 0, 0.35) 0%, rgba(24, 16, 20, 0.95) 100%) !important;
+  border: 2px solid #e10600 !important;
+  border-bottom: 4px solid #990000 !important;
+  box-shadow: 0 4px 18px rgba(225, 6, 0, 0.3) !important;
+}
+
+body[data-sport="f1"] .rank-row.is-user .rank-pos,
+body[data-sport="f1"][data-theme="dark"] .rank-row.is-user .rank-pos {
+  color: #fee2e2 !important;
+  font-weight: 900 !important;
+}
+
+body[data-sport="f1"] .rank-row.is-user .rank-name,
+body[data-sport="f1"][data-theme="dark"] .rank-row.is-user .rank-name {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+body[data-sport="f1"] .rank-row.is-user .rank-xp,
+body[data-sport="f1"][data-theme="dark"] .rank-row.is-user .rank-xp {
+  color: #ffc800 !important;
+  font-weight: 900 !important;
+  font-size: 15px !important;
+}
+
+body[data-sport="f1"] .promotion-divider,
+body[data-sport="f1"][data-theme="dark"] .promotion-divider {
+  background: rgba(225, 6, 0, 0.18) !important;
+  color: #ff6b6b !important;
+  border: 1px solid rgba(225, 6, 0, 0.35) !important;
+}

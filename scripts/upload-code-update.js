@@ -147,30 +147,9 @@ async function uploadSinglePackage(zipFilename) {
 }
 
 async function uploadAndExtractCodeUpdate() {
-  console.log('🔄 Rinfresco sessione Aruba File Manager...');
-  const refreshAs = `
-tell application "Google Chrome"
-    repeat with aWindow in every window
-        repeat with aTab in every tab of aWindow
-            if URL of aTab contains "fm.aruba.it" then
-                set URL of aTab to "https://admin.aruba.it/PannelloAdmin/BridgePost.aspx?Servizio=Gestione_NewLinuxfileManager"
-                return "ok"
-            end if
-        end repeat
-    end repeat
-end tell
-`;
-  try {
-    runAppleScript(refreshAs);
-    sleep(6500);
-  } catch (e) {
-    console.log('Note refresh:', e.message);
-  }
-
-  // Carica ed estrai 01-code.zip, 03-data-f1.zip e 04-data-basket.zip
+  console.log('🚀 Avvio upload 01-code.zip su Aruba...');
   await uploadSinglePackage('01-code.zip');
-  await uploadSinglePackage('03-data-f1.zip');
-  await uploadSinglePackage('04-data-basket.zip');
+  console.log('🎉 01-code.zip caricato ed estratto con successo!');
 }
 
 uploadAndExtractCodeUpdate().catch(err => {
