@@ -3753,98 +3753,100 @@ body[data-sport="basket"] .unit-progress-pill {
 
 /* ========================================================
    VETRINA E BANNER AMAZON AFFILIATE PER CATEGORIE IN OFFERTA
+   (STILE DISPLAY BANNER UFFICIALE AMAZON.IT + PRIME + STELLE)
    ======================================================== */
 .amazon-deals-hub {
-  background: linear-gradient(135deg, #161f2c 0%, #232f3e 100%);
+  background: #ffffff;
   border: 2px solid #ff9900;
-  border-bottom: 5px solid #d47e00;
-  border-radius: 20px;
-  padding: 16px 18px;
+  border-bottom: 5px solid #e47911;
+  border-radius: 18px;
+  padding: 0;
   margin: 0 0 22px 0;
-  color: #ffffff;
-  box-shadow: 0 8px 24px rgba(255, 153, 0, 0.16);
+  color: #0f1111;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
   position: relative;
   overflow: hidden;
 }
 
-.amazon-hub-header {
+/* Top bar ufficiale Amazon Navy #131921 */
+.amazon-official-topbar {
+  background: linear-gradient(90deg, #131921 0%, #232f3e 100%);
+  padding: 10px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  border-bottom: 2px solid #ff9900;
 }
 
-.amazon-brand-tag {
+.amazon-logo-lockup {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  background: #ff9900;
-  color: #111827;
+  gap: 10px;
+}
+
+.amazon-wordmark-svg {
+  height: 24px;
+  width: auto;
+  display: block;
+}
+
+.amazon-prime-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0, 168, 225, 0.16);
+  border: 1px solid #00a8e1;
+  color: #38bdf8;
   font-size: 11px;
   font-weight: 900;
-  padding: 4px 10px;
-  border-radius: 8px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+.amazon-prime-pill b {
+  color: #ff9900;
 }
 
 .amazon-bonus-pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: rgba(255, 200, 0, 0.16);
-  border: 1.5px solid #ffc800;
-  color: #ffc800;
-  font-size: 11.5px;
+  background: #cc0c39;
+  color: #ffffff;
+  font-size: 11px;
   font-weight: 900;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: 6px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
-.amazon-hub-title-row {
-  margin-bottom: 12px;
-}
-
-.amazon-hub-title-row h3 {
-  margin: 0 0 3px 0;
-  font-size: 17px;
-  font-weight: 900;
-  color: #ffffff;
-  letter-spacing: 0.2px;
-}
-
-.amazon-hub-title-row p {
-  margin: 0;
-  font-size: 12.5px;
-  color: #cbd5e1;
-  font-weight: 700;
-}
-
-/* Barra categorie in offerta scorrevole / responsive */
-.amazon-categories-bar {
+/* Sotto-barra categorie Amazon (#232f3e) */
+.amazon-categories-strip {
+  background: #232f3e;
+  padding: 8px 14px;
   display: flex;
+  align-items: center;
   gap: 7px;
   overflow-x: auto;
-  padding-bottom: 8px;
-  margin-bottom: 12px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
-.amazon-categories-bar::-webkit-scrollbar {
+.amazon-categories-strip::-webkit-scrollbar {
   display: none;
 }
 
 .amazon-cat-chip {
   appearance: none;
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   background: rgba(255, 255, 255, 0.08);
-  color: #f1f5f9;
+  color: #ffffff;
   font-family: inherit;
   font-size: 12px;
   font-weight: 800;
-  padding: 6px 12px;
+  padding: 5px 12px;
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
@@ -3854,145 +3856,260 @@ body[data-sport="basket"] .unit-progress-pill {
   transition: transform 0.12s, background-color 0.15s, border-color 0.15s;
 }
 .amazon-cat-chip:hover {
-  background: rgba(255, 153, 0, 0.22);
+  background: rgba(255, 153, 0, 0.25);
   border-color: #ff9900;
 }
 .amazon-cat-chip.active {
-  background: #ff9900;
+  background: #febd69;
   border-color: #ff9900;
   color: #111827;
   font-weight: 900;
-  box-shadow: 0 3px 10px rgba(255, 153, 0, 0.35);
+  box-shadow: 0 2px 8px rgba(255, 153, 0, 0.4);
 }
 
-/* Griglia Offerte della Categoria Selezionata */
+/* Griglia Banner Visivi Prodotti Amazon (Sfondo Bianco Storefront) */
 .amazon-deals-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 12px;
+  padding: 14px;
+  background: #f3f4f6;
 }
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .amazon-deals-grid {
     grid-template-columns: 1fr;
+    padding: 10px;
   }
 }
 
-.amazon-deal-card {
+/* Vero Banner Grafico Prodotto Amazon.it */
+.amazon-visual-banner-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: rgba(15, 23, 42, 0.78);
-  border: 1.5px solid rgba(255, 153, 0, 0.45);
-  border-radius: 14px;
-  padding: 11px 13px;
-  text-decoration: none;
-  color: #ffffff;
-  transition: transform 0.15s, border-color 0.15s, background-color 0.15s;
-}
-.amazon-deal-card:hover {
-  transform: translateY(-2px);
-  border-color: #ff9900;
-  background: rgba(15, 23, 42, 0.95);
-}
-
-.amazon-deal-icon {
-  width: 48px;
-  height: 48px;
+  gap: 14px;
+  background: #ffffff;
+  border: 1.5px solid #d5d9d9;
   border-radius: 12px;
-  background: rgba(255, 153, 0, 0.16);
-  border: 1px solid rgba(255, 153, 0, 0.35);
-  display: grid;
-  place-items: center;
-  font-size: 26px;
-  flex-shrink: 0;
+  padding: 12px;
+  text-decoration: none;
+  color: #0f1111 !important;
+  position: relative;
+  box-shadow: 0 2px 6px rgba(15, 17, 17, 0.08);
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.amazon-visual-banner-card:hover {
+  transform: translateY(-2px);
+  border-color: #e47911;
+  box-shadow: 0 6px 16px rgba(228, 121, 17, 0.22);
 }
 
-.amazon-deal-body {
+/* Box Illustrazione Prodotto con bollino rosso sconto */
+.amazon-product-thumb {
+  width: 86px;
+  height: 86px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #f8fafc 0%, #eef2f6 100%);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.amazon-thumb-emoji {
+  font-size: 40px;
+  line-height: 1;
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,0.14));
+}
+
+.amazon-choice-ribbon {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #232f3e;
+  color: #ffffff;
+  font-size: 8.5px;
+  font-weight: 900;
+  text-align: center;
+  padding: 2px 3px;
+  letter-spacing: 0.03em;
+}
+.amazon-choice-ribbon span {
+  color: #ff9900;
+}
+
+.amazon-corner-pct {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: #cc0c39;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.amazon-banner-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .amazon-deal-badges {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 3px;
   flex-wrap: wrap;
 }
 
-.amazon-discount-badge {
-  background: #ef4444;
+.amazon-red-deal-tag {
+  background: #cc0c39;
   color: #ffffff;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 900;
-  padding: 2px 6px;
-  border-radius: 5px;
-  letter-spacing: 0.03em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
 }
 
-.amazon-cat-label {
-  font-size: 10px;
-  font-weight: 800;
-  color: #fbbf24;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.amazon-cat-tag-text {
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #cc0c39;
 }
 
-.amazon-deal-title {
-  font-size: 13.5px;
+.amazon-product-title {
+  font-size: 14px;
   font-weight: 900;
-  color: #ffffff;
+  color: #0f1111 !important;
   line-height: 1.25;
-  margin-bottom: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.amazon-visual-banner-card:hover .amazon-product-title {
+  color: #c7511f !important;
 }
 
-.amazon-deal-sub {
-  font-size: 11.5px;
-  color: #94a3b8;
-  font-weight: 700;
-  line-height: 1.25;
-}
-
-.amazon-deal-cta {
-  background: #ff9900;
-  color: #111827;
-  font-size: 11.5px;
-  font-weight: 900;
-  padding: 7px 11px;
-  border-radius: 10px;
-  border-bottom: 3px solid #c27200;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-/* Banner Amazon Inline tra le Unità del Percorso */
-.amazon-path-inline-banner {
-  background: linear-gradient(135deg, #1b2533 0%, #232f3e 100%);
-  border: 2px solid #ff9900;
-  border-bottom: 4px solid #c27200;
-  border-radius: 18px;
-  padding: 13px 16px;
-  margin: 18px 0;
+.amazon-stars-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: #ffffff;
+  gap: 5px;
+  font-size: 12px;
+  line-height: 1;
+}
+.amazon-stars-gold {
+  color: #ffa41c;
+  letter-spacing: 1px;
+  font-size: 13px;
+}
+.amazon-reviews-count {
+  color: #007185;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.amazon-price-prime-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 1px;
+}
+
+.amazon-price-drop {
+  font-size: 13px;
+  font-weight: 900;
+  color: #cc0c39;
+}
+
+.amazon-prime-inline {
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #007185;
+}
+.amazon-prime-inline i {
+  color: #ff9900;
+  font-style: normal;
+}
+
+/* Iconico Bottone Giallo Amazon (#FFD814) */
+.amazon-yellow-cta-btn {
+  background: #ffd814;
+  border: 1px solid #fcd200;
+  border-bottom: 3px solid #e2b600;
+  color: #0f1111 !important;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 8px 13px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(213, 217, 217, 0.5);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.amazon-visual-banner-card:hover .amazon-yellow-cta-btn,
+.amazon-path-inline-banner:hover .amazon-yellow-cta-btn {
+  background: #f7ca00;
+  border-color: #f2c200;
+}
+
+@media (max-width: 520px) {
+  .amazon-visual-banner-card {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .amazon-visual-banner-card .amazon-yellow-cta-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 9px 14px;
+    font-size: 13px;
+  }
+}
+
+/* Banner Leaderboard Amazon Inline tra le Unità del Percorso */
+.amazon-path-inline-banner {
+  background: #ffffff;
+  border: 2px solid #ff9900;
+  border-bottom: 4px solid #e47911;
+  border-radius: 16px;
+  padding: 0;
+  margin: 20px 0;
+  display: block;
+  color: #0f1111 !important;
   text-decoration: none;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
   transition: transform 0.15s;
 }
 .amazon-path-inline-banner:hover {
   transform: translateY(-2px);
 }
+.amazon-inline-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 16px;
+  background: #ffffff;
+}
 @media (max-width: 560px) {
-  .amazon-path-inline-banner {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: left;
+  .amazon-inline-body {
+    flex-wrap: wrap;
   }
-  .amazon-path-inline-banner .amazon-deal-cta {
-    text-align: center;
+  .amazon-inline-body .amazon-yellow-cta-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 

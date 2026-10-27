@@ -18,8 +18,8 @@
   <meta name="apple-mobile-web-app-title" content="Fuoriclasse" />
   <title>Fuoriclasse — Gael League &amp; Quizzocampo</title>
 
-  <link rel="manifest" href="manifest.webmanifest?v=49" />
-  <link rel="icon" type="image/svg+xml" href="icon.svg?v=49" />
+  <link rel="manifest" href="manifest.webmanifest?v=50" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg?v=50" />
   <link rel="apple-touch-icon" href="assets/mascot-coach.jpg" />
   <link rel="preload" href="assets/mascot-coach.jpg" as="image" fetchpriority="high" />
 
@@ -31,14 +31,14 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="style.css?v=49" />
-  <link rel="stylesheet" href="mobile.css?v=49" />
-  <link rel="stylesheet" href="dark-theme.css?v=49" />
+  <link rel="stylesheet" href="style.css?v=50" />
+  <link rel="stylesheet" href="mobile.css?v=50" />
+  <link rel="stylesheet" href="dark-theme.css?v=50" />
   <script>
     (function() {
       try {
         // Pulizia selettiva solo di eventuali cache obsolete (mantiene la cache attiva per caricamento 0ms)
-        var ACTIVE_CACHE = 'fuoriclasse-v49';
+        var ACTIVE_CACHE = 'fuoriclasse-v50';
         if ('caches' in window) {
           caches.keys().then(function(keys) {
             return Promise.all(
@@ -323,20 +323,21 @@
           </div>
         </div>
 
-        <!-- VETRINA SEMPRE VISIBILE: BANNER AMAZON CLASSIFICATI PER CATEGORIE IN OFFERTA -->
-        <section class="amazon-deals-hub" id="amazonDealsHubBanner" aria-label="Offerte Amazon per Categoria">
-          <div class="amazon-hub-header">
-            <span class="amazon-brand-tag">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M.7 18.2C5.9 22 13.8 24 19.8 20.3c.9-.6 1.8-1.2 2.6-1.9.5-.4.4-.8-.1-.9-.7-.1-1.4-.3-2-.5-6.5-2.2-12.8-1.6-18.7 1.2-.5.2-.6.7-.2.9zM22.8 17.5c-.3-.4-1.8-.4-2.7-.2-1 .2-1.9.6-2.8.9-.3.1-.3.4 0 .5.7.3 1.5.5 2.3.4.9-.1 2.3-.3 2.9-.8.4-.3.5-.6.3-.8zM15.4 3.7c-4.1.3-8 2.5-10 6-.5.9-.9 2-.9 3.1 0 1.9 1 3.5 2.8 4.2 2.3.9 4.9.4 7.2-.5 2.5-1 4.7-2.6 6.5-4.5.3-.3.1-.7-.3-.7-2.2.3-4.5.8-6.7.4-1.2-.2-2.3-.7-3.1-1.6-.7-.8-1-1.8-.8-2.8.3-1.6 1.8-2.8 3.4-3.1 1.7-.3 3.4.2 4.9 1 .3.2.6 0 .6-.3l.1-.4c.1-.4-.2-.6-.5-.8-1.1-.6-2.4-.8-3.7-.8z"/></svg>
-              PARTNER AMAZON • CATEGORIE IN OFFERTA
-            </span>
-            <span class="amazon-bonus-pill" id="amazonHubBonusPill">🎁 +5 🥫 Bonus Esplorazione</span>
+        <!-- VETRINA SEMPRE VISIBILE: VERO BANNER DISPLAY AMAZON.IT CLASSIFICATO PER CATEGORIE IN OFFERTA -->
+        <section class="amazon-deals-hub" id="amazonDealsHubBanner" aria-label="Offerte Amazon.it per Categoria">
+          <div class="amazon-official-topbar">
+            <div class="amazon-logo-lockup">
+              <svg class="amazon-wordmark-svg" viewBox="0 0 132 36" aria-label="amazon.it">
+                <text x="2" y="21" fill="#ffffff" font-family="Nunito, Arial, sans-serif" font-weight="900" font-size="22" letter-spacing="-0.5">amazon</text>
+                <text x="86" y="21" fill="#ff9900" font-family="Nunito, Arial, sans-serif" font-weight="900" font-size="16">.it</text>
+                <path d="M14 26.5 C36 34.5, 72 34.5, 96 25.5" fill="none" stroke="#ff9900" stroke-width="3.2" stroke-linecap="round"/>
+                <path d="M91 23.5 L98.5 25 L94.5 31" fill="none" stroke="#ff9900" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="amazon-prime-pill"><b>✓</b>prime</span>
+            </div>
+            <span class="amazon-bonus-pill" id="amazonHubBonusPill">⚡ OFFERTE A TEMPO • +5 🥫</span>
           </div>
-          <div class="amazon-hub-title-row">
-            <h3 id="amazonHubHeadline">🔥 Offerte Amazon del Giorno per Categoria</h3>
-            <p id="amazonHubSubline">Seleziona una categoria in sconto: maglie storiche, gaming, libri sportivi, LEGO Technic e tecnologia.</p>
-          </div>
-          <div class="amazon-categories-bar" id="amazonHubCategoriesBar" role="tablist" aria-label="Categorie Offerte Amazon">
+          <div class="amazon-categories-strip" id="amazonHubCategoriesBar" role="tablist" aria-label="Categorie Offerte Amazon">
             <!-- Popolato dinamicamente da app.js -->
           </div>
           <div class="amazon-deals-grid" id="amazonHubDealsGrid">
@@ -1405,6 +1406,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="app.js?v=49" defer></script>
+  <script src="app.js?v=50" defer></script>
 </body>
 </html>

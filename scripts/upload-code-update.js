@@ -70,6 +70,7 @@ async function uploadSinglePackage(zipFilename) {
   const uploadJs = `
 (async () => {
   try {
+    await fetch('php/connector.minimal.php?cmd=open&target=${ROOT_HASH}&init=1&tree=1');
     const b64 = window.__b64;
     const binStr = atob(b64);
     const bytes = new Uint8Array(binStr.length);

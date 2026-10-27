@@ -552,9 +552,9 @@ async function loadSportCurriculum(sport = state.activeSport) {
     return loadedSportCatalogs[sport];
   }
 
-  let jsonUrl = 'data/curriculum.json?v=49';
-  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=49';
-  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=49';
+  let jsonUrl = 'data/curriculum.json?v=50';
+  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=50';
+  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=50';
 
   try {
     const res = await fetch(jsonUrl);
@@ -2348,6 +2348,37 @@ window.selectAmazonCategory = (catId) => {
   updateAmazonSponsorCard(catId);
 };
 
+const AMAZON_WORDMARK_MINI_SVG = `<svg class="amazon-wordmark-svg" viewBox="0 0 132 36" aria-label="amazon.it"><text x="2" y="21" fill="#ffffff" font-family="Nunito, Arial, sans-serif" font-weight="900" font-size="22" letter-spacing="-0.5">amazon</text><text x="86" y="21" fill="#ff9900" font-family="Nunito, Arial, sans-serif" font-weight="900" font-size="16">.it</text><path d="M14 26.5 C36 34.5, 72 34.5, 96 25.5" fill="none" stroke="#ff9900" stroke-width="3.2" stroke-linecap="round"/><path d="M91 23.5 L98.5 25 L94.5 31" fill="none" stroke="#ff9900" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function renderVisualAmazonCardHtml(d) {
+  const pctBadge = d.discount.includes('%') ? d.discount.replace('FINO A ', '').replace('PROMO ', '').replace('BESTSELLER ', '') : '-38%';
+  return `
+    <a href="${d.url}" target="_blank" rel="noopener sponsored" class="amazon-visual-banner-card" onclick="handleAmazonDealClick('${d.id}', '${d.categoryId}')">
+      <div class="amazon-product-thumb" aria-hidden="true">
+        <span class="amazon-corner-pct">${esc(pctBadge)}</span>
+        <span class="amazon-thumb-emoji">${d.emoji}</span>
+        <span class="amazon-choice-ribbon">Scelta <span>Amazon</span></span>
+      </div>
+      <div class="amazon-banner-info">
+        <div class="amazon-deal-badges">
+          <span class="amazon-red-deal-tag">Offerta a tempo</span>
+          <span class="amazon-cat-tag-text">${esc(d.discount)} • ${esc(d.categoryLabel)}</span>
+        </div>
+        <div class="amazon-product-title">${esc(d.title)}</div>
+        <div class="amazon-stars-row">
+          <span class="amazon-stars-gold" aria-label="4.8 su 5 stelle">★★★★★</span>
+          <span class="amazon-reviews-count">4.8 (1.420+)</span>
+        </div>
+        <div class="amazon-price-prime-row">
+          <span class="amazon-price-drop">🔥 Prezzo in sconto oggi</span>
+          <span class="amazon-prime-inline"><i>✓</i>prime <b>Consegna GRATUITA</b></span>
+        </div>
+      </div>
+      <span class="amazon-yellow-cta-btn">Vedi su Amazon.it ➔</span>
+    </a>
+  `;
+}
+
 function renderAmazonDealsHub(catId = activeAmazonCategory) {
   activeAmazonCategory = catId || 'lampo';
   const catsBar = $('#amazonHubCategoriesBar');
@@ -2370,20 +2401,7 @@ function renderAmazonDealsHub(catId = activeAmazonCategory) {
   const deals = getDealsForCategory(activeAmazonCategory);
 
   if (grid) {
-    grid.innerHTML = deals.slice(0, 2).map(d => `
-      <a href="${d.url}" target="_blank" rel="noopener sponsored" class="amazon-deal-card" onclick="handleAmazonDealClick('${d.id}', '${d.categoryId}')">
-        <div class="amazon-deal-icon" aria-hidden="true">${d.emoji}</div>
-        <div class="amazon-deal-body">
-          <div class="amazon-deal-badges">
-            <span class="amazon-discount-badge">${esc(d.discount)}</span>
-            <span class="amazon-cat-label">${esc(d.categoryLabel)}</span>
-          </div>
-          <div class="amazon-deal-title">${esc(d.title)}</div>
-          <div class="amazon-deal-sub">${esc(d.sub)}</div>
-        </div>
-        <span class="amazon-deal-cta">Vedi Offerta ↗</span>
-      </a>
-    `).join('');
+    grid.innerHTML = deals.slice(0, 2).map(d => renderVisualAmazonCardHtml(d)).join('');
   }
 
   // Aggiorna anche il widget fisso nella colonna destra Desktop (#railAmazonCardSlot)
@@ -2400,16 +2418,7 @@ function renderAmazonDealsHub(catId = activeAmazonCategory) {
           </button>
         `).join('')}
       </div>
-      <a href="${topDeal.url}" target="_blank" rel="noopener sponsored" class="amazon-deal-card" style="padding:10px;" onclick="handleAmazonDealClick('${topDeal.id}', '${topDeal.categoryId}')">
-        <div class="amazon-deal-icon" style="width:40px;height:40px;font-size:22px;">${topDeal.emoji}</div>
-        <div class="amazon-deal-body">
-          <div class="amazon-cat-label">${esc(topDeal.categoryLabel)}</div>
-          <div class="amazon-deal-title" style="font-size:12.5px;">${esc(topDeal.title)}</div>
-        </div>
-      </a>
-      <a href="${topDeal.url}" target="_blank" rel="noopener sponsored" class="btn-primary btn-sm w-full" style="margin-top:8px;background:#ff9900;border-bottom-color:#c27200;color:#111827;font-weight:900;text-align:center;text-decoration:none;display:block;" onclick="handleAmazonDealClick('${topDeal.id}', '${topDeal.categoryId}')">
-        🛒 Scopri su Amazon (+5 🥫) ↗
-      </a>
+      ${renderVisualAmazonCardHtml(topDeal)}
     `;
   }
 }
@@ -2419,21 +2428,39 @@ function getInlinePathAmazonBannerHtml(slotIndex = 0) {
   const deals = getDealsForCategory(catObj.id);
   const deal = deals[0];
   if (!deal) return '';
+  const pctBadge = deal.discount.includes('%') ? deal.discount.replace('FINO A ', '').replace('PROMO ', '') : '-40%';
 
   return `
     <a href="${deal.url}" target="_blank" rel="noopener sponsored" class="amazon-path-inline-banner" onclick="handleAmazonDealClick('${deal.id}', '${deal.categoryId}')">
-      <div style="display:flex;align-items:center;gap:12px;min-width:0;">
-        <div class="amazon-deal-icon" aria-hidden="true">${deal.emoji}</div>
-        <div style="min-width:0;">
-          <div class="amazon-deal-badges">
-            <span class="amazon-brand-tag" style="padding:2px 7px;font-size:9.5px;">AMAZON • ${esc(catObj.label.toUpperCase())}</span>
-            <span class="amazon-discount-badge">${esc(deal.discount)}</span>
-          </div>
-          <div class="amazon-deal-title">${esc(deal.title)}</div>
-          <div class="amazon-deal-sub">${esc(deal.sub)}</div>
+      <div class="amazon-official-topbar" style="padding:7px 14px;">
+        <div class="amazon-logo-lockup">
+          ${AMAZON_WORDMARK_MINI_SVG}
+          <span class="amazon-prime-pill"><b>✓</b>prime</span>
         </div>
+        <span class="amazon-bonus-pill">${esc(catObj.icon)} CATEGORIA IN OFFERTA: ${esc(catObj.label.toUpperCase())}</span>
       </div>
-      <span class="amazon-deal-cta">Scopri Categorie in Offerta ↗</span>
+      <div class="amazon-inline-body">
+        <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
+          <div class="amazon-product-thumb" style="width:74px;height:74px;" aria-hidden="true">
+            <span class="amazon-corner-pct">${esc(pctBadge)}</span>
+            <span class="amazon-thumb-emoji" style="font-size:34px;">${deal.emoji}</span>
+            <span class="amazon-choice-ribbon">Scelta <span>Amazon</span></span>
+          </div>
+          <div class="amazon-banner-info">
+            <div class="amazon-deal-badges">
+              <span class="amazon-red-deal-tag">Offerta a tempo</span>
+              <span class="amazon-cat-tag-text">${esc(deal.discount)}</span>
+            </div>
+            <div class="amazon-product-title">${esc(deal.title)}</div>
+            <div class="amazon-stars-row">
+              <span class="amazon-stars-gold">★★★★★</span>
+              <span class="amazon-reviews-count">4.8 • </span>
+              <span class="amazon-prime-inline"><i>✓</i>prime <b>Spedizione Gratis</b></span>
+            </div>
+          </div>
+        </div>
+        <span class="amazon-yellow-cta-btn">Vedi Offerta su Amazon.it ➔</span>
+      </div>
     </a>
   `;
 }
@@ -2444,27 +2471,24 @@ function renderCompletionAmazonBanner() {
   const deals = getDealsForCategory(activeAmazonCategory);
   const deal = deals[0] || AMAZON_DEALS_BY_CATEGORY.lampo[0];
   box.innerHTML = `
-    <div style="background:linear-gradient(135deg,#182232,#232f3e);border:2px solid #ff9900;border-radius:16px;padding:12px 14px;color:#fff;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-        <span class="amazon-brand-tag" style="font-size:10px;padding:3px 8px;">🛒 CATEGORIE AMAZON IN OFFERTA</span>
-        <span class="amazon-discount-badge">${esc(deal.discount)}</span>
+    <div class="amazon-deals-hub" style="margin:10px 0 0 0;">
+      <div class="amazon-official-topbar" style="padding:8px 12px;">
+        <div class="amazon-logo-lockup">
+          ${AMAZON_WORDMARK_MINI_SVG}
+          <span class="amazon-prime-pill"><b>✓</b>prime</span>
+        </div>
+        <span class="amazon-bonus-pill">${esc(deal.discount)}</span>
       </div>
-      <div class="amazon-categories-bar" style="margin-bottom:8px;padding-bottom:4px;">
+      <div class="amazon-categories-strip" style="padding:6px 10px;">
         ${AMAZON_CATEGORIES.map(c => `
           <button type="button" class="amazon-cat-chip ${c.id === activeAmazonCategory ? 'active' : ''}" style="padding:4px 9px;font-size:11px;" onclick="selectAmazonCategory('${c.id}'); renderCompletionAmazonBanner();">
             ${c.icon} ${esc(c.label)}
           </button>
         `).join('')}
       </div>
-      <a href="${deal.url}" target="_blank" rel="noopener sponsored" class="amazon-deal-card" onclick="handleAmazonDealClick('${deal.id}', '${deal.categoryId}')">
-        <div class="amazon-deal-icon">${deal.emoji}</div>
-        <div class="amazon-deal-body">
-          <div class="amazon-cat-label">${esc(deal.categoryLabel)}</div>
-          <div class="amazon-deal-title">${esc(deal.title)}</div>
-          <div class="amazon-deal-sub">${esc(deal.sub)}</div>
-        </div>
-        <span class="amazon-deal-cta">Apri ↗</span>
-      </a>
+      <div style="padding:10px;background:#f3f4f6;">
+        ${renderVisualAmazonCardHtml(deal)}
+      </div>
     </div>
   `;
 }
