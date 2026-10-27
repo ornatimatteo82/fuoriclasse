@@ -552,9 +552,9 @@ async function loadSportCurriculum(sport = state.activeSport) {
     return loadedSportCatalogs[sport];
   }
 
-  let jsonUrl = 'data/curriculum.json?v=50';
-  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=50';
-  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=50';
+  let jsonUrl = 'data/curriculum.json?v=51';
+  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=51';
+  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=51';
 
   try {
     const res = await fetch(jsonUrl);
@@ -1788,9 +1788,12 @@ window.handleNodeClick = (uIdx, lIdx, status) => {
 
 window.forceStartNode = (uIdx, lIdx) => {
   if (state.hearts <= 0) {
+    playTone('wrong');
     openHeartsFreemiumModal();
     return;
   }
+
+  playTone('click');
 
   // Ri-allinea tassativamente catalog con lo sport attivo prima di estrarre le domande
   if (loadedSportCatalogs[state.activeSport]) {
@@ -4133,12 +4136,91 @@ window.switchTab = switchTab;
 
 // -------------------------------------------------------------
 // 12. MOTORE AUDIO PRO STADIO & 16-BIT ARCADE (DISATTIVABILE)
-// - Sintesi Pink-Noise 1/f con filtri formanti vocali (vero boato "GOOOOL!" e vero coro delusione "OOOOOH!")
+// - Compatibilità totale iPhone/iOS (anche con tasto Silenzioso attivo via audioSession='playback' + HTML5 WAV unlock)
+// - Master Bus con DynamicsCompressor + MasterGain ad alta presenza sonora
+// - Sintesi Pink-Noise 1/f con filtri formanti vocali (boato "GOOOOL!" e coro delusione "OOOOOH!")
 // - Riverbero Stadio stereo + Fischietto Arbitro con trillo reale (pea-whistle FM) + Ottoni/Chiptune filtrati caldi
 // -------------------------------------------------------------
 let audioCtx = null;
+let masterBusNode = null;
 let stadiumReverbNode = null;
 let pinkNoiseBuffer = null;
+let iosAudioUnlocked = false;
+
+// Mini WAV silenzioso (44 byte) per forzare il canale hardware Media Playback su iOS Safari
+const SILENT_WAV_DATA_URI = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+let html5UnlockAudio = null;
+
+function unlockAudioOnUserGesture() {
+  try {
+    // 1. iOS 16.4+ Safari: forza sessione 'playback' così i suoni si sentono anche col selettore laterale Silenzioso attivo
+    if (typeof navigator !== 'undefined' && 'audioSession' in navigator && navigator.audioSession) {
+      try { navigator.audioSession.type = 'playback'; } catch (_) {}
+    }
+
+    // 2. Crea o risveglia AudioContext
+    const CtxClass = window.AudioContext || window.webkitAudioContext;
+    if (!CtxClass) return;
+    if (!audioCtx) {
+      audioCtx = new CtxClass();
+    }
+    if (audioCtx.state !== 'running') {
+      audioCtx.resume().catch(() => {});
+    }
+
+    // 3. Sblocca il canale audio su tutte le versioni iOS/Android con un buffer muto di 1 sample + HTML5 Audio
+    if (!iosAudioUnlocked && audioCtx) {
+      const silentBuf = audioCtx.createBuffer(1, 1, 22050);
+      const src = audioCtx.createBufferSource();
+      src.buffer = silentBuf;
+      src.connect(audioCtx.destination);
+      src.start(0);
+
+      if (!html5UnlockAudio && typeof Audio !== 'undefined') {
+        html5UnlockAudio = new Audio(SILENT_WAV_DATA_URI);
+        html5UnlockAudio.volume = 0.01;
+      }
+      if (html5UnlockAudio) {
+        const p = html5UnlockAudio.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      }
+
+      // Pre-genera buffer rumore rosa e riverbero in modo che il primo suono parta a latenza 0ms
+      if (!pinkNoiseBuffer) pinkNoiseBuffer = getPinkNoiseBuffer(audioCtx, 2.0);
+      getMasterOut(audioCtx);
+      getStadiumReverb(audioCtx);
+      iosAudioUnlocked = true;
+    }
+  } catch (_) {}
+}
+
+// Registra listener di sblocco immediato al primo tocco/clic/tasto ovunque nella pagina
+if (typeof window !== 'undefined') {
+  ['touchstart', 'pointerdown', 'click', 'keydown'].forEach((evt) => {
+    window.addEventListener(evt, unlockAudioOnUserGesture, { passive: true, capture: true });
+  });
+}
+
+function getMasterOut(ctx) {
+  if (masterBusNode && masterBusNode.context === ctx) return masterBusNode;
+  const masterGain = ctx.createGain();
+  masterGain.gain.setValueAtTime(1.45, ctx.currentTime);
+
+  if (typeof ctx.createDynamicsCompressor === 'function') {
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.setValueAtTime(-16, ctx.currentTime);
+    comp.knee.setValueAtTime(18, ctx.currentTime);
+    comp.ratio.setValueAtTime(4, ctx.currentTime);
+    comp.attack.setValueAtTime(0.003, ctx.currentTime);
+    comp.release.setValueAtTime(0.20, ctx.currentTime);
+    masterGain.connect(comp);
+    comp.connect(ctx.destination);
+  } else {
+    masterGain.connect(ctx.destination);
+  }
+  masterBusNode = masterGain;
+  return masterBusNode;
+}
 
 function getPinkNoiseBuffer(ctx, durationSec = 2.0) {
   const sampleRate = ctx.sampleRate;
@@ -4156,7 +4238,7 @@ function getPinkNoiseBuffer(ctx, durationSec = 2.0) {
       b3 = 0.86650 * b3 + white * 0.3104856;
       b4 = 0.55000 * b4 + white * 0.5329522;
       b5 = -0.7616 * b5 - white * 0.0168980;
-      out[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.042;
+      out[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.13;
       b6 = white * 0.115926;
     }
   }
@@ -4164,34 +4246,37 @@ function getPinkNoiseBuffer(ctx, durationSec = 2.0) {
 }
 
 function getStadiumReverb(ctx) {
-  if (stadiumReverbNode) return stadiumReverbNode;
-  const length = Math.floor(ctx.sampleRate * 1.15);
+  if (stadiumReverbNode && stadiumReverbNode.context === ctx) return stadiumReverbNode;
+  const length = Math.floor(ctx.sampleRate * 0.95);
   const impulse = ctx.createBuffer(2, length, ctx.sampleRate);
   for (let ch = 0; ch < 2; ch++) {
     const data = impulse.getChannelData(ch);
     for (let i = 0; i < length; i++) {
-      const decay = Math.pow(1 - i / length, 2.6);
-      data[i] = (Math.random() * 2 - 1) * decay * 0.35;
+      const decay = Math.pow(1 - i / length, 2.5);
+      data[i] = (Math.random() * 2 - 1) * decay * 0.38;
     }
   }
   const convolver = ctx.createConvolver();
   convolver.buffer = impulse;
-  convolver.connect(ctx.destination);
+  convolver.connect(getMasterOut(ctx));
   stadiumReverbNode = convolver;
   return convolver;
 }
 
 // Boato della Curva con formanti vocali ("GOOOOOOL!") + rombo basso dello stadio
-function playStadiumGoalRoar(ctx, durationSec = 1.25, intensity = 0.34) {
+function playStadiumGoalRoar(ctx, durationSec = 1.25, intensity = 0.62) {
   const now = ctx.currentTime;
-  if (!pinkNoiseBuffer) pinkNoiseBuffer = getPinkNoiseBuffer(ctx, 2.2);
+  const out = getMasterOut(ctx);
+  if (!pinkNoiseBuffer || pinkNoiseBuffer.sampleRate !== ctx.sampleRate) {
+    pinkNoiseBuffer = getPinkNoiseBuffer(ctx, 2.0);
+  }
   const reverb = getStadiumReverb(ctx);
 
   // 3 formanti corali (simulano migliaia di voci su vocali A / O)
   const formants = [
-    { fStart: 420, fEnd: 620, q: 2.2, weight: 0.45 },
-    { fStart: 820, fEnd: 1180, q: 2.5, weight: 0.38 },
-    { fStart: 1450, fEnd: 1850, q: 3.0, weight: 0.22 }
+    { fStart: 420, fEnd: 620, q: 1.8, weight: 0.65 },
+    { fStart: 820, fEnd: 1180, q: 2.0, weight: 0.55 },
+    { fStart: 1450, fEnd: 1850, q: 2.4, weight: 0.35 }
   ];
 
   formants.forEach(fm => {
@@ -4208,47 +4293,50 @@ function playStadiumGoalRoar(ctx, durationSec = 1.25, intensity = 0.34) {
     const gain = ctx.createGain();
     const peak = intensity * fm.weight;
     gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(peak, now + 0.16);
+    gain.gain.linearRampToValueAtTime(peak, now + 0.14);
     gain.gain.setValueAtTime(peak * 0.92, now + durationSec * 0.55);
     gain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
 
     src.connect(filter);
     filter.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(out);
     gain.connect(reverb);
 
     src.start(now);
     src.stop(now + durationSec);
   });
 
-  // Caldo rombo acustico da stadio (lowpass 165Hz)
+  // Caldo rombo acustico da stadio (lowpass 185Hz)
   const subNoise = ctx.createBufferSource();
   subNoise.buffer = pinkNoiseBuffer;
   const lowFilter = ctx.createBiquadFilter();
   lowFilter.type = 'lowpass';
-  lowFilter.frequency.setValueAtTime(165, now);
+  lowFilter.frequency.setValueAtTime(185, now);
   const lowGain = ctx.createGain();
   lowGain.gain.setValueAtTime(0.001, now);
-  lowGain.gain.linearRampToValueAtTime(intensity * 0.45, now + 0.18);
+  lowGain.gain.linearRampToValueAtTime(intensity * 0.55, now + 0.16);
   lowGain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
   subNoise.connect(lowFilter);
   lowFilter.connect(lowGain);
-  lowGain.connect(ctx.destination);
+  lowGain.connect(out);
   subNoise.start(now);
   subNoise.stop(now + durationSec);
 }
 
 // Boato di delusione dello stadio ("OOOOOOH!") con transizione formante vocale F1/F2 discendente
-function playStadiumMissGroan(ctx, durationSec = 1.05, intensity = 0.36) {
+function playStadiumMissGroan(ctx, durationSec = 1.05, intensity = 0.62) {
   const now = ctx.currentTime;
-  if (!pinkNoiseBuffer) pinkNoiseBuffer = getPinkNoiseBuffer(ctx, 2.2);
+  const out = getMasterOut(ctx);
+  if (!pinkNoiseBuffer || pinkNoiseBuffer.sampleRate !== ctx.sampleRate) {
+    pinkNoiseBuffer = getPinkNoiseBuffer(ctx, 2.0);
+  }
   const reverb = getStadiumReverb(ctx);
 
   // Transizione vocale umana da "AAAH!" a "OOOOOH!" (F1: 680->340Hz, F2: 1180->640Hz)
   const vocalFormants = [
-    { f1: 680, f2: 330, q: 3.6, w: 0.58 },
-    { f1: 1180, f2: 640, q: 4.0, w: 0.36 },
-    { f1: 210, f2: 115, q: 1.8, w: 0.42 }
+    { f1: 680, f2: 330, q: 2.6, w: 0.72 },
+    { f1: 1180, f2: 640, q: 2.8, w: 0.50 },
+    { f1: 220, f2: 120, q: 1.5, w: 0.55 }
   ];
 
   vocalFormants.forEach(vf => {
@@ -4264,13 +4352,13 @@ function playStadiumMissGroan(ctx, durationSec = 1.05, intensity = 0.36) {
     const g = ctx.createGain();
     const peak = intensity * vf.w;
     g.gain.setValueAtTime(0.001, now);
-    g.gain.linearRampToValueAtTime(peak, now + 0.12);
+    g.gain.linearRampToValueAtTime(peak, now + 0.10);
     g.gain.setValueAtTime(peak * 0.85, now + 0.38);
     g.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
 
     src.connect(bp);
     bp.connect(g);
-    g.connect(ctx.destination);
+    g.connect(out);
     g.connect(reverb);
 
     src.start(now);
@@ -4279,7 +4367,8 @@ function playStadiumMissGroan(ctx, durationSec = 1.05, intensity = 0.36) {
 }
 
 // Fischietto reale dell'arbitro con pallina vibrante (FM + AM pea trill a 28Hz)
-function playRefereeWhistle(ctx, startTime, duration = 0.22, baseFreq = 2820, volume = 0.085) {
+function playRefereeWhistle(ctx, startTime, duration = 0.22, baseFreq = 2820, volume = 0.20) {
+  const out = getMasterOut(ctx);
   const osc1 = ctx.createOscillator();
   const osc2 = ctx.createOscillator();
   const lfo = ctx.createOscillator();
@@ -4290,7 +4379,7 @@ function playRefereeWhistle(ctx, startTime, duration = 0.22, baseFreq = 2820, vo
   osc1.type = 'sine';
   osc2.type = 'triangle';
   osc1.frequency.setValueAtTime(baseFreq, startTime);
-  osc2.frequency.setValueAtTime(baseFreq * 1.018, startTime); // Leggero battimento dual-chamber
+  osc2.frequency.setValueAtTime(baseFreq * 1.018, startTime);
 
   // Trillo della pallina del fischietto (28 Hz)
   lfo.type = 'sine';
@@ -4304,14 +4393,14 @@ function playRefereeWhistle(ctx, startTime, duration = 0.22, baseFreq = 2820, vo
   lp.frequency.setValueAtTime(3600, startTime);
 
   gain.gain.setValueAtTime(0.001, startTime);
-  gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
+  gain.gain.linearRampToValueAtTime(volume, startTime + 0.018);
   gain.gain.setValueAtTime(volume * 0.9, startTime + duration - 0.04);
   gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
   osc1.connect(lp);
   osc2.connect(lp);
   lp.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(out);
   gain.connect(getStadiumReverb(ctx));
 
   osc1.start(startTime);
@@ -4323,7 +4412,8 @@ function playRefereeWhistle(ctx, startTime, duration = 0.22, baseFreq = 2820, vo
 }
 
 // Nota musicale calda filtrata (stile SNES / Ottoni da stadio senza asprezza)
-function playWarmNote(ctx, freq, startTime, duration, waveType = 'sawtooth', vol = 0.1, cutoff = 1850) {
+function playWarmNote(ctx, freq, startTime, duration, waveType = 'sawtooth', vol = 0.22, cutoff = 2100) {
+  const out = getMasterOut(ctx);
   const osc1 = ctx.createOscillator();
   const osc2 = ctx.createOscillator();
   const filter = ctx.createBiquadFilter();
@@ -4332,20 +4422,20 @@ function playWarmNote(ctx, freq, startTime, duration, waveType = 'sawtooth', vol
   osc1.type = waveType;
   osc2.type = waveType === 'sawtooth' ? 'triangle' : 'sine';
   osc1.frequency.setValueAtTime(freq, startTime);
-  osc2.frequency.setValueAtTime(freq * 1.003, startTime); // Chorus caldo
+  osc2.frequency.setValueAtTime(freq * 1.003, startTime);
 
   filter.type = 'lowpass';
   filter.frequency.setValueAtTime(cutoff, startTime);
   filter.frequency.exponentialRampToValueAtTime(cutoff * 0.65, startTime + duration);
 
   gain.gain.setValueAtTime(0.001, startTime);
-  gain.gain.linearRampToValueAtTime(vol, startTime + 0.018);
+  gain.gain.linearRampToValueAtTime(vol, startTime + 0.015);
   gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
   osc1.connect(filter);
   osc2.connect(filter);
   filter.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(out);
   gain.connect(getStadiumReverb(ctx));
 
   osc1.start(startTime);
@@ -4354,153 +4444,175 @@ function playWarmNote(ctx, freq, startTime, duration, waveType = 'sawtooth', vol
   osc2.stop(startTime + duration);
 }
 
+function scheduleSynthesizedTone(ctx, type, variant) {
+  const now = ctx.currentTime;
+  const out = getMasterOut(ctx);
+
+  if (type === 'correct') {
+    if (variant === 0) {
+      // GOAL 1: Fischio dell'arbitro + Boato "GOOOOL!" della Curva + Accordo trionfale caldo
+      playRefereeWhistle(ctx, now, 0.20, 2840, 0.18);
+      playStadiumGoalRoar(ctx, 1.35, 0.62);
+      const chord = [523.25, 659.25, 783.99, 1046.5];
+      chord.forEach((f, i) => {
+        playWarmNote(ctx, f, now + 0.06 + i * 0.07, 0.48, 'triangle', 0.22, 2400);
+      });
+      playWarmNote(ctx, 261.63, now + 0.06, 0.55, 'sine', 0.28, 900);
+    } else if (variant === 1) {
+      // GOAL 2: Fanfara 16-Bit SNES stile Captain Tsubasa + Boato Stadio
+      playStadiumGoalRoar(ctx, 1.25, 0.56);
+      const melody = [
+        { f: 587.33, t: 0.00, d: 0.09 },
+        { f: 587.33, t: 0.09, d: 0.09 },
+        { f: 587.33, t: 0.18, d: 0.09 },
+        { f: 880.00, t: 0.27, d: 0.22 },
+        { f: 783.99, t: 0.49, d: 0.14 },
+        { f: 1174.66, t: 0.63, d: 0.45 }
+      ];
+      melody.forEach(n => {
+        playWarmNote(ctx, n.f, now + n.t, n.d, 'square', 0.18, 2200);
+        playWarmNote(ctx, n.f * 0.5, now + n.t, n.d, 'triangle', 0.20, 1400);
+      });
+    } else if (variant === 2) {
+      // GOAL 3: Fruscio della rete + Trombe da Stadio ("Olé!") + Boato Curva
+      playStadiumGoalRoar(ctx, 1.4, 0.64);
+      const horns = [
+        { f: 392.00, t: 0.02, d: 0.14 },
+        { f: 523.25, t: 0.16, d: 0.14 },
+        { f: 659.25, t: 0.30, d: 0.16 },
+        { f: 783.99, t: 0.46, d: 0.50 }
+      ];
+      horns.forEach(h => {
+        playWarmNote(ctx, h.f, now + h.t, h.d, 'sawtooth', 0.20, 1850);
+        playWarmNote(ctx, h.f * 0.75, now + h.t, h.d, 'triangle', 0.15, 1500);
+      });
+    } else {
+      // GOAL 4: Tiro della Tigre (Impatto pallone + Boato esplosivo + Arpeggio vittoria)
+      playStadiumGoalRoar(ctx, 1.3, 0.60);
+      const kick = ctx.createOscillator();
+      const kGain = ctx.createGain();
+      kick.type = 'sine';
+      kick.frequency.setValueAtTime(160, now);
+      kick.frequency.exponentialRampToValueAtTime(44, now + 0.15);
+      kGain.gain.setValueAtTime(0.45, now);
+      kGain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+      kick.connect(kGain);
+      kGain.connect(out);
+      kick.start(now);
+      kick.stop(now + 0.17);
+
+      [440, 554.37, 659.25, 880, 1108.73].forEach((f, idx) => {
+        playWarmNote(ctx, f, now + 0.05 + idx * 0.06, 0.38, 'triangle', 0.22, 2500);
+      });
+    }
+  } else if (type === 'wrong') {
+    if (variant === 0) {
+      // ERRORE 1: Colpo sulla Traversa ("DOOONG!") + Boato di delusione dello stadio ("OOOOOH!")
+      playStadiumMissGroan(ctx, 1.15, 0.64);
+      const thud = ctx.createOscillator();
+      const tGain = ctx.createGain();
+      thud.type = 'sine';
+      thud.frequency.setValueAtTime(145, now);
+      thud.frequency.exponentialRampToValueAtTime(46, now + 0.14);
+      tGain.gain.setValueAtTime(0.48, now);
+      tGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+      thud.connect(tGain);
+      tGain.connect(out);
+      thud.start(now);
+      thud.stop(now + 0.16);
+
+      [515, 778].forEach((f, i) => {
+        playWarmNote(ctx, f, now, 0.34 - i * 0.08, 'sine', 0.22, 1600);
+      });
+    } else if (variant === 1) {
+      // ERRORE 2: Doppio fischio fallo dell'arbitro ("Fiii-Fiiiii!") + Boato "OOOOOH!" della curva
+      playRefereeWhistle(ctx, now, 0.12, 2760, 0.18);
+      playRefereeWhistle(ctx, now + 0.15, 0.26, 2680, 0.20);
+      playStadiumMissGroan(ctx, 1.10, 0.60);
+      playWarmNote(ctx, 146.83, now + 0.15, 0.45, 'triangle', 0.26, 750);
+    } else {
+      // ERRORE 3: Cadenza minore 16-bit morbida + Sospiro di delusione dello stadio
+      playStadiumMissGroan(ctx, 1.05, 0.58);
+      const sadNotes = [
+        { f: 349.23, t: 0.00, d: 0.14 },
+        { f: 311.13, t: 0.12, d: 0.14 },
+        { f: 261.63, t: 0.24, d: 0.38 }
+      ];
+      sadNotes.forEach(n => {
+        playWarmNote(ctx, n.f, now + n.t, n.d, 'triangle', 0.24, 1300);
+        playWarmNote(ctx, n.f * 0.5, now + n.t, n.d, 'sine', 0.22, 750);
+      });
+    }
+  } else if (type === 'click') {
+    playWarmNote(ctx, 680, now, 0.06, 'triangle', 0.22, 2200);
+    playWarmNote(ctx, 1020, now + 0.015, 0.05, 'sine', 0.16, 2600);
+  } else if (type === 'cheer') {
+    playRefereeWhistle(ctx, now, 0.11, 2850, 0.17);
+    playRefereeWhistle(ctx, now + 0.14, 0.11, 2850, 0.17);
+    playRefereeWhistle(ctx, now + 0.28, 0.28, 2920, 0.20);
+    playStadiumGoalRoar(ctx, 1.5, 0.65);
+    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+      playWarmNote(ctx, freq, now + 0.14 + idx * 0.09, 0.48, 'triangle', 0.24, 2400);
+    });
+  }
+}
+
 function playTone(type) {
   if (!state.soundEnabled) return 0;
   try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-
-    const now = audioCtx.currentTime;
-
-    if (type === 'correct') {
-      const variant = Math.floor(Math.random() * 4);
-
-      if (variant === 0) {
-        // GOAL 1: Fischio dell'arbitro + Boato "GOOOOL!" della Curva + Accordo trionfale caldo
-        playRefereeWhistle(audioCtx, now, 0.20, 2840, 0.08);
-        playStadiumGoalRoar(audioCtx, 1.35, 0.36);
-        const chord = [523.25, 659.25, 783.99, 1046.5];
-        chord.forEach((f, i) => {
-          playWarmNote(audioCtx, f, now + 0.08 + i * 0.07, 0.48, 'triangle', 0.11, 2200);
-        });
-        // Basso fondamentale caldo
-        playWarmNote(audioCtx, 261.63, now + 0.08, 0.55, 'sine', 0.15, 800);
-      } else if (variant === 1) {
-        // GOAL 2: Fanfara 16-Bit SNES stile Captain Tsubasa + Boato Stadio
-        playStadiumGoalRoar(audioCtx, 1.25, 0.30);
-        const melody = [
-          { f: 587.33, t: 0.00, d: 0.09 },
-          { f: 587.33, t: 0.09, d: 0.09 },
-          { f: 587.33, t: 0.18, d: 0.09 },
-          { f: 880.00, t: 0.27, d: 0.22 },
-          { f: 783.99, t: 0.49, d: 0.14 },
-          { f: 1174.66, t: 0.63, d: 0.45 }
-        ];
-        melody.forEach(n => {
-          playWarmNote(audioCtx, n.f, now + n.t, n.d, 'square', 0.085, 2100);
-          playWarmNote(audioCtx, n.f * 0.5, now + n.t, n.d, 'triangle', 0.09, 1200);
-        });
-      } else if (variant === 2) {
-        // GOAL 3: Fruscio della rete + Trombe da Stadio ("Olé!") + Boato Curva
-        playStadiumGoalRoar(audioCtx, 1.4, 0.38);
-        const horns = [
-          { f: 392.00, t: 0.02, d: 0.14 },
-          { f: 523.25, t: 0.16, d: 0.14 },
-          { f: 659.25, t: 0.30, d: 0.16 },
-          { f: 783.99, t: 0.46, d: 0.50 }
-        ];
-        horns.forEach(h => {
-          playWarmNote(audioCtx, h.f, now + h.t, h.d, 'sawtooth', 0.095, 1650);
-          playWarmNote(audioCtx, h.f * 0.75, now + h.t, h.d, 'triangle', 0.06, 1400);
-        });
-      } else {
-        // GOAL 4: Tiro della Tigre (Impatto pallone + Boato esplosivo + Arpeggio vittoria)
-        playStadiumGoalRoar(audioCtx, 1.3, 0.35);
-        // Colpo del pallone nel sette (sub-kick)
-        const kick = audioCtx.createOscillator();
-        const kGain = audioCtx.createGain();
-        kick.type = 'sine';
-        kick.frequency.setValueAtTime(150, now);
-        kick.frequency.exponentialRampToValueAtTime(42, now + 0.14);
-        kGain.gain.setValueAtTime(0.28, now);
-        kGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
-        kick.connect(kGain);
-        kGain.connect(audioCtx.destination);
-        kick.start(now);
-        kick.stop(now + 0.16);
-
-        [440, 554.37, 659.25, 880, 1108.73].forEach((f, idx) => {
-          playWarmNote(audioCtx, f, now + 0.06 + idx * 0.06, 0.38, 'triangle', 0.10, 2400);
-        });
-      }
-      return variant;
-    } else if (type === 'wrong') {
-      const variant = Math.floor(Math.random() * 3);
-
-      if (variant === 0) {
-        // ERRORE 1: Colpo sulla Traversa ("DOOONG!") + Boato di delusione dello stadio ("OOOOOH!")
-        playStadiumMissGroan(audioCtx, 1.15, 0.38);
-
-        // Impatto del pallone sul legno/metallo della traversa
-        const thud = audioCtx.createOscillator();
-        const tGain = audioCtx.createGain();
-        thud.type = 'sine';
-        thud.frequency.setValueAtTime(135, now);
-        thud.frequency.exponentialRampToValueAtTime(45, now + 0.12);
-        tGain.gain.setValueAtTime(0.30, now);
-        tGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
-        thud.connect(tGain);
-        tGain.connect(audioCtx.destination);
-        thud.start(now);
-        thud.stop(now + 0.14);
-
-        // Risonanza tubolare metallica del palo (armonica morbida, non gracchiante)
-        [515, 778].forEach((f, i) => {
-          playWarmNote(audioCtx, f, now, 0.32 - i * 0.08, 'sine', 0.11, 1400);
-        });
-      } else if (variant === 1) {
-        // ERRORE 2: Doppio fischio fallo dell'arbitro ("Fiii-Fiiiii!") + Boato "OOOOOH!" della curva
-        playRefereeWhistle(audioCtx, now, 0.12, 2760, 0.075);
-        playRefereeWhistle(audioCtx, now + 0.15, 0.26, 2680, 0.085);
-        playStadiumMissGroan(audioCtx, 1.10, 0.35);
-        playWarmNote(audioCtx, 146.83, now + 0.15, 0.45, 'triangle', 0.14, 600);
-      } else {
-        // ERRORE 3: Cadenza minore 16-bit morbida + Sospiro di delusione dello stadio
-        playStadiumMissGroan(audioCtx, 1.05, 0.34);
-        const sadNotes = [
-          { f: 349.23, t: 0.00, d: 0.14 },
-          { f: 311.13, t: 0.12, d: 0.14 },
-          { f: 261.63, t: 0.24, d: 0.36 }
-        ];
-        sadNotes.forEach(n => {
-          playWarmNote(audioCtx, n.f, now + n.t, n.d, 'triangle', 0.12, 1100);
-          playWarmNote(audioCtx, n.f * 0.5, now + n.t, n.d, 'sine', 0.10, 600);
-        });
-      }
-      return variant;
-    } else if (type === 'click') {
-      playWarmNote(audioCtx, 660, now, 0.045, 'triangle', 0.055, 1800);
-    } else if (type === 'cheer') {
-      playRefereeWhistle(audioCtx, now, 0.11, 2850, 0.07);
-      playRefereeWhistle(audioCtx, now + 0.14, 0.11, 2850, 0.07);
-      playRefereeWhistle(audioCtx, now + 0.28, 0.28, 2920, 0.085);
-      playStadiumGoalRoar(audioCtx, 1.5, 0.38);
-      [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
-        playWarmNote(audioCtx, freq, now + 0.15 + idx * 0.09, 0.45, 'triangle', 0.11, 2200);
-      });
+    if (typeof navigator !== 'undefined' && 'audioSession' in navigator && navigator.audioSession) {
+      try { navigator.audioSession.type = 'playback'; } catch (_) {}
     }
+
+    const CtxClass = window.AudioContext || window.webkitAudioContext;
+    if (!CtxClass) return 0;
+    if (!audioCtx) audioCtx = new CtxClass();
+
+    const variant = type === 'correct'
+      ? Math.floor(Math.random() * 4)
+      : type === 'wrong'
+        ? Math.floor(Math.random() * 3)
+        : 0;
+
+    if (audioCtx.state !== 'running') {
+      audioCtx.resume().then(() => {
+        scheduleSynthesizedTone(audioCtx, type, variant);
+      }).catch(() => {});
+    } else {
+      scheduleSynthesizedTone(audioCtx, type, variant);
+    }
+    return variant;
   } catch (e) {}
   return 0;
 }
+window.playTone = playTone;
 
 // -------------------------------------------------------------
 // 13. SINTESI VOCALE DOMANDE
 // -------------------------------------------------------------
 function speakCurrentQuestion() {
+  playTone('click');
   if (!('speechSynthesis' in window)) return;
   const q = state.currentQuestions[state.questionIndex];
   if (!q) return;
 
-  window.speechSynthesis.cancel();
-  const parsed = parseCleanQuestionText(q.question || '');
-  const text = q.name
-    ? `Gael League: indovina il giocatore che ha militato in ${(q.clubs || []).map(c => c[0]).join(', ')}. Opzioni: ${q.options.join(', ')}`
-    : `Quizzocampo: ${parsed.cleanText}. Opzioni: ${q.options.join(', ')}`;
+  try {
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.resume();
+    const parsed = parseCleanQuestionText(q.question || '');
+    const text = q.name
+      ? `Gael League: indovina il giocatore che ha militato in ${(q.clubs || []).map(c => c[0]).join(', ')}. Opzioni: ${q.options.join(', ')}`
+      : `${parsed.cleanText}. Opzioni: ${q.options.join(', ')}`;
 
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'it-IT';
-  u.rate = 1.0;
-  window.speechSynthesis.speak(u);
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'it-IT';
+    u.rate = 1.0;
+    u.volume = 1.0;
+    const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+    const itVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('it'));
+    if (itVoice) u.voice = itVoice;
+    window.speechSynthesis.speak(u);
+  } catch (_) {}
 }
 
 // -------------------------------------------------------------
@@ -4564,24 +4676,30 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#unitJumpModal').hidden = true;
   });
 
-  // Toggle Audio (Goal & Boato Disattivabili)
+  // Toggle Audio (Goal & Boato Disattivabili in Topbar e dentro il Quiz)
   const audioBtn = $('#audioToggle');
-  if (audioBtn) {
-    const syncAudioBtnUI = () => {
-      $('#audioIcon').textContent = state.soundEnabled ? '🔊' : '🔇';
-      if ($('#audioLabelText')) {
-        $('#audioLabelText').textContent = state.soundEnabled ? 'SUONI ON' : 'MUTO';
-      }
-      audioBtn.setAttribute('aria-pressed', String(state.soundEnabled));
-    };
+  const quizAudioBtn = $('#quizAudioToggleBtn');
+  const syncAudioBtnUI = () => {
+    if ($('#audioIcon')) $('#audioIcon').textContent = state.soundEnabled ? '🔊' : '🔇';
+    if ($('#quizAudioIcon')) $('#quizAudioIcon').textContent = state.soundEnabled ? '🔊' : '🔇';
+    if ($('#audioLabelText')) {
+      $('#audioLabelText').textContent = state.soundEnabled ? 'SUONI ON' : 'MUTO';
+    }
+    audioBtn?.setAttribute('aria-pressed', String(state.soundEnabled));
+    quizAudioBtn?.setAttribute('aria-pressed', String(state.soundEnabled));
+  };
+  syncAudioBtnUI();
+  const toggleSoundHandler = () => {
+    state.soundEnabled = !state.soundEnabled;
     syncAudioBtnUI();
-    audioBtn.addEventListener('click', () => {
-      state.soundEnabled = !state.soundEnabled;
-      syncAudioBtnUI();
-      if (state.soundEnabled) playTone('click');
-      persistState();
-    });
-  }
+    if (state.soundEnabled) {
+      unlockAudioOnUserGesture();
+      playTone('correct');
+    }
+    persistState();
+  };
+  audioBtn?.addEventListener('click', toggleSoundHandler);
+  quizAudioBtn?.addEventListener('click', toggleSoundHandler);
 
   // Toggle Tema Dark / Light
   const themeBtn = $('#themeToggle');

@@ -18,8 +18,8 @@
   <meta name="apple-mobile-web-app-title" content="Fuoriclasse" />
   <title>Fuoriclasse — Gael League &amp; Quizzocampo</title>
 
-  <link rel="manifest" href="manifest.webmanifest?v=50" />
-  <link rel="icon" type="image/svg+xml" href="icon.svg?v=50" />
+  <link rel="manifest" href="manifest.webmanifest?v=51" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg?v=51" />
   <link rel="apple-touch-icon" href="assets/mascot-coach.jpg" />
   <link rel="preload" href="assets/mascot-coach.jpg" as="image" fetchpriority="high" />
 
@@ -31,14 +31,14 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="style.css?v=50" />
-  <link rel="stylesheet" href="mobile.css?v=50" />
-  <link rel="stylesheet" href="dark-theme.css?v=50" />
+  <link rel="stylesheet" href="style.css?v=51" />
+  <link rel="stylesheet" href="mobile.css?v=51" />
+  <link rel="stylesheet" href="dark-theme.css?v=51" />
   <script>
     (function() {
       try {
         // Pulizia selettiva solo di eventuali cache obsolete (mantiene la cache attiva per caricamento 0ms)
-        var ACTIVE_CACHE = 'fuoriclasse-v50';
+        var ACTIVE_CACHE = 'fuoriclasse-v51';
         if ('caches' in window) {
           caches.keys().then(function(keys) {
             return Promise.all(
@@ -908,6 +908,9 @@
         <span aria-hidden="true">❤️</span>
         <b id="quizHeartsNum">5</b>
       </div>
+      <button class="tool-btn" id="quizAudioToggleBtn" type="button" title="Attiva/Disattiva Suoni Stadio" style="width:38px;height:38px;min-width:38px;border-radius:10px;font-size:16px;">
+        <span id="quizAudioIcon" aria-hidden="true">🔊</span>
+      </button>
     </div>
 
     <div class="quiz-body">
@@ -1406,6 +1409,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="app.js?v=50" defer></script>
+  <script src="app.js?v=51" defer></script>
 </body>
 </html>
