@@ -47,7 +47,8 @@ console.log(`✓ ${targetZip} creato con successo (${(stats.size / 1024).toFixed
 const dataPackages = [
   { zip: '02-data-calcio.zip', files: ['data/curriculum.json', 'data/curriculum.schema.json'] },
   { zip: '03-data-f1.zip', files: ['data/curriculum-f1.json'] },
-  { zip: '04-data-basket.zip', files: ['data/curriculum-basket.json'] }
+  { zip: '04-data-basket.zip', files: ['data/curriculum-basket.json'] },
+  { zip: '05-assets.zip', files: ['assets/*.jpg', 'assets/*.svg'] }
 ];
 
 for (const pkg of dataPackages) {

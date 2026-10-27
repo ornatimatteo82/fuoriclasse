@@ -18,25 +18,27 @@
   <meta name="apple-mobile-web-app-title" content="Fuoriclasse" />
   <title>Fuoriclasse — Gael League &amp; Quizzocampo</title>
 
-  <link rel="manifest" href="manifest.webmanifest?v=34" />
-  <link rel="icon" type="image/svg+xml" href="icon.svg?v=34" />
-  <link rel="apple-touch-icon" href="assets/mascot-coach.jpg?v=34" />
+  <link rel="manifest" href="manifest.webmanifest?v=48" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg?v=48" />
+  <link rel="apple-touch-icon" href="assets/mascot-coach.jpg" />
+  <link rel="preload" href="assets/mascot-coach.jpg" as="image" fetchpriority="high" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="style.css?v=47" />
-  <link rel="stylesheet" href="mobile.css?v=47" />
-  <link rel="stylesheet" href="dark-theme.css?v=47" />
+  <link rel="stylesheet" href="style.css?v=48" />
+  <link rel="stylesheet" href="mobile.css?v=48" />
+  <link rel="stylesheet" href="dark-theme.css?v=48" />
   <script>
     (function() {
       try {
         // Pulizia selettiva solo di eventuali cache obsolete (mantiene la cache attiva per caricamento 0ms)
-        var ACTIVE_CACHE = 'fuoriclasse-v47';
+        var ACTIVE_CACHE = 'fuoriclasse-v48';
         if ('caches' in window) {
           caches.keys().then(function(keys) {
             return Promise.all(
@@ -60,7 +62,7 @@
     <div class="topbar-inner">
       <a href="#percorso" class="brand-pill" aria-label="Fuoriclasse Home" id="brandHomeLink">
         <span class="brand-logo-wrap">
-          <img src="assets/mascot-coach.jpg" alt="Il Mister #10" class="brand-avatar-img" width="36" height="36" />
+          <img src="assets/mascot-coach.jpg" alt="Il Mister #10" class="brand-avatar-img" width="36" height="36" decoding="async" fetchpriority="high" />
           <span class="brand-online-dot" aria-hidden="true"></span>
         </span>
         <span class="brand-wordmark">FUORICLASSE</span>
@@ -173,9 +175,9 @@
       <div class="sidebar-PromoCard">
         <div class="promo-card-header">
           <div style="display:flex;align-items:center;margin-right:6px;">
-            <img src="assets/trophy-quizzone.jpg?v=33" alt="Coppa Quizzone" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #1cb0f6;" />
-            <img src="assets/trophy-gael.jpg?v=33" alt="Coppa Gael League" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #58cc02;margin-left:-8px;" />
-            <img src="assets/trophy-pastore.jpg?v=33" alt="Coppa Pastore League" class="promo-trophy-img" width="34" height="34" style="border-radius:8px;border:1.5px solid #ffc800;margin-left:-8px;" />
+            <img src="assets/trophy-quizzone.jpg" alt="Coppa Quizzone" class="promo-trophy-img" width="34" height="34" loading="lazy" decoding="async" style="border-radius:8px;border:1.5px solid #1cb0f6;" />
+            <img src="assets/trophy-gael.jpg" alt="Coppa Gael League" class="promo-trophy-img" width="34" height="34" loading="lazy" decoding="async" style="border-radius:8px;border:1.5px solid #58cc02;margin-left:-8px;" />
+            <img src="assets/trophy-pastore.jpg" alt="Coppa Pastore League" class="promo-trophy-img" width="34" height="34" loading="lazy" decoding="async" style="border-radius:8px;border:1.5px solid #ffc800;margin-left:-8px;" />
           </div>
           <div>
             <span class="promo-badge">3 TROFEI 16-BIT</span>
@@ -237,7 +239,7 @@
               </div>
             </div>
             <div class="banner-mascot-preview" aria-hidden="true">
-              <img src="assets/mascot-coach.jpg" alt="Fuoriclasse" class="banner-mascot-img" width="84" height="84" />
+              <img src="assets/mascot-coach.jpg" alt="Fuoriclasse" class="banner-mascot-img" width="84" height="84" decoding="async" />
             </div>
           </div>
         </div>
@@ -258,7 +260,7 @@
         <div class="game-mode-switcher mode-switcher-3" id="calcioModeSwitcher" role="tablist" aria-label="Scegli la tipologia di gioco">
           <button class="mode-switch-btn active" id="switchModeQuiz" data-mode="quizzone" type="button" role="tab" aria-selected="true">
             <span class="mode-switch-icon">
-              <img src="assets/mascot-coach.jpg?v=33" alt="" width="32" height="32" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
+              <img src="assets/mascot-coach.jpg" alt="" width="32" height="32" decoding="async" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
             </span>
             <div class="mode-switch-text">
               <b>QUIZZONE (15 UNITÀ)</b>
@@ -267,7 +269,7 @@
           </button>
           <button class="mode-switch-btn" id="switchModeGael" data-mode="gael" type="button" role="tab" aria-selected="false">
             <span class="mode-switch-icon">
-              <img src="assets/gael-mascot.jpg?v=33" alt="" width="32" height="32" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
+              <img src="assets/gael-mascot.jpg" alt="" width="32" height="32" decoding="async" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
             </span>
             <div class="mode-switch-text">
               <b>GAEL LEAGUE (10 UNITÀ HARD)</b>
@@ -276,7 +278,7 @@
           </button>
           <button class="mode-switch-btn" id="switchModePastore" data-mode="pastore" type="button" role="tab" aria-selected="false">
             <span class="mode-switch-icon">
-              <img src="assets/pastore-mascot.jpg?v=33" alt="" width="32" height="32" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
+              <img src="assets/pastore-mascot.jpg" alt="" width="32" height="32" decoding="async" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
             </span>
             <div class="mode-switch-text">
               <b>PASTORE LEAGUE (15 UNITÀ)</b>
@@ -311,7 +313,7 @@
             <!-- Il Mister #10 -->
             <div class="hero-mascot-card">
               <div class="hero-mascot-avatar-wrap">
-                <img src="assets/mascot-coach.jpg" alt="Il Mister #10 — Allenatore Giocatore" class="hero-mascot-img" width="96" height="96" />
+                <img src="assets/mascot-coach.jpg" alt="Il Mister #10 — Allenatore Giocatore" class="hero-mascot-img" width="96" height="96" decoding="async" fetchpriority="high" />
                 <span class="mascot-role-tag">IL MISTER #10</span>
               </div>
               <div class="mascot-bubble" id="mascotGreeting">
@@ -333,7 +335,7 @@
       <section class="view-panel" id="view-league" hidden aria-label="Classifica Lega">
         <div class="panel-card league-header-card">
           <div class="league-trophy-showcase">
-            <img src="assets/trophy-quizzone.jpg?v=33" alt="Trofeo Divisione" class="league-hero-trophy" id="leagueHeroTrophy" width="96" height="96" />
+            <img src="assets/trophy-quizzone.jpg" alt="Trofeo Divisione" class="league-hero-trophy" id="leagueHeroTrophy" width="96" height="96" loading="lazy" decoding="async" />
           </div>
           <span class="eyebrow-pill pill-gold" id="leagueDivisionBadge">DIVISIONE SCUDETTO 🏆</span>
           <h2 id="leagueTitle">Classifica Calcio</h2>
@@ -384,7 +386,7 @@
               <h2>Missioni &amp; Bauli Premio</h2>
               <p>Completa le sfide per accumulare <b>Lattine Energy Drink 🥫</b> e sbloccare i trofei.</p>
             </div>
-            <img src="assets/chest-gold.jpg" alt="Baule del Campione" class="quests-banner-chest" width="84" height="84" />
+            <img src="assets/chest-gold.jpg" alt="Baule del Campione" class="quests-banner-chest" width="84" height="84" loading="lazy" decoding="async" />
           </div>
         </div>
 
@@ -551,7 +553,7 @@
         <!-- SEZIONE SPECIALE: MODALITÀ PASTORE (MARCATORI SERIE A 1990 - OGGI) -->
         <div class="panel-card extra-hero-card mt-16" style="border: 2px solid #ffc800; background: linear-gradient(135deg, #132438, #0b192c);">
           <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-            <img src="assets/pastore-mascot.jpg" alt="Giuseppe Pastore" style="width:72px;height:72px;border-radius:16px;border:2px solid #ffc800;object-fit:cover;box-shadow:0 4px 14px rgba(255,200,0,0.3);" />
+            <img src="assets/pastore-mascot.jpg" alt="Giuseppe Pastore" width="72" height="72" loading="lazy" decoding="async" style="width:72px;height:72px;border-radius:16px;border:2px solid #ffc800;object-fit:cover;box-shadow:0 4px 14px rgba(255,200,0,0.3);" />
             <div style="flex:1;min-width:220px;">
               <span class="eyebrow-pill pill-gold">🎯 NOVITÀ ASSOLUTA • MODALITÀ PASTORE</span>
               <h2 style="margin:4px 0;color:#fff;">Il Grande Archivio Marcatori (2.000 Sfide)</h2>
@@ -653,7 +655,7 @@
       <section class="view-panel" id="view-profile" hidden aria-label="Profilo Giocatore">
         <div class="panel-card profile-hero-card">
           <div class="profile-avatar-big">
-            <img src="assets/mascot-coach.jpg" alt="Avatar Profilo" class="profile-hero-img" width="76" height="76" />
+            <img src="assets/mascot-coach.jpg" alt="Avatar Profilo" class="profile-hero-img" width="76" height="76" loading="lazy" decoding="async" />
             <span class="profile-level-pill" id="profileLevelBadge">LIV. 1</span>
           </div>
           <div class="profile-meta">
@@ -791,7 +793,7 @@
           <span class="widget-badge" id="railGoalPct">0%</span>
         </div>
         <div class="widget-goal-row">
-          <img src="assets/chest-gold.jpg" alt="Baule" class="widget-chest-thumb" width="46" height="46" />
+          <img src="assets/chest-gold.jpg" alt="Baule" class="widget-chest-thumb" width="46" height="46" loading="lazy" decoding="async" />
           <div class="widget-goal-bar-wrap">
             <div class="duo-progress-bar">
               <div class="duo-progress-fill" id="railGoalFill" style="width: 0%"></div>
@@ -885,7 +887,7 @@
 
         <div class="quiz-prompt-row">
           <div class="quiz-mascot-wrap">
-            <img src="assets/mascot-coach.jpg" alt="Il Mister #10" class="quiz-mascot-avatar" id="quizMascotImg" width="72" height="72" />
+            <img src="assets/mascot-coach.jpg" alt="Il Mister #10" class="quiz-mascot-avatar" id="quizMascotImg" width="72" height="72" decoding="async" />
             <span class="quiz-mascot-mood" id="quizMascotMood">🎯</span>
           </div>
           <div class="speech-bubble">
@@ -908,7 +910,7 @@
       <div id="quizCompletionView" class="quiz-completion-view" hidden>
         <div class="completion-card">
           <div class="completion-trophy-wrap">
-            <img src="assets/trophy-fuoriclasse.jpg" alt="Trofeo Vittoria" class="completion-trophy-img" id="completionTrophyImg" width="116" height="116" />
+            <img src="assets/trophy-fuoriclasse.jpg" alt="Trofeo Vittoria" class="completion-trophy-img" id="completionTrophyImg" width="116" height="116" loading="lazy" decoding="async" />
           </div>
           <span class="eyebrow-pill pill-gold" id="completionBadgeText">ROUND 1 COMPLETATO!</span>
           <h2 class="completion-title" id="completionTitle">INCASSI O RILANCI?</h2>
@@ -1060,7 +1062,7 @@
     <div class="duo-modal-card modal-lg">
       <div class="modal-head">
         <div style="display:flex;align-items:center;gap:12px;">
-          <img src="assets/mascot-coach.jpg" alt="Il Mister #10" style="width:48px;height:48px;border-radius:12px;border:2px solid #ffc800;" />
+          <img src="assets/mascot-coach.jpg" alt="Il Mister #10" width="48" height="48" loading="lazy" decoding="async" style="width:48px;height:48px;border-radius:12px;border:2px solid #ffc800;" />
           <div>
             <span class="eyebrow-pill">SPOGLIATOIO UFFICIALE • 16-BIT</span>
             <h2 id="authModalTitle">⚽ Entra in Campo: Login &amp; Username</h2>
@@ -1133,7 +1135,7 @@
           <div class="sport-card-choice active" id="chooseSportCalcio" data-sport="calcio">
             <div class="sport-card-head">
               <div class="sport-avatar-wrap" style="border-color:#58cc02;">
-                <img src="assets/mascot-coach.jpg?v=33" alt="Calcio" />
+                <img src="assets/mascot-coach.jpg" alt="Calcio" width="56" height="56" loading="lazy" decoding="async" />
               </div>
               <span class="eyebrow-pill pill-green">5.000+ SFIDE</span>
             </div>
@@ -1147,7 +1149,7 @@
           <div class="sport-card-choice" id="chooseSportF1" data-sport="f1">
             <div class="sport-card-head">
               <div class="sport-avatar-wrap" style="border-color:#e10600;">
-                <img src="assets/f1-mascot.jpg?v=35" alt="F1 Boomer" onerror="this.onerror=null;this.parentElement.innerHTML='🏎️';" />
+                <img src="assets/f1-mascot.jpg" alt="F1 Boomer" width="56" height="56" loading="lazy" decoding="async" onerror="this.onerror=null;this.parentElement.innerHTML='🏎️';" />
               </div>
               <span class="eyebrow-pill" style="background:#ffffff;color:#e10600;border-color:#e10600;font-weight:900;">4.100+ QUIZ</span>
             </div>
@@ -1161,7 +1163,7 @@
           <div class="sport-card-choice" id="chooseSportBasket" data-sport="basket">
             <div class="sport-card-head">
               <div class="sport-avatar-wrap" style="border-color:#f97316;">
-                <img src="assets/basket-mascot.jpg?v=35" alt="Basket NBA" onerror="this.onerror=null;this.parentElement.innerHTML='🏀';" />
+                <img src="assets/basket-mascot.jpg" alt="Basket NBA" width="56" height="56" loading="lazy" decoding="async" onerror="this.onerror=null;this.parentElement.innerHTML='🏀';" />
               </div>
               <span class="eyebrow-pill pill-gold">4.100+ QUIZ</span>
             </div>
@@ -1359,7 +1361,7 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=47"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="app.js?v=48" defer></script>
 </body>
 </html>
