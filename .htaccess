@@ -1,5 +1,12 @@
-# Fuoriclasse — Hardening Sicurezza & Anti-Cache Stale per Aruba Apache
+# Fuoriclasse — Performance GZIP, Smart Caching & Hardening per Aruba Apache
 DirectoryIndex index.html index.php
+
+# 1. COMPRESSIONE GZIP / DEFLATE (Riduce i JSON da 4MB a ~400KB!)
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css
+  AddOutputFilterByType DEFLATE application/javascript text/javascript application/x-javascript
+  AddOutputFilterByType DEFLATE application/json application/manifest+json image/svg+xml
+</IfModule>
 
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
@@ -7,12 +14,20 @@ DirectoryIndex index.html index.php
   Header set Referrer-Policy "strict-origin-when-cross-origin"
   Header set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
 
-  # Disabilita completamente la cache HTTP su HTML, Service Worker, JS, CSS e JSON
-  # così iPhone/Safari scarica SEMPRE l'ultima versione senza mai mostrare HTML vecchio
-  <FilesMatch "\.(html|htm|js|css|json|webmanifest)$">
+  # 2. ZERO CACHE su entry-point (index.html, sw.js, version.json, manifest)
+  # Garantisce che ogni nuovo deploy venga rilevato istantaneamente su iPhone/Safari
+  <FilesMatch "^(index\.html|sw\.js|version\.json|manifest\.webmanifest)$">
     Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header set Pragma "no-cache"
     Header set Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+  </FilesMatch>
+
+  # 3. CACHE VELOCE per asset versionati con ?v=XX (JSON curriculum, JS, CSS, Immagini)
+  # Quando cambia ?v=XX il browser scarica il file nuovo; altrimenti carica in 0ms da disco!
+  <FilesMatch "\.(json|js|css|jpg|jpeg|png|webp|svg|ico)$">
+    <If "%{REQUEST_URI} !~ m#/(sw\.js|version\.json)$#">
+      Header set Cache-Control "public, max-age=604800, stale-while-revalidate=86400"
+    </If>
   </FilesMatch>
 </IfModule>
 

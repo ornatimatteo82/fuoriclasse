@@ -42,3 +42,18 @@ try {
 execSync(`zip -q -9 "${targetZip}" ${filesToZip.join(' ')}`, { cwd: rootDir });
 const stats = fs.statSync(targetZip);
 console.log(`✓ ${targetZip} creato con successo (${(stats.size / 1024).toFixed(1)} KB)`);
+
+// 3. Aggiorna anche i pacchetti dati 2015-2026 minificati
+const dataPackages = [
+  { zip: '02-data-calcio.zip', files: ['data/curriculum.json', 'data/curriculum.schema.json'] },
+  { zip: '03-data-f1.zip', files: ['data/curriculum-f1.json'] },
+  { zip: '04-data-basket.zip', files: ['data/curriculum-basket.json'] }
+];
+
+for (const pkg of dataPackages) {
+  const pkgPath = path.join(rootDir, 'deploy-packages', pkg.zip);
+  try { fs.unlinkSync(pkgPath); } catch (_) {}
+  execSync(`zip -q -9 "${pkgPath}" ${pkg.files.join(' ')}`, { cwd: rootDir });
+  const st = fs.statSync(pkgPath);
+  console.log(`✓ ${pkg.zip} aggiornato (${(st.size / 1024).toFixed(1)} KB)`);
+}

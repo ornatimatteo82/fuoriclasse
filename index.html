@@ -29,28 +29,20 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="style.css?v=46" />
-  <link rel="stylesheet" href="mobile.css?v=46" />
-  <link rel="stylesheet" href="dark-theme.css?v=46" />
+  <link rel="stylesheet" href="style.css?v=47" />
+  <link rel="stylesheet" href="mobile.css?v=47" />
+  <link rel="stylesheet" href="dark-theme.css?v=47" />
   <script>
     (function() {
       try {
-        // Pulizia iniziale proattiva cache Service Worker per garantire aggiornamenti istantanei
+        // Pulizia selettiva solo di eventuali cache obsolete (mantiene la cache attiva per caricamento 0ms)
+        var ACTIVE_CACHE = 'fuoriclasse-v47';
         if ('caches' in window) {
           caches.keys().then(function(keys) {
-            return Promise.all(keys.map(function(k) { return caches.delete(k); }));
-          });
-        }
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(regs) {
-            regs.forEach(function(r) {
-              var scriptUrl = (r.active && r.active.scriptURL) || (r.installing && r.installing.scriptURL) || '';
-              if (scriptUrl.indexOf('v=34') === -1) {
-                r.unregister();
-              } else {
-                r.update();
-              }
-            });
+            return Promise.all(
+              keys.filter(function(k) { return k !== ACTIVE_CACHE; })
+                  .map(function(k) { return caches.delete(k); })
+            );
           });
         }
       } catch (e) {}
@@ -1368,6 +1360,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=46"></script>
+  <script src="app.js?v=47"></script>
 </body>
 </html>

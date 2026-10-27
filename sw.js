@@ -1,9 +1,11 @@
-// Fuoriclasse Service Worker v46 — Auto-Refresh, PWA & Streak Notifications
-const SW_VERSION = 'fuoriclasse-v46';
+// Fuoriclasse Service Worker v47 — Instant Cache per Curriculum JSON & Assets, Auto-Refresh & Streak Notifications
+const SW_VERSION = 'fuoriclasse-v47';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== SW_VERSION).map((k) => caches.delete(k)))
+    )
   );
   self.skipWaiting();
 });
@@ -11,7 +13,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== SW_VERSION).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -50,6 +52,32 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-self.addEventListener('fetch', () => {
-  // Pass-through diretto alla rete: nessuna intercettazione cache
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+
+  // 1. version.json e HTML principale sempre freschi da rete (per rilevamento deploy istantaneo)
+  if (url.pathname.endsWith('version.json') || url.pathname === '/' || url.pathname.endsWith('index.html')) {
+    return;
+  }
+
+  // 2. Cache-First ultra-veloce per file dati curriculum JSON e asset versionati (?v=...)
+  if (url.pathname.includes('/data/') || url.pathname.includes('/assets/') || url.search.includes('v=')) {
+    event.respondWith(
+      caches.open(SW_VERSION).then((cache) =>
+        cache.match(req).then((cachedResp) => {
+          if (cachedResp) return cachedResp;
+          return fetch(req).then((netResp) => {
+            if (netResp && netResp.status === 200) {
+              cache.put(req, netResp.clone());
+            }
+            return netResp;
+          });
+        })
+      )
+    );
+  }
 });

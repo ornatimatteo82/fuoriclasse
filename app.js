@@ -332,7 +332,16 @@ function persistState() {
   } catch (e) {
     console.warn('Impossibile salvare lo stato:', e);
   }
-  syncProfileToSupabase();
+  scheduleProfileCloudSync();
+}
+
+let _cloudSyncTimer = null;
+function scheduleProfileCloudSync() {
+  if (_cloudSyncTimer) clearTimeout(_cloudSyncTimer);
+  _cloudSyncTimer = setTimeout(() => {
+    _cloudSyncTimer = null;
+    syncProfileToSupabase();
+  }, 3000);
 }
 
 // -------------------------------------------------------------
@@ -543,9 +552,9 @@ async function loadSportCurriculum(sport = state.activeSport) {
     return loadedSportCatalogs[sport];
   }
 
-  let jsonUrl = 'data/curriculum.json?v=35';
-  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=35';
-  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=35';
+  let jsonUrl = 'data/curriculum.json?v=47';
+  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=47';
+  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=47';
 
   try {
     const res = await fetch(jsonUrl);
@@ -806,11 +815,11 @@ window.switchSport = async (targetSport) => {
   // 3. Caricamento del curriculum dello sport scelto
   await loadSportCurriculum(targetSport);
 
-  // 4. Se torniamo a calcio, riallinea modalità
+  // 4. Se torniamo a calcio, riallinea modalità (senza doppio render)
   if (targetSport === 'calcio') {
-    setGameMode(state.activeGameMode, false);
+    setGameMode(state.activeGameMode, false, true);
   }
-  switchTab('path', state.activeGameMode);
+  switchTab('path', state.activeGameMode, true);
   currentLeagueSport = targetSport;
   renderLeaderboard(targetSport);
   renderUnitJumpModal();
@@ -818,7 +827,7 @@ window.switchSport = async (targetSport) => {
   persistState();
 
   trackEvent('sport_switch', { from_sport: previousSport, to_sport: targetSport });
-  scrollToCurrentProgress({ smooth: true, delay: 120 });
+  scrollToCurrentProgress({ smooth: false, delay: 40 });
 };
 
 async function loadCurriculum() {
@@ -831,7 +840,7 @@ async function loadCurriculum() {
   updateSportBadgeUI();
   updateSportUITheme();
   if (state.activeSport === 'calcio') {
-    setGameMode(state.activeGameMode, false);
+    setGameMode(state.activeGameMode, false, true);
   }
   renderUnitJumpModal();
   renderLeaderboard();
@@ -839,37 +848,14 @@ async function loadCurriculum() {
   updateTopStats();
   renderSnakePath();
 
-  // Ripristina e centra automaticamente i progressi dell'utente proprio come Duolingo
-  scrollToCurrentProgress({ smooth: false, delay: 50 });
-  setTimeout(() => scrollToCurrentProgress({ smooth: false }), 250);
-  setTimeout(() => scrollToCurrentProgress({ smooth: true }), 650);
+  // Ripristina e centra istantaneamente i progressi dell'utente (singolo pass non bloccante)
+  scrollToCurrentProgress({ smooth: false, delay: 40 });
 
   trackEvent('page_view', { sport: state.activeSport, is_logged_in: Boolean(currentCloudUser) });
-
-  // Precarica in background le altre categorie per click istantaneo a zero attesa
-  preloadOtherSportCurricula();
 }
 
 function preloadOtherSportCurricula() {
-  setTimeout(() => {
-    ['calcio', 'f1', 'basket'].forEach(sp => {
-      if (sp !== state.activeSport && !loadedSportCatalogs[sp]) {
-        const url = sp === 'f1' ? 'data/curriculum-f1.json?v=35' : (sp === 'basket' ? 'data/curriculum-basket.json?v=35' : 'data/curriculum.json?v=35');
-        fetch(url)
-          .then(r => r.json())
-          .then(data => {
-            if (data && Array.isArray(data.units)) {
-              loadedSportCatalogs[sp] = data;
-              // Assicurati al 100% che il catalog globale rimanga sempre quello dello sport attivo
-              if (loadedSportCatalogs[state.activeSport]) {
-                catalog = loadedSportCatalogs[state.activeSport];
-              }
-            }
-          })
-          .catch(() => {});
-      }
-    });
-  }, 2500);
+  // Caricamento on-demand al cambio sport per non saturare CPU e banda mobile all'avvio
 }
 
 // -------------------------------------------------------------
@@ -1344,14 +1330,16 @@ window.requestStreakNotificationPermission = requestStreakNotificationPermission
 // -------------------------------------------------------------
 // 5. SWITCHER 3 MODALITÀ DI GIOCO: QUIZZONE, GAEL LEAGUE, PASTORE LEAGUE
 // -------------------------------------------------------------
-window.setGameMode = (mode, scroll = true) => {
+window.setGameMode = (mode, scroll = true, skipRender = false) => {
   if (state.activeSport !== 'calcio') return; // Se siamo in F1 o Basket, ignora
   if (mode === 'quizzone' || mode === 'quiz') mode = 'quizzocampo';
   if (mode !== 'gael' && mode !== 'pastore' && mode !== 'quizzocampo') {
     mode = 'quizzocampo';
   }
   state.activeGameMode = mode;
-  persistState();
+  if (!skipRender) {
+    persistState();
+  }
 
   // Se non siamo sul tab percorso, portiamoci lì quando si clicca una modalità
   if (state.activeTab !== 'path' && scroll) {
@@ -1468,9 +1456,11 @@ window.setGameMode = (mode, scroll = true) => {
         : 'Coppa Quizzone';
   }
 
-  renderSnakePath();
-  if (scroll) {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (!skipRender) {
+    renderSnakePath();
+    if (scroll) {
+      scrollToCurrentProgress({ smooth: false, delay: 30 });
+    }
   }
 };
 
@@ -1928,6 +1918,22 @@ function shuffleArray(arr) {
 window.shuffleArray = shuffleArray;
 
 function sampleQuestions(pool, count = 5) {
+  if (!Array.isArray(pool) || pool.length === 0) return [];
+  if (pool.length <= count) return shuffleArray(pool);
+  // Estrazione O(k) ultra-rapida senza copiare né mescolare interi array da 5.000 elementi
+  if (pool.length > 40) {
+    const picked = [];
+    const usedIdx = new Set();
+    const maxAttempts = count * 4;
+    for (let a = 0; a < maxAttempts && picked.length < count; a++) {
+      const idx = Math.floor(Math.random() * pool.length);
+      if (!usedIdx.has(idx)) {
+        usedIdx.add(idx);
+        picked.push(pool[idx]);
+      }
+    }
+    return picked;
+  }
   return shuffleArray(pool).slice(0, count);
 }
 
@@ -1941,53 +1947,55 @@ function getDynamicLessonQuestions(uIdx, lIdx) {
   if (!Array.isArray(state.recentQuestionKeys)) state.recentQuestionKeys = [];
   const recentSet = new Set(state.recentQuestionKeys);
 
-  // 1. Domande base della tappa specifica
-  const baseQuestions = (lesson?.questions || lesson?.players || []).map(q => ({ ...q }));
-
-  // 2. Domande dell'intera unità tematica (altre tappe della stessa unità)
+  // 1. Domande della tappa e dell'unità tematica (~50-70 domande, incluse le 2015-2026)
+  const baseQuestions = lesson?.questions || lesson?.players || [];
   const unitQuestions = [];
   if (unit && Array.isArray(unit.lessons)) {
-    unit.lessons.forEach(l => {
-      (l.questions || l.players || []).forEach(q => unitQuestions.push({ ...q }));
-    });
-  }
-
-  // 3. Pool di riserva dal mega-archivio dello sport
-  const sportPool = [];
-  if (sp === 'f1' && Array.isArray(curCat?.f1Pool)) {
-    const targetDiff = (uIdx % 3) + 1;
-    const match = curCat.f1Pool.filter(q => Number(q.difficultyLevel) === targetDiff);
-    sportPool.push(...(match.length >= 10 ? match : curCat.f1Pool));
-  } else if (sp === 'basket' && Array.isArray(curCat?.basketPool)) {
-    const targetDiff = (uIdx % 3) + 1;
-    const match = curCat.basketPool.filter(q => Number(q.difficultyLevel) === targetDiff);
-    sportPool.push(...(match.length >= 10 ? match : curCat.basketPool));
-  } else if (sp === 'calcio') {
-    if (uIdx >= 25 && Array.isArray(curCat?.pastoreMode)) {
-      sportPool.push(...curCat.pastoreMode);
-    } else if (uIdx < 10 && curCat?.gaelModes) {
-      Object.values(curCat.gaelModes).forEach(arr => { if (Array.isArray(arr)) sportPool.push(...arr); });
-    } else if (curCat?.extraModes) {
-      Object.values(curCat.extraModes).forEach(arr => { if (Array.isArray(arr)) sportPool.push(...arr); });
+    for (let i = 0; i < unit.lessons.length; i++) {
+      const qs = unit.lessons[i].questions || unit.lessons[i].players || [];
+      for (let j = 0; j < qs.length; j++) unitQuestions.push(qs[j]);
     }
   }
 
-  // Costruisci pool combinato deduplicato
+  // 2. Campionamento O(1) leggero (max 15 elementi) dal mega-archivio dello sport senza iterare 5.000 oggetti
+  let bigPool = null;
+  if (sp === 'f1' && Array.isArray(curCat?.f1Pool)) {
+    bigPool = curCat.f1Pool;
+  } else if (sp === 'basket' && Array.isArray(curCat?.basketPool)) {
+    bigPool = curCat.basketPool;
+  } else if (sp === 'calcio') {
+    if (uIdx >= 25 && Array.isArray(curCat?.pastoreMode)) {
+      bigPool = curCat.pastoreMode;
+    } else if (uIdx < 10 && curCat?.gaelModes) {
+      bigPool = curCat.gaelModes.allstars || curCat.gaelModes.anni2000 || [];
+    } else if (curCat?.extraModes) {
+      const modes = ['goals', 'scorers', 'derby', 'champions'];
+      bigPool = curCat.extraModes[modes[uIdx % modes.length]] || [];
+    }
+  }
+  const fastSportSample = bigPool ? sampleQuestions(bigPool, 15) : [];
+
+  // 3. Costruisci pool locale leggero (~80 elementi max) deduplicato
   const uniqueMap = new Map();
-  [...baseQuestions, ...unitQuestions, ...sportPool].forEach(q => {
+  const candidates = [...baseQuestions, ...unitQuestions, ...fastSportSample];
+  for (let i = 0; i < candidates.length; i++) {
+    const q = candidates[i];
     const k = getQKey(q);
     if (k && !uniqueMap.has(k)) {
       uniqueMap.set(k, q);
     }
-  });
+  }
 
   const allAvailable = Array.from(uniqueMap.values());
-  // Anti-fatica: escludi quelle affrontate nelle ultime sessioni
   const unseen = allAvailable.filter(q => !recentSet.has(getQKey(q)));
   const chosenPool = unseen.length >= 5 ? unseen : allAvailable;
 
-  // Estrai 5 sfide randomiche
-  const picked = sampleQuestions(chosenPool, 5);
+  // 4. Garantisce un mix equilibrato con focus sulle nuove domande 2015-2026 + classiche
+  const modern2026 = chosenPool.filter(q => q.era2015_2026);
+  const classicPool = chosenPool.filter(q => !q.era2015_2026);
+  const pickedModern = sampleQuestions(modern2026, Math.min(2, modern2026.length));
+  const pickedClassic = sampleQuestions(classicPool, 5 - pickedModern.length);
+  const picked = shuffleArray([...pickedModern, ...pickedClassic]);
 
   picked.forEach(q => {
     const k = getQKey(q);
@@ -2032,8 +2040,7 @@ function getQuestionsForDifficulty(gameType, diffLevel, count = 5) {
       });
     }
     if (Array.isArray(curCat?.f1Pool)) {
-      const matchPool = curCat.f1Pool.filter(q => Number(q.difficultyLevel) === ((targetDiff - 1) % 3) + 1);
-      pool.push(...(matchPool.length ? matchPool : curCat.f1Pool));
+      pool.push(...sampleQuestions(curCat.f1Pool, 20));
     }
   } else if (sp === 'basket') {
     const targetUnit = units[Math.min(units.length - 1, targetDiff - 1)] || units[0];
@@ -2043,8 +2050,7 @@ function getQuestionsForDifficulty(gameType, diffLevel, count = 5) {
       });
     }
     if (Array.isArray(curCat?.basketPool)) {
-      const matchPool = curCat.basketPool.filter(q => Number(q.difficultyLevel) === ((targetDiff - 1) % 3) + 1);
-      pool.push(...(matchPool.length ? matchPool : curCat.basketPool));
+      pool.push(...sampleQuestions(curCat.basketPool, 20));
     }
   } else {
     const actualMode = (gameType === 'quiz' || gameType === 'quizzone') ? 'quizzocampo' : (gameType || 'gael');
@@ -2057,11 +2063,11 @@ function getQuestionsForDifficulty(gameType, diffLevel, count = 5) {
       });
     }
     if (actualMode === 'pastore' && Array.isArray(curCat?.pastoreMode)) {
-      pool.push(...curCat.pastoreMode);
+      pool.push(...sampleQuestions(curCat.pastoreMode, 20));
     } else if (actualMode === 'gael' && curCat?.gaelModes) {
-      Object.values(curCat.gaelModes).forEach(arr => { if (Array.isArray(arr)) pool.push(...arr); });
+      pool.push(...sampleQuestions(curCat.gaelModes.allstars || [], 15));
     } else if (curCat?.extraModes) {
-      Object.values(curCat.extraModes).forEach(arr => { if (Array.isArray(arr)) pool.push(...arr); });
+      pool.push(...sampleQuestions(curCat.extraModes.goals || [], 15));
     }
   }
 
@@ -3724,7 +3730,7 @@ function updateTopStats() {
 // -------------------------------------------------------------
 // 11. CAMBIO SCHEDA / TAB SWITCHER
 // -------------------------------------------------------------
-function switchTab(tabId, forcedGameMode = null) {
+function switchTab(tabId, forcedGameMode = null, skipRender = false) {
   state.activeTab = tabId;
   if (forcedGameMode) {
     state.activeGameMode = forcedGameMode;
@@ -3754,6 +3760,8 @@ function switchTab(tabId, forcedGameMode = null) {
     }
   });
 
+  if (skipRender) return;
+
   if (tabId === 'path' && state.activeSport === 'calcio') {
     setGameMode(state.activeGameMode, false);
   } else if (tabId === 'league') {
@@ -3761,9 +3769,9 @@ function switchTab(tabId, forcedGameMode = null) {
   }
 
   if (tabId === 'path') {
-    scrollToCurrentProgress({ smooth: true, delay: 80 });
+    scrollToCurrentProgress({ smooth: false, delay: 30 });
   } else {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }
 }
 window.switchTab = switchTab;
@@ -4536,13 +4544,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Timer automatico rigenerazione gratuita (+1 ❤️ ogni 15 minuti) & Reset Vite a Mezzanotte & Promemoria Streak
   let regenSecondsLeft = 15 * 60;
+  let bgTickCount = 0;
   setInterval(() => {
-    checkMidnightHeartsReset();
-    checkAndTriggerStreakReminder();
-    const timerEl = $('#heartsRegenTimerText');
+    bgTickCount++;
+    if (bgTickCount % 60 === 0) {
+      checkMidnightHeartsReset();
+      checkAndTriggerStreakReminder();
+    }
     if (state.hearts >= state.maxHearts) {
       regenSecondsLeft = 15 * 60;
-      if (timerEl) timerEl.textContent = '✅ Batterie al 100%: hai tutte le 5/5 ❤️ vite disponibili!';
+      const modal = $('#heartsEmptyModal');
+      if (modal && !modal.hidden) {
+        const timerEl = $('#heartsRegenTimerText');
+        if (timerEl) timerEl.textContent = '✅ Batterie al 100%: hai tutte le 5/5 ❤️ vite disponibili!';
+      }
       return;
     }
     regenSecondsLeft--;
@@ -4553,10 +4568,14 @@ document.addEventListener('DOMContentLoaded', () => {
       persistState();
       if ($('#freemiumHeartsNow')) $('#freemiumHeartsNow').textContent = state.hearts;
     }
-    const mm = String(Math.floor(regenSecondsLeft / 60)).padStart(2, '0');
-    const ss = String(regenSecondsLeft % 60).padStart(2, '0');
-    if (timerEl) {
-      timerEl.textContent = `⏱️ Prossima vita gratis (+1 ❤️) tra ${mm}:${ss}`;
+    const modal = $('#heartsEmptyModal');
+    if (modal && !modal.hidden) {
+      const timerEl = $('#heartsRegenTimerText');
+      if (timerEl) {
+        const mm = String(Math.floor(regenSecondsLeft / 60)).padStart(2, '0');
+        const ss = String(regenSecondsLeft % 60).padStart(2, '0');
+        timerEl.textContent = `⏱️ Prossima vita gratis (+1 ❤️) tra ${mm}:${ss}`;
+      }
     }
   }, 1000);
 
@@ -4681,15 +4700,10 @@ document.addEventListener('DOMContentLoaded', () => {
     openModal('✅ Progressi Azzerati', '<p>Il tuo profilo locale è stato riportato all\'inizio della stagione.</p>');
   });
 
-  // Ripristino e centraggio progressi su riapertura PWA e ritorno in primo piano
-  window.addEventListener('pageshow', () => {
-    if (state.activeTab === 'path' && !state.quizOpen) {
-      scrollToCurrentProgress({ smooth: false, delay: 50 });
-    }
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && state.activeTab === 'path' && !state.quizOpen) {
-      scrollToCurrentProgress({ smooth: false, delay: 50 });
+  // Ripristino progressi su bfcache iOS
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted && state.activeTab === 'path' && !state.quizOpen) {
+      scrollToCurrentProgress({ smooth: false, delay: 40 });
     }
   });
 });
