@@ -552,9 +552,9 @@ async function loadSportCurriculum(sport = state.activeSport) {
     return loadedSportCatalogs[sport];
   }
 
-  let jsonUrl = 'data/curriculum.json?v=48';
-  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=48';
-  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=48';
+  let jsonUrl = 'data/curriculum.json?v=49';
+  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=49';
+  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=49';
 
   try {
     const res = await fetch(jsonUrl);
@@ -823,6 +823,7 @@ window.switchSport = async (targetSport) => {
   currentLeagueSport = targetSport;
   renderLeaderboard(targetSport);
   renderUnitJumpModal();
+  renderAmazonDealsHub(activeAmazonCategory);
   renderSnakePath();
   persistState();
 
@@ -846,6 +847,7 @@ async function loadCurriculum() {
   renderLeaderboard();
   renderQuests();
   updateTopStats();
+  renderAmazonDealsHub(activeAmazonCategory);
   renderSnakePath();
 
   // Ripristina e centra istantaneamente i progressi dell'utente (singolo pass non bloccante)
@@ -1602,6 +1604,10 @@ function renderSnakePath() {
       `;
     }).join('');
 
+    const inlineAmazonHtml = (visibleUnitOrder % 2 === 0 && typeof getInlinePathAmazonBannerHtml === 'function')
+      ? getInlinePathAmazonBannerHtml(Math.floor(visibleUnitOrder / 2) - 1)
+      : '';
+
     return `
       <article class="unit-section" id="unit-sec-${uIdx}">
         <header class="unit-banner-card ${themeClass}">
@@ -1623,6 +1629,7 @@ function renderSnakePath() {
           ${nodesHtml}
         </div>
       </article>
+      ${inlineAmazonHtml}
     `;
   }).join('');
 
@@ -2096,85 +2103,396 @@ function getQuestionsForDifficulty(gameType, diffLevel, count = 5) {
 
 const AMAZON_AFFILIATE_TAG = 'matteornati0d-21';
 
-const AMAZON_FOOTBALL_DEALS = [
-  {
-    emoji: '📚',
-    title: "Libri & Biografie Calcio Serie A Anni '90",
-    sub: "I capolavori nostalgici consigliati da Fuoriclasse",
-    url: `https://www.amazon.it/s?k=libri+calcio+serie+a&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
-  },
-  {
-    emoji: '👕',
-    title: "Maglie Vintage & Retro Serie A",
-    sub: "Le divise leggendarie delle Sette Sorelle e club storici",
-    url: `https://www.amazon.it/s?k=maglie+calcio+vintage+serie+a&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
-  },
-  {
-    emoji: '⚽',
-    title: "Subbuteo Champions & Palloni Storici",
-    sub: "Il mito del panno verde da tavolo e palloni Mondiali",
-    url: `https://www.amazon.it/s?k=subbuteo+calcio&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
-  },
-  {
-    emoji: '🎮',
-    title: "EA Sports FC & Videogiochi di Calcio",
-    sub: "Le sfide console e card da collezione per veri bomber",
-    url: `https://www.amazon.it/s?k=ea+sports+fc&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
-  }
+// Classificazione strutturata delle Offerte Amazon per Categoria
+const AMAZON_CATEGORIES = [
+  { id: 'lampo', icon: '🔥', label: 'Offerte Lampo', badge: 'FINO A -50%' },
+  { id: 'sport', icon: '👕', label: 'Maglie & Sport', badge: 'PROMO SPORT' },
+  { id: 'tech', icon: '📱', label: 'Tech & Smart TV', badge: 'FINO A -40%' },
+  { id: 'gaming', icon: '🎮', label: 'Gaming & Console', badge: 'SCONTI GAMING' },
+  { id: 'libri', icon: '📚', label: 'Libri & Biografie', badge: 'BESTSELLER' },
+  { id: 'collezionismo', icon: '🏆', label: 'LEGO & Gadget', badge: 'IDEA REGALO' }
 ];
 
-const AMAZON_F1_DEALS = [
-  {
-    emoji: '🏎️',
-    title: "Modellini Formula 1 & Caschi Storici",
-    sub: "Ferrari, McLaren di Senna e leggende della pista",
-    url: `https://www.amazon.it/s?k=modellini+formula+1&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
-  },
-  {
-    emoji: '📚',
-    title: "Libri & Biografie F1 (Lauda, Senna, Schumi)",
-    sub: "I duelli e i segreti dell'era d'oro dei motori",
-    url: `https://www.amazon.it/s?k=libri+formula+1&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
-  },
-  {
-    emoji: '🎮',
-    title: "EA Sports F1 & Volanti da Corsa",
-    sub: "I videogiochi e le periferiche da simulazione pura",
-    url: `https://www.amazon.it/s?k=f1+videogioco+volante&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
-  }
-];
+const AMAZON_DEALS_BY_CATEGORY = {
+  lampo: [
+    {
+      id: 'deal-lampo-today',
+      categoryId: 'lampo',
+      categoryLabel: 'OFFERTE DEL GIORNO',
+      discount: 'FINO A -50%',
+      emoji: '🔥',
+      title: 'Tutte le Offerte Lampo & Promo di Oggi',
+      sub: 'Scopri i prodotti più scontati del momento su Amazon.it',
+      url: `https://www.amazon.it/deals?tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    },
+    {
+      id: 'deal-lampo-outlet',
+      categoryId: 'lampo',
+      categoryLabel: 'COUPON & OUTLET',
+      discount: 'EXTRA SCONTO',
+      emoji: '🏷️',
+      title: 'Prodotti Scontati & Bestseller in Offerta',
+      sub: 'Selezione giornaliera di elettronica, sport, casa e tempo libero',
+      url: `https://www.amazon.it/s?k=offerte+del+giorno&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    }
+  ],
+  sport: [
+    {
+      id: 'deal-sport-calcio-1',
+      sport: 'calcio',
+      categoryId: 'sport',
+      categoryLabel: 'ABBIGLIAMENTO CALCIO',
+      discount: 'IN OFFERTA',
+      emoji: '👕',
+      title: 'Maglie Calcio Vintage & Retro Serie A',
+      sub: 'Le divise storiche delle Sette Sorelle, palloni e scarpini',
+      url: `https://www.amazon.it/s?k=maglie+calcio+vintage+serie+a+offerta&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    },
+    {
+      id: 'deal-sport-calcio-2',
+      sport: 'calcio',
+      categoryId: 'sport',
+      categoryLabel: 'CAMPO & ALLENAMENTO',
+      discount: 'PROMO -30%',
+      emoji: '⚽',
+      title: 'Palloni Ufficiali, Borse & Accessori Calcetto',
+      sub: 'Tutto per scendere in campo con gli amici in offerta',
+      url: `https://www.amazon.it/s?k=pallone+calcio+adidas+nike+offerta&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    },
+    {
+      id: 'deal-sport-f1-1',
+      sport: 'f1',
+      categoryId: 'sport',
+      categoryLabel: 'MERCHANDISING F1',
+      discount: 'PROMO GP',
+      emoji: '🏎️',
+      title: 'Cappellini, Polo & Giacche Ufficiali Scuderie F1',
+      sub: 'Ferrari, McLaren, Mercedes, Red Bull e linea Ayrton Senna',
+      url: `https://www.amazon.it/s?k=cappellino+maglia+ferrari+f1+offerta&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    },
+    {
+      id: 'deal-sport-basket-1',
+      sport: 'basket',
+      categoryId: 'sport',
+      categoryLabel: 'BASKET NBA STORE',
+      discount: 'IN OFFERTA',
+      emoji: '🏀',
+      title: 'Canotte NBA Vintage & Palloni Ufficiali Wilson',
+      sub: 'Bulls #23 Jordan, Lakers Kobe, Celtics e palloni da parquet',
+      url: `https://www.amazon.it/s?k=canotta+nba+pallone+wilson+offerta&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    }
+  ],
+  tech: [
+    {
+      id: 'deal-tech-tv',
+      categoryId: 'tech',
+      categoryLabel: 'SMART TV & STREAMING',
+      discount: 'FINO A -40%',
+      emoji: '📺',
+      title: 'Smart TV 4K & Fire TV Stick per Partite e GP',
+      sub: 'Vivi Serie A, Champions, Formula 1 e NBA in 4K Ultra HD',
+      url: `https://www.amazon.it/s?k=smart+tv+4k+fire+tv+stick+offerta&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    },
+    {
+      id: 'deal-tech-audio',
+      categoryId: 'tech',
+      categoryLabel: 'AUDIO & SMARTWATCH',
+      discount: 'OFFERTA TECH',
+      emoji: '🎧',
+      title: 'Cuffie Bluetooth, Soundbar Stadio & Sportwatch',
+      sub: 'Auricolari wireless e orologi GPS sportivi in promozione',
+      url: `https://www.amazon.it/s?k=cuffie+bluetooth+smartwatch+sport+offerta&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    }
+  ],
+  gaming: [
+    {
+      id: 'deal-gaming-calcio',
+      sport: 'calcio',
+      categoryId: 'gaming',
+      categoryLabel: 'GAMING CALCIO',
+      discount: 'SCONTO CONSOLE',
+      emoji: '🎮',
+      title: 'EA Sports FC, PS5, Nintendo Switch & Controller',
+      sub: 'Videogiochi di calcio, console e accessori gaming in offerta',
+      url: `https://www.amazon.it/s?k=ea+sports+fc+ps5+controller+offerta&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    },
+    {
+      id: 'deal-gaming-f1',
+      sport: 'f1',
+      categoryId: 'gaming',
+      categoryLabel: 'SIM RACING F1',
+      discount: 'PROMO SIMULATORI',
+      emoji: '🕹️',
+      title: 'EA Sports F1 & Volanti Logitech / Thrustmaster',
+      sub: 'Postazioni guida, pedaliere e giochi ufficiali Formula 1',
+      url: `https://www.amazon.it/s?k=volante+f1+logitech+thrustmaster+offerta&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    },
+    {
+      id: 'deal-gaming-basket',
+      sport: 'basket',
+      categoryId: 'gaming',
+      categoryLabel: 'GAMING NBA',
+      discount: 'IN OFFERTA',
+      emoji: '🎮',
+      title: 'NBA 2K, Console & Cuffie da Gaming',
+      sub: 'Sfida gli amici sul parquet virtuale con le promo gaming',
+      url: `https://www.amazon.it/s?k=nba+2k+videogioco+offerta&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    }
+  ],
+  libri: [
+    {
+      id: 'deal-libri-calcio',
+      sport: 'calcio',
+      categoryId: 'libri',
+      categoryLabel: 'LIBRI CALCIO',
+      discount: 'BESTSELLER -15%',
+      emoji: '📚',
+      title: "Libri & Biografie Calcio Serie A Anni '90 e 2000",
+      sub: 'Baggio, Totti, Del Piero, Ronaldo e i racconti nostalgici',
+      url: `https://www.amazon.it/s?k=libri+biografie+calcio+serie+a&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    },
+    {
+      id: 'deal-libri-f1',
+      sport: 'f1',
+      categoryId: 'libri',
+      categoryLabel: 'LIBRI MOTORI F1',
+      discount: 'CULTURA F1',
+      emoji: '📖',
+      title: 'Libri & Biografie Formula 1 (Senna, Lauda, Schumi, Newey)',
+      sub: 'Come progettare un’auto, duelli storici e segreti del paddock',
+      url: `https://www.amazon.it/s?k=libri+formula+1+senna+newey+ferrari&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    },
+    {
+      id: 'deal-libri-basket',
+      sport: 'basket',
+      categoryId: 'libri',
+      categoryLabel: 'LIBRI BASKET NBA',
+      discount: 'BESTSELLER NBA',
+      emoji: '📘',
+      title: 'Libri & Biografie NBA (Mamba Mentality, Jordan, LeBron)',
+      sub: 'Le grandi dinastie NBA raccontate dai protagonisti',
+      url: `https://www.amazon.it/s?k=libri+basket+nba+kobe+jordan&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    }
+  ],
+  collezionismo: [
+    {
+      id: 'deal-coll-f1',
+      sport: 'f1',
+      categoryId: 'collezionismo',
+      categoryLabel: 'LEGO & MODELLINI F1',
+      discount: 'TOP REGALO',
+      emoji: '🏎️',
+      title: 'LEGO Technic Formula 1 & Modellini Bburago Ferrari',
+      sub: 'Monoposto da costruire e caschi in scala da collezione',
+      url: `https://www.amazon.it/s?k=lego+technic+formula+1+ferrari+mclaren&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    },
+    {
+      id: 'deal-coll-calcio',
+      sport: 'calcio',
+      categoryId: 'collezionismo',
+      categoryLabel: 'GIOCHI & COLLEZIONE',
+      discount: 'IN OFFERTA',
+      emoji: '🏆',
+      title: 'Subbuteo Ufficiale, LEGO Stadi & Card da Collezione',
+      sub: 'Il fascino del panno verde e i set da collezione calcistici',
+      url: `https://www.amazon.it/s?k=subbuteo+calcio+lego+stadio&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    },
+    {
+      id: 'deal-coll-basket',
+      sport: 'basket',
+      categoryId: 'collezionismo',
+      categoryLabel: 'GADGET & MINI CANESTRI',
+      discount: 'IDEA REGALO',
+      emoji: '🏀',
+      title: 'Mini Canestri da Camera, Funko Pop NBA & Card',
+      sub: 'Canestri da porta Wilson e memorabilia delle stelle NBA',
+      url: `https://www.amazon.it/s?k=mini+canestro+basket+funko+pop+nba&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2`
+    }
+  ]
+};
 
-const AMAZON_BASKET_DEALS = [
-  {
-    emoji: '🏀',
-    title: "Canotte NBA Vintage & Retro Jersey",
-    sub: "Bulls #23 Jordan, Lakers Kobe, Celtics Bird",
-    url: `https://www.amazon.it/s?k=canotte+nba+vintage&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
-  },
-  {
-    emoji: '📚',
-    title: "Libri & Biografie NBA (Jordan, Kobe, LeBron)",
-    sub: "The Last Dance, Mamba Mentality e la storia dell'anello",
-    url: `https://www.amazon.it/s?k=libri+basket+nba&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
-  },
-  {
-    emoji: '🎮',
-    title: "NBA 2K & Palloni Ufficiali Wilson",
-    sub: "Sfide virtuali e tiri a canestro sul campetto",
-    url: `https://www.amazon.it/s?k=nba+2k+pallone+wilson&tag=${AMAZON_AFFILIATE_TAG}&linkCode=ll2&ref_=as_li_ss_tl`
-  }
-];
+let activeAmazonCategory = 'lampo';
 
-function updateAmazonSponsorCard() {
+function getDealsForCategory(catId = activeAmazonCategory) {
   const sp = state.activeSport || 'calcio';
-  const dealsPool = sp === 'f1' ? AMAZON_F1_DEALS : sp === 'basket' ? AMAZON_BASKET_DEALS : AMAZON_FOOTBALL_DEALS;
-  const deal = dealsPool[Math.floor(Math.random() * dealsPool.length)];
+  const rawList = AMAZON_DEALS_BY_CATEGORY[catId] || AMAZON_DEALS_BY_CATEGORY.lampo;
+  // Ordina mettendo in cima le offerte dello sport attivo, seguite dalle universali
+  const sorted = [...rawList].sort((a, b) => {
+    const aMatch = a.sport === sp ? 2 : (!a.sport ? 1 : 0);
+    const bMatch = b.sport === sp ? 2 : (!b.sport ? 1 : 0);
+    return bMatch - aMatch;
+  });
+  return sorted;
+}
+
+window.handleAmazonDealClick = (dealId, categoryId) => {
+  trackEvent('amazon_deal_click', { deal_id: dealId, category: categoryId, sport: state.activeSport });
+  const claimKey = `amz_bonus_${getLocalDateString()}_${dealId}`;
+  if (!state.claimedChests) state.claimedChests = [];
+  if (!state.claimedChests.includes(claimKey)) {
+    state.claimedChests.push(claimKey);
+    state.gems = (state.gems || 0) + 5;
+    updateTopStats();
+    persistState();
+    const bonusPill = $('#amazonHubBonusPill');
+    if (bonusPill) {
+      bonusPill.textContent = '🎉 +5 🥫 Lattine Accreditate!';
+    }
+  }
+};
+
+window.selectAmazonCategory = (catId) => {
+  activeAmazonCategory = catId;
+  playTone('click');
+  renderAmazonDealsHub(catId);
+  updateAmazonSponsorCard(catId);
+};
+
+function renderAmazonDealsHub(catId = activeAmazonCategory) {
+  activeAmazonCategory = catId || 'lampo';
+  const catsBar = $('#amazonHubCategoriesBar');
+  const grid = $('#amazonHubDealsGrid');
+  const sp = state.activeSport || 'calcio';
+
+  if (catsBar) {
+    catsBar.innerHTML = AMAZON_CATEGORIES.map(c => {
+      const sportIcon = c.id === 'sport' ? (sp === 'f1' ? '🏎️' : sp === 'basket' ? '🏀' : '👕') : c.icon;
+      const isAct = c.id === activeAmazonCategory;
+      return `
+        <button type="button" class="amazon-cat-chip ${isAct ? 'active' : ''}" role="tab" aria-selected="${isAct}" onclick="selectAmazonCategory('${c.id}')">
+          <span>${sportIcon}</span>
+          <span>${esc(c.label)}</span>
+        </button>
+      `;
+    }).join('');
+  }
+
+  const deals = getDealsForCategory(activeAmazonCategory);
+
+  if (grid) {
+    grid.innerHTML = deals.slice(0, 2).map(d => `
+      <a href="${d.url}" target="_blank" rel="noopener sponsored" class="amazon-deal-card" onclick="handleAmazonDealClick('${d.id}', '${d.categoryId}')">
+        <div class="amazon-deal-icon" aria-hidden="true">${d.emoji}</div>
+        <div class="amazon-deal-body">
+          <div class="amazon-deal-badges">
+            <span class="amazon-discount-badge">${esc(d.discount)}</span>
+            <span class="amazon-cat-label">${esc(d.categoryLabel)}</span>
+          </div>
+          <div class="amazon-deal-title">${esc(d.title)}</div>
+          <div class="amazon-deal-sub">${esc(d.sub)}</div>
+        </div>
+        <span class="amazon-deal-cta">Vedi Offerta ↗</span>
+      </a>
+    `).join('');
+  }
+
+  // Aggiorna anche il widget fisso nella colonna destra Desktop (#railAmazonCardSlot)
+  const railSlot = $('#railAmazonCardSlot');
+  if (railSlot && deals.length > 0) {
+    const topDeal = deals[0];
+    const railBadge = $('#railAmazonDiscountBadge');
+    if (railBadge) railBadge.textContent = topDeal.discount;
+    railSlot.innerHTML = `
+      <div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;scrollbar-width:none;">
+        ${AMAZON_CATEGORIES.map(c => `
+          <button type="button" class="amazon-cat-chip ${c.id === activeAmazonCategory ? 'active' : ''}" style="padding:4px 8px;font-size:10.5px;" onclick="selectAmazonCategory('${c.id}')">
+            ${c.icon} ${esc(c.label.split(' ')[0])}
+          </button>
+        `).join('')}
+      </div>
+      <a href="${topDeal.url}" target="_blank" rel="noopener sponsored" class="amazon-deal-card" style="padding:10px;" onclick="handleAmazonDealClick('${topDeal.id}', '${topDeal.categoryId}')">
+        <div class="amazon-deal-icon" style="width:40px;height:40px;font-size:22px;">${topDeal.emoji}</div>
+        <div class="amazon-deal-body">
+          <div class="amazon-cat-label">${esc(topDeal.categoryLabel)}</div>
+          <div class="amazon-deal-title" style="font-size:12.5px;">${esc(topDeal.title)}</div>
+        </div>
+      </a>
+      <a href="${topDeal.url}" target="_blank" rel="noopener sponsored" class="btn-primary btn-sm w-full" style="margin-top:8px;background:#ff9900;border-bottom-color:#c27200;color:#111827;font-weight:900;text-align:center;text-decoration:none;display:block;" onclick="handleAmazonDealClick('${topDeal.id}', '${topDeal.categoryId}')">
+        🛒 Scopri su Amazon (+5 🥫) ↗
+      </a>
+    `;
+  }
+}
+
+function getInlinePathAmazonBannerHtml(slotIndex = 0) {
+  const catObj = AMAZON_CATEGORIES[slotIndex % AMAZON_CATEGORIES.length];
+  const deals = getDealsForCategory(catObj.id);
+  const deal = deals[0];
+  if (!deal) return '';
+
+  return `
+    <a href="${deal.url}" target="_blank" rel="noopener sponsored" class="amazon-path-inline-banner" onclick="handleAmazonDealClick('${deal.id}', '${deal.categoryId}')">
+      <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+        <div class="amazon-deal-icon" aria-hidden="true">${deal.emoji}</div>
+        <div style="min-width:0;">
+          <div class="amazon-deal-badges">
+            <span class="amazon-brand-tag" style="padding:2px 7px;font-size:9.5px;">AMAZON • ${esc(catObj.label.toUpperCase())}</span>
+            <span class="amazon-discount-badge">${esc(deal.discount)}</span>
+          </div>
+          <div class="amazon-deal-title">${esc(deal.title)}</div>
+          <div class="amazon-deal-sub">${esc(deal.sub)}</div>
+        </div>
+      </div>
+      <span class="amazon-deal-cta">Scopri Categorie in Offerta ↗</span>
+    </a>
+  `;
+}
+
+function renderCompletionAmazonBanner() {
+  const box = $('#quizCompletionAmazonBanner');
+  if (!box) return;
+  const deals = getDealsForCategory(activeAmazonCategory);
+  const deal = deals[0] || AMAZON_DEALS_BY_CATEGORY.lampo[0];
+  box.innerHTML = `
+    <div style="background:linear-gradient(135deg,#182232,#232f3e);border:2px solid #ff9900;border-radius:16px;padding:12px 14px;color:#fff;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <span class="amazon-brand-tag" style="font-size:10px;padding:3px 8px;">🛒 CATEGORIE AMAZON IN OFFERTA</span>
+        <span class="amazon-discount-badge">${esc(deal.discount)}</span>
+      </div>
+      <div class="amazon-categories-bar" style="margin-bottom:8px;padding-bottom:4px;">
+        ${AMAZON_CATEGORIES.map(c => `
+          <button type="button" class="amazon-cat-chip ${c.id === activeAmazonCategory ? 'active' : ''}" style="padding:4px 9px;font-size:11px;" onclick="selectAmazonCategory('${c.id}'); renderCompletionAmazonBanner();">
+            ${c.icon} ${esc(c.label)}
+          </button>
+        `).join('')}
+      </div>
+      <a href="${deal.url}" target="_blank" rel="noopener sponsored" class="amazon-deal-card" onclick="handleAmazonDealClick('${deal.id}', '${deal.categoryId}')">
+        <div class="amazon-deal-icon">${deal.emoji}</div>
+        <div class="amazon-deal-body">
+          <div class="amazon-cat-label">${esc(deal.categoryLabel)}</div>
+          <div class="amazon-deal-title">${esc(deal.title)}</div>
+          <div class="amazon-deal-sub">${esc(deal.sub)}</div>
+        </div>
+        <span class="amazon-deal-cta">Apri ↗</span>
+      </a>
+    </div>
+  `;
+}
+
+function updateAmazonSponsorCard(catId = activeAmazonCategory) {
+  activeAmazonCategory = catId || 'lampo';
+  const dealsPool = getDealsForCategory(activeAmazonCategory);
+  const deal = dealsPool[0] || AMAZON_DEALS_BY_CATEGORY.lampo[0];
+
+  const modalCatsBar = $('#modalAmazonCatsBar');
+  if (modalCatsBar) {
+    modalCatsBar.innerHTML = AMAZON_CATEGORIES.map(c => `
+      <button type="button" class="amazon-cat-chip ${c.id === activeAmazonCategory ? 'active' : ''}" style="padding:4px 9px;font-size:11px;color:${c.id === activeAmazonCategory ? '#111' : 'var(--text-main)'};border-color:#ff9900;" onclick="selectAmazonCategory('${c.id}')">
+        ${c.icon} ${esc(c.label)}
+      </button>
+    `).join('');
+  }
+
   const emojiEl = $('#amazonItemEmoji');
+  const discountEl = $('#amazonItemDiscount');
+  const catLabelEl = $('#amazonItemCatLabel');
   const titleEl = $('#amazonItemTitle');
   const subEl = $('#amazonItemSub');
   const linkEl = $('#amazonShopLink');
 
   if (emojiEl) emojiEl.textContent = deal.emoji;
+  if (discountEl) discountEl.textContent = deal.discount;
+  if (catLabelEl) catLabelEl.textContent = deal.categoryLabel;
   if (titleEl) titleEl.textContent = deal.title;
   if (subEl) subEl.textContent = deal.sub;
   if (linkEl) {
@@ -2815,6 +3133,7 @@ function failQuizSessionByNoHearts() {
 
   $('#quizQuestionView').hidden = true;
   $('#quizCompletionView').hidden = false;
+  renderCompletionAmazonBanner();
 
   const drawer = $('#quizBottomDrawer');
   drawer.className = 'quiz-bottom-drawer state-wrong';
@@ -2931,6 +3250,7 @@ function completeQuizSession() {
 
   $('#quizQuestionView').hidden = true;
   $('#quizCompletionView').hidden = false;
+  renderCompletionAmazonBanner();
 
   const drawer = $('#quizBottomDrawer');
   drawer.className = 'quiz-bottom-drawer state-correct';

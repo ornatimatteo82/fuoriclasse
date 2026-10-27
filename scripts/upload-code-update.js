@@ -149,7 +149,6 @@ async function uploadSinglePackage(zipFilename) {
 async function uploadAndExtractCodeUpdate() {
   console.log('🚀 Avvio upload pacchetti aggiornati su Aruba...');
   await uploadSinglePackage('01-code.zip');
-  await uploadSinglePackage('05-assets.zip');
   console.log('🎉 Tutti i pacchetti caricati ed estratti con successo!');
 }
 
