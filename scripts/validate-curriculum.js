@@ -14,7 +14,25 @@ if (!fs.existsSync(curriculumPath)) {
 let curriculum;
 try {
   curriculum = JSON.parse(fs.readFileSync(curriculumPath, 'utf8'));
-  console.log('✓ File data/curriculum.json analizzato con successo (JSON valido).');
+  const gaelExtraPath = path.join(__dirname, '..', 'data', 'curriculum-gael-extra.json');
+  if (fs.existsSync(gaelExtraPath)) {
+    const gaelExtra = JSON.parse(fs.readFileSync(gaelExtraPath, 'utf8'));
+    if (gaelExtra.gaelModes && curriculum.gaelModes) {
+      for (const k of ['anni90', 'anni2000', 'allstars', 'pro']) {
+        if (Array.isArray(gaelExtra.gaelModes[k])) {
+          curriculum.gaelModes[k] = (curriculum.gaelModes[k] || []).concat(gaelExtra.gaelModes[k]);
+        }
+      }
+    }
+  }
+  const pastoreExtraPath = path.join(__dirname, '..', 'data', 'curriculum-pastore-extra.json');
+  if (fs.existsSync(pastoreExtraPath)) {
+    const pastoreExtra = JSON.parse(fs.readFileSync(pastoreExtraPath, 'utf8'));
+    if (Array.isArray(pastoreExtra.pastoreMode)) {
+      curriculum.pastoreMode = (curriculum.pastoreMode || []).concat(pastoreExtra.pastoreMode);
+    }
+  }
+  console.log('✓ File data/curriculum.json (+ extra 10K pools) analizzato con successo (JSON valido).');
 } catch (e) {
   console.error('❌ Errore di parsing JSON in data/curriculum.json:', e.message);
   process.exit(1);

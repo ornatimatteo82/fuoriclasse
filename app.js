@@ -668,6 +668,32 @@ async function loadSportCurriculum(sport = state.activeSport) {
       if (sport === state.activeSport) {
         catalog = data;
       }
+      // Se siamo su Calcio, arricchisci in background i pool 10K di Gael e Pastore senza bloccare il boot
+      if (sport === 'calcio' && !data.__extraPoolsMerged) {
+        data.__extraPoolsMerged = true;
+        setTimeout(() => {
+          fetch('data/curriculum-gael-extra.json?v=53')
+            .then(r => r.ok ? r.json() : null)
+            .then(ext => {
+              if (ext && ext.gaelModes && data.gaelModes) {
+                for (const k of ['anni90', 'anni2000', 'allstars', 'pro']) {
+                  if (Array.isArray(ext.gaelModes[k])) {
+                    data.gaelModes[k] = (data.gaelModes[k] || []).concat(ext.gaelModes[k]);
+                  }
+                }
+              }
+            })
+            .catch(() => {});
+          fetch('data/curriculum-pastore-extra.json?v=53')
+            .then(r => r.ok ? r.json() : null)
+            .then(ext => {
+              if (ext && Array.isArray(ext.pastoreMode)) {
+                data.pastoreMode = (data.pastoreMode || []).concat(ext.pastoreMode);
+              }
+            })
+            .catch(() => {});
+        }, 180);
+      }
     }
     return data;
   } catch (err) {

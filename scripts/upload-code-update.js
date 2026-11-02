@@ -1,9 +1,11 @@
 // Script per caricare ed estrarre solo 01-code.zip su Aruba fuoriclasse.cloud
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 const { execSync } = require('child_process');
 
 const ROOT_HASH = 'f1_Lw'; // Root di fuoriclasse.cloud
+const DATA_HASH = 'f1_ZGF0YQ'; // Cartella data/ di fuoriclasse.cloud
 
 function runAppleScript(script) {
   const tmpScript = path.join('/tmp', `run_as_${Date.now()}.applescript`);
@@ -65,34 +67,31 @@ function ensureFreshSession() {
 
   console.log('🔄 Sessione elFinder scaduta o chiusa. Riapertura automatica da admin.aruba.it...');
   try {
-    // Chiude eventuali vecchi tab fm.aruba.it scaduti tranne se necessario, oppure clicca il link su admin.aruba.it
-    runChromeJsOnUrl('admin.aruba.it', `
-      (() => {
-        const link = document.querySelector('a[href*="Gestione_NewLinuxfileManager"]');
-        if (link) { link.click(); return "CLICKED_LINK"; }
-        // In alternativa cerca il bottone "Apri File Manager" dentro l'iframe o pagina
-        const btns = Array.from(document.querySelectorAll('a, input, button')).filter(el => {
-          const t = (el.innerText || el.value || '').toLowerCase();
-          return t.includes('file manager');
-        });
-        if (btns.length > 0) { btns[0].click(); return "CLICKED_BTN"; }
-        return "NOT_FOUND";
-      })()
-    `);
-    sleep(5000);
-    // Verifica se nella pagina admin è apparso un pulsante "Gestisci" / "File Manager" che apre il popup
+    // 1. Se siamo su LoginDomain.aspx (selettore dominio), clicca fuoriclasse.cloud
     try {
-      runChromeJsOnUrl('admin.aruba.it', `
+      const clickedDomain = runChromeJsOnUrl('admin.aruba.it', `
         (() => {
-          const btn = Array.from(document.querySelectorAll('input[type="button"], input[type="submit"], a.button, button')).find(el => {
+          const domBtn = Array.from(document.querySelectorAll('input, button, a')).find(el => {
             const v = (el.value || el.innerText || '').toLowerCase();
-            return v.includes('file manager') || v.includes('gestisci');
+            return v.includes('fuoriclasse.cloud');
           });
-          if (btn) btn.click();
+          if (domBtn) { domBtn.click(); return "CLICKED_DOMAIN"; }
+          return "ALREADY_IN_PANEL";
         })()
       `);
-      sleep(5000);
+      if (clickedDomain === 'CLICKED_DOMAIN') {
+        console.log('✓ Dominio fuoriclasse.cloud selezionato, attesa caricamento pannello...');
+        sleep(4500);
+      }
     } catch (_) {}
+
+    // 2. Apri BridgePost in un nuovo tab nativo AppleScript (non bloccato dal popup blocker)
+    runAppleScript(`
+tell application "Google Chrome"
+    make new tab at end of tabs of window 1 with properties {URL:"https://admin.aruba.it/PannelloAdmin/BridgePost.aspx?Servizio=Gestione_NewLinuxfileManager"}
+end tell
+`);
+    sleep(6000);
   } catch (e) {
     console.warn('⚠️ Impossibile riaprire automaticamente da admin.aruba.it:', e.message);
   }
@@ -102,8 +101,9 @@ function ensureFreshSession() {
 async function uploadSinglePackage(zipFilename) {
   ensureFreshSession();
   const zipPath = path.join(__dirname, '..', 'deploy-packages', zipFilename);
+  const expectedSize = fs.statSync(zipPath).size;
 
-  console.log(`\n📦 Upload pacchetto: ${zipFilename} (${(fs.statSync(zipPath).size / 1024).toFixed(1)} KB)...`);
+  console.log(`\n📦 Upload pacchetto: ${zipFilename} (${(expectedSize / 1024).toFixed(1)} KB)...`);
   const zipBuffer = fs.readFileSync(zipPath);
   const base64 = zipBuffer.toString('base64');
   const chunkSize = 250000;
@@ -119,7 +119,7 @@ async function uploadSinglePackage(zipFilename) {
   }
   console.log(' OK');
 
-  console.log('- Esecuzione upload in elFinder...');
+  console.log('- Esecuzione upload ed estrazione in elFinder...');
   const uploadJs = `
 (async () => {
   try {
@@ -130,16 +130,18 @@ async function uploadSinglePackage(zipFilename) {
     for (let i = 0; i < binStr.length; i++) {
       bytes[i] = binStr.charCodeAt(i);
     }
+
     const blob = new Blob([bytes], { type: 'application/zip' });
     const fd = new FormData();
     fd.append('cmd', 'upload');
     fd.append('target', '${ROOT_HASH}');
+    fd.append('overwrite', '1');
     fd.append('upload[]', blob, '${zipFilename}');
-
     const upRes = await fetch('php/connector.minimal.php', { method: 'POST', body: fd });
     const upJson = await upRes.json();
-    if (upJson.error) {
-      window.__deployStatus = { error: 'Upload failed: ' + JSON.stringify(upJson.error) };
+
+    if (!upJson || upJson.error) {
+      window.__deployStatus = { error: 'Upload failed: ' + JSON.stringify(upJson && upJson.error) };
       return;
     }
 
@@ -153,13 +155,13 @@ async function uploadSinglePackage(zipFilename) {
     // Estrazione file
     const extRes = await fetch('php/connector.minimal.php?cmd=extract&target=' + encodeURIComponent(zipFile.hash));
     const extJson = await extRes.json();
+    // Eliminazione file zip anche in caso di errore
+    await fetch('php/connector.minimal.php?cmd=rm&targets%5B%5D=' + encodeURIComponent(zipFile.hash));
+
     if (extJson.error) {
       window.__deployStatus = { error: 'Extract failed: ' + JSON.stringify(extJson.error) };
       return;
     }
-
-    // Eliminazione file zip
-    await fetch('php/connector.minimal.php?cmd=rm&targets%5B%5D=' + encodeURIComponent(zipFile.hash));
 
     window.__deployStatus = {
       success: true,
@@ -200,11 +202,31 @@ async function uploadSinglePackage(zipFilename) {
   throw new Error(`Timeout attesa completamento per ${zipFilename}`);
 }
 
+async function cleanupPartFiles() {
+  ensureFreshSession();
+  runChromeJs(`
+    (async () => {
+      try {
+        const res = await fetch('php/connector.minimal.php?cmd=open&target=${DATA_HASH}');
+        const d = await res.json();
+        const parts = (d.files || []).filter(f => f.name.endsWith('.part'));
+        for (const p of parts) {
+          await fetch('php/connector.minimal.php?cmd=rm&targets%5B%5D=' + encodeURIComponent(p.hash));
+        }
+      } catch (_) {}
+    })();
+  `);
+  sleep(1500);
+}
+
 async function uploadAndExtractCodeUpdate() {
   console.log('🚀 Avvio upload pacchetti aggiornati su Aruba...');
+  await cleanupPartFiles();
   await uploadSinglePackage('01-code.zip');
-  if (process.argv.includes('--with-data')) {
+  if (process.argv.includes('--with-data') || process.argv.includes('--data-only')) {
     await uploadSinglePackage('02-data-calcio.zip');
+    await uploadSinglePackage('02b-data-gael.zip');
+    await uploadSinglePackage('02c-data-pastore.zip');
   }
   console.log('🎉 Tutti i pacchetti caricati ed estratti con successo!');
 }
