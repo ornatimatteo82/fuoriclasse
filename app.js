@@ -38,6 +38,9 @@ let currentCloudUser = null;
 const state = {
   username: 'Mister Fuoriclasse',
   xp: 120,
+  weeklyXp: 0,
+  currentWeekKey: null,
+  leaguePeriod: 'weekly', // 'weekly' | 'lifetime'
   streak: 3,
   gems: 250,
   hearts: 5,
@@ -48,6 +51,11 @@ const state = {
   activeSport: 'calcio', // 'calcio' | 'f1' | 'basket'
   categoryXp: {
     calcio: 120,
+    f1: 0,
+    basket: 0
+  },
+  weeklyCategoryXp: {
+    calcio: 0,
     f1: 0,
     basket: 0
   },
@@ -206,18 +214,94 @@ const PIXEL_ICONS = {
 };
 
 // -------------------------------------------------------------
-// 3. SALVATAGGIO E RIPRISTINO STATO (LOCALSTORAGE)
+// 3. SALVATAGGIO E RIPRISTINO STATO (LOCALSTORAGE) + RESET SETTIMANALE LEGA
 // -------------------------------------------------------------
+function getCurrentIsoWeekKey(dateObj = new Date()) {
+  const d = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+}
+
+function getNextMondayCountdownText() {
+  const now = new Date();
+  const day = now.getDay(); // 0 = Dom, 1 = Lun, ..., 6 = Sab
+  const daysUntilMonday = day === 0 ? 1 : (8 - day);
+  const nextMonday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntilMonday, 0, 0, 0, 0);
+  const diffMs = Math.max(0, nextMonday.getTime() - now.getTime());
+  const days = Math.floor(diffMs / 86400000);
+  const hours = Math.floor((diffMs % 86400000) / 3600000);
+  if (days > 0) {
+    return `${days}g ${hours}h al reset di Lunedì`;
+  }
+  const mins = Math.floor((diffMs % 3600000) / 60000);
+  return `${hours}h ${mins}m al reset di Lunedì`;
+}
+
+function checkWeeklyLeagueReset() {
+  const thisWeek = getCurrentIsoWeekKey();
+  if (!state.currentWeekKey) {
+    state.currentWeekKey = thisWeek;
+    if (!state.weeklyCategoryXp || typeof state.weeklyCategoryXp !== 'object') {
+      state.weeklyCategoryXp = { calcio: 0, f1: 0, basket: 0 };
+    }
+    if (!Number.isFinite(state.weeklyXp)) {
+      state.weeklyXp = 0;
+    }
+    persistState();
+    return false;
+  }
+  if (state.currentWeekKey !== thisWeek) {
+    console.info(`🔄 [Weekly League Reset] Nuova settimana (${state.currentWeekKey} -> ${thisWeek}): Classifica Settimanale riparte da 0 XP! La Classifica Lifetime (${state.xp} XP) resta intatta.`);
+    state.currentWeekKey = thisWeek;
+    state.weeklyXp = 0;
+    state.weeklyCategoryXp = {
+      calcio: 0,
+      f1: 0,
+      basket: 0
+    };
+    persistState();
+    return true;
+  }
+  return false;
+}
+window.checkWeeklyLeagueReset = checkWeeklyLeagueReset;
+
+function addEarnedXpToState(earnedXp, sport = state.activeSport || 'calcio') {
+  const amount = Math.max(0, Math.round(Number(earnedXp) || 0));
+  if (amount <= 0) return;
+  checkWeeklyLeagueReset();
+  if (!state.categoryXp) state.categoryXp = { calcio: 120, f1: 0, basket: 0 };
+  if (!state.weeklyCategoryXp) state.weeklyCategoryXp = { calcio: 0, f1: 0, basket: 0 };
+
+  // Incrementa sia Classifica Lifetime (xp / categoryXp) sia Classifica Settimanale (weeklyXp / weeklyCategoryXp)
+  state.xp = (Number(state.xp) || 0) + amount;
+  state.categoryXp[sport] = (Number(state.categoryXp[sport]) || 0) + amount;
+
+  state.weeklyXp = (Number(state.weeklyXp) || 0) + amount;
+  state.weeklyCategoryXp[sport] = (Number(state.weeklyCategoryXp[sport]) || 0) + amount;
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
+    if (!raw) {
+      state.currentWeekKey = getCurrentIsoWeekKey();
+      return;
+    }
     const saved = JSON.parse(raw);
     if (typeof saved === 'object' && saved !== null) {
       if (typeof saved.username === 'string' && saved.username.trim()) {
         state.username = saved.username.trim();
       }
       state.xp = Number.isFinite(saved.xp) ? saved.xp : state.xp;
+      state.weeklyXp = Number.isFinite(saved.weeklyXp) ? saved.weeklyXp : 0;
+      state.currentWeekKey = typeof saved.currentWeekKey === 'string' ? saved.currentWeekKey : null;
+      if (saved.leaguePeriod === 'lifetime' || saved.leaguePeriod === 'weekly') {
+        state.leaguePeriod = saved.leaguePeriod;
+      }
       state.streak = Number.isFinite(saved.streak) ? saved.streak : state.streak;
       state.gems = Number.isFinite(saved.gems) ? saved.gems : state.gems;
       state.hearts = Number.isFinite(saved.hearts) ? saved.hearts : state.hearts;
@@ -235,6 +319,19 @@ function loadState() {
       } else {
         state.categoryXp = {
           calcio: state.xp || 120,
+          f1: 0,
+          basket: 0
+        };
+      }
+      if (saved.weeklyCategoryXp && typeof saved.weeklyCategoryXp === 'object') {
+        state.weeklyCategoryXp = {
+          calcio: Number(saved.weeklyCategoryXp.calcio) || 0,
+          f1: Number(saved.weeklyCategoryXp.f1) || 0,
+          basket: Number(saved.weeklyCategoryXp.basket) || 0
+        };
+      } else {
+        state.weeklyCategoryXp = {
+          calcio: 0,
           f1: 0,
           basket: 0
         };
@@ -291,10 +388,11 @@ function loadState() {
         state.activeLessonIdx = saved.lastActiveLesson;
       }
       if (Array.isArray(saved.recentQuestionKeys)) {
-        state.recentQuestionKeys = saved.recentQuestionKeys.slice(-30);
+        state.recentQuestionKeys = saved.recentQuestionKeys.slice(-500);
       }
       state.dailyGoalDone = Number.isFinite(saved.dailyGoalDone) ? saved.dailyGoalDone : 1;
       state.todayCorrect = Number.isFinite(saved.todayCorrect) ? saved.todayCorrect : 2;
+      checkWeeklyLeagueReset();
     }
   } catch (e) {
     console.warn('Impossibile leggere lo stato salvato:', e);
@@ -307,7 +405,11 @@ function persistState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       username: state.username,
       xp: state.xp,
+      weeklyXp: state.weeklyXp,
+      currentWeekKey: state.currentWeekKey || getCurrentIsoWeekKey(),
+      leaguePeriod: state.leaguePeriod || 'weekly',
       categoryXp: state.categoryXp,
+      weeklyCategoryXp: state.weeklyCategoryXp,
       streak: activeStreak,
       activeSport: state.activeSport,
       categoryStreaks: state.categoryStreaks,
@@ -325,7 +427,7 @@ function persistState() {
       claimedChests: state.claimedChests,
       lastActiveUnit: state.lastActiveUnit,
       lastActiveLesson: state.lastActiveLesson,
-      recentQuestionKeys: (state.recentQuestionKeys || []).slice(-30),
+      recentQuestionKeys: (state.recentQuestionKeys || []).slice(-500),
       dailyGoalDone: state.dailyGoalDone,
       todayCorrect: state.todayCorrect
     }));
@@ -552,9 +654,9 @@ async function loadSportCurriculum(sport = state.activeSport) {
     return loadedSportCatalogs[sport];
   }
 
-  let jsonUrl = 'data/curriculum.json?v=51';
-  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=51';
-  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=51';
+  let jsonUrl = 'data/curriculum.json?v=52';
+  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=52';
+  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=52';
 
   try {
     const res = await fetch(jsonUrl);
@@ -772,7 +874,7 @@ function updateSportUITheme() {
     const promoTitle = document.querySelector('.sidebar-PromoCard h4');
     if (promoTitle) promoTitle.textContent = 'Coppe di Lega';
     const promoDesc = document.querySelector('.sidebar-PromoCard p');
-    if (promoDesc) promoDesc.innerHTML = '<b>Quizzone</b> (15 Unità) + <b>Gael League</b> (10 Unità Hard &amp; PRO) + <b>Pastore League</b> (15 Unità sui marcatori di Serie A dal 1990 ad oggi).';
+    if (promoDesc) promoDesc.innerHTML = '<b>Quizzone</b> (15 Unità) + <b>Gael League</b> (10.000 Sfide Hard &amp; PRO) + <b>Pastore League</b> (10.000 Sfide sui marcatori di Serie A dal 1990 al 2026).';
   }
 }
 
@@ -835,6 +937,7 @@ async function loadCurriculum() {
   await loadSportCurriculum(state.activeSport || 'calcio');
 
   checkMidnightHeartsReset();
+  checkWeeklyLeagueReset();
   updateHomeInstallBannerVisibility();
   updateNotificationUI();
   checkAndTriggerStreakReminder();
@@ -1380,9 +1483,9 @@ window.setGameMode = (mode, scroll = true, skipRender = false) => {
   }
   if ($('#heroPoolBadge')) {
     $('#heroPoolBadge').textContent = isPastore
-      ? '15 UNITÀ • 2.000 TABELLINI SERIE A'
+      ? '15 UNITÀ • 10.000 SFIDE SERIE A'
       : isGael
-        ? '10 UNITÀ • CULT HEROES & LIVELLI PRO'
+        ? '10 UNITÀ • 10.000 SFIDE & LIVELLI PRO'
         : '15 UNITÀ • DAI RECORD ALL\'ESAME FINALE';
   }
   if ($('#heroTitle')) {
@@ -1394,9 +1497,9 @@ window.setGameMode = (mode, scroll = true, skipRender = false) => {
   }
   if ($('#heroDescription')) {
     $('#heroDescription').innerHTML = isPastore
-      ? 'La modalità sui <b>Marcatori di Serie A dal 1990 ad oggi</b> in stile <b>Giuseppe Pastore</b>! Ricordi le doppiette scudetto, i gol vittoria al 94\' e chi NON ha segnato in quel tabellino?'
+      ? 'La modalità da <b>10.000 sfide sui Marcatori di Serie A dal 1990 al 2026</b> in stile <b>Giuseppe Pastore</b>! Doppiette scudetto, gol al 94\', risultati esatti e chi NON ha segnato in quel tabellino!'
       : isGael
-        ? 'Percorso a <b>10 Unità ad alta difficoltà</b>: niente superstar scontate! Si parte dai Fantasisti ribelli e si sale fino a <b>bomber di provincia, meteore dimenticate e livelli PRO con Club Misteriosi ❓ e zero date</b>!'
+        ? 'Mega-Archivio da <b>10.000 sfide ad alta varietà</b>: si parte dai Fantasisti ribelli e si sale fino a <b>bomber di provincia, doppi ex, meteore dimenticate e livelli PRO con Club Misteriosi ❓ e zero date</b>!'
         : 'Percorso a <b>15 Unità</b>: dal Calcio Pop fino alle <b>notti magiche azzurre, Champions League, sanzioni e l\'Esame Supremo del Mister</b>!';
   }
   if ($('#heroQuickPlayText')) {
@@ -1818,7 +1921,7 @@ window.claimChestBonus = (chestId, btnEl) => {
   state.claimedChests.push(chestId);
   btnEl.classList.add('claimed');
   state.gems += 25;
-  state.xp += 15;
+  addEarnedXpToState(15, state.activeSport || 'calcio');
   playTone('cheer');
   updateTopStats();
   persistState();
@@ -1914,37 +2017,135 @@ window.loadWikidataFact = async (qid, playerName) => {
 };
 
 // -------------------------------------------------------------
-// 8. MOTORE DI GIOCO INTERATTIVO (RANDOMIZZATORE AVANZATO & POOL MULTI-SPORT)
+// 8. MOTORE DI GIOCO INTERATTIVO (RANDOMIZZATORE AVANZATO 10K & POOL MULTI-SPORT)
 // -------------------------------------------------------------
+function cryptoRandomFloat() {
+  try {
+    if (typeof window !== 'undefined' && window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      const buf = new Uint32Array(1);
+      window.crypto.getRandomValues(buf);
+      return buf[0] / 4294967296;
+    }
+  } catch (_) {}
+  return Math.random();
+}
+
+function cryptoRandomInt(maxExclusive) {
+  if (maxExclusive <= 1) return 0;
+  return Math.floor(cryptoRandomFloat() * maxExclusive);
+}
+
 function shuffleArray(arr) {
   if (!Array.isArray(arr)) return [];
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = cryptoRandomInt(i + 1);
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
 window.shuffleArray = shuffleArray;
 
-function sampleQuestions(pool, count = 5) {
+function getQuestionSubjectKey(q) {
+  if (!q) return '';
+  if (q.mode === 'gael' || (q.name && Array.isArray(q.clubs))) {
+    return `gael_player:${q.name || q.correct || ''}`;
+  }
+  if (q.mode === 'pastore' || q.match) {
+    return `pastore_match:${q.match || ''}_${q.date || ''}`;
+  }
+  return `q:${q.id || q.question || ''}`;
+}
+
+function sampleQuestions(pool, count = 5, avoidKeysSet = null) {
   if (!Array.isArray(pool) || pool.length === 0) return [];
   if (pool.length <= count) return shuffleArray(pool);
-  // Estrazione O(k) ultra-rapida senza copiare né mescolare interi array da 5.000 elementi
-  if (pool.length > 40) {
-    const picked = [];
-    const usedIdx = new Set();
-    const maxAttempts = count * 4;
-    for (let a = 0; a < maxAttempts && picked.length < count; a++) {
-      const idx = Math.floor(Math.random() * pool.length);
-      if (!usedIdx.has(idx)) {
+
+  const picked = [];
+  const usedIdx = new Set();
+  const usedSubjects = new Set();
+  const maxAttempts = Math.min(pool.length * 2, count * 35);
+
+  for (let a = 0; a < maxAttempts && picked.length < count; a++) {
+    const idx = cryptoRandomInt(pool.length);
+    if (usedIdx.has(idx)) continue;
+    const item = pool[idx];
+    if (!item) continue;
+
+    const qKey = item.id || item.name || item.question || '';
+    if (avoidKeysSet && qKey && avoidKeysSet.has(qKey) && a < maxAttempts * 0.7) {
+      continue;
+    }
+
+    const subjKey = getQuestionSubjectKey(item);
+    if (subjKey && usedSubjects.has(subjKey) && a < maxAttempts * 0.85) {
+      continue;
+    }
+
+    usedIdx.add(idx);
+    if (subjKey) usedSubjects.add(subjKey);
+    picked.push(item);
+  }
+
+  if (picked.length < count) {
+    for (let i = 0; i < pool.length && picked.length < count; i++) {
+      const idx = (cryptoRandomInt(pool.length) + i) % pool.length;
+      if (!usedIdx.has(idx) && pool[idx]) {
         usedIdx.add(idx);
         picked.push(pool[idx]);
       }
     }
-    return picked;
   }
-  return shuffleArray(pool).slice(0, count);
+
+  return shuffleArray(picked);
+}
+
+function collectFullGaelPools(curCat) {
+  const gm = curCat?.gaelModes || {};
+  return [
+    gm.anni90 || [],
+    gm.anni2000 || [],
+    gm.allstars || [],
+    gm.pro || []
+  ].filter(arr => Array.isArray(arr) && arr.length > 0);
+}
+
+function sampleFromMultiPools(poolsArray, count, avoidKeysSet = null) {
+  const validPools = (poolsArray || []).filter(p => Array.isArray(p) && p.length > 0);
+  if (validPools.length === 0) return [];
+  const totalLen = validPools.reduce((acc, p) => acc + p.length, 0);
+  if (totalLen === 0) return [];
+
+  const picked = [];
+  const usedGlobalKeys = new Set();
+  const usedSubjects = new Set();
+  const maxAttempts = count * 40;
+
+  for (let a = 0; a < maxAttempts && picked.length < count; a++) {
+    let r = cryptoRandomInt(totalLen);
+    let item = null;
+    for (let pIdx = 0; pIdx < validPools.length; pIdx++) {
+      const p = validPools[pIdx];
+      if (r < p.length) {
+        item = p[r];
+        break;
+      }
+      r -= p.length;
+    }
+    if (!item) continue;
+
+    const k = item.id || item.question || item.name || '';
+    if (k && usedGlobalKeys.has(k)) continue;
+    if (avoidKeysSet && k && avoidKeysSet.has(k) && a < maxAttempts * 0.75) continue;
+
+    const subj = getQuestionSubjectKey(item);
+    if (subj && usedSubjects.has(subj) && a < maxAttempts * 0.85) continue;
+
+    if (k) usedGlobalKeys.add(k);
+    if (subj) usedSubjects.add(subj);
+    picked.push(item);
+  }
+  return picked;
 }
 
 function getDynamicLessonQuestions(uIdx, lIdx) {
@@ -1953,11 +2154,11 @@ function getDynamicLessonQuestions(uIdx, lIdx) {
   const unit = curCat?.units?.[uIdx];
   const lesson = unit?.lessons?.[lIdx];
 
-  const getQKey = (q) => q ? (q.id || q.name || q.question || '') : '';
+  const getQKey = (q) => q ? (q.id || q.question || q.name || '') : '';
   if (!Array.isArray(state.recentQuestionKeys)) state.recentQuestionKeys = [];
   const recentSet = new Set(state.recentQuestionKeys);
 
-  // 1. Domande della tappa e dell'unità tematica (~50-70 domande, incluse le 2015-2026)
+  // 1. Domande della tappa e dell'unità tematica
   const baseQuestions = lesson?.questions || lesson?.players || [];
   const unitQuestions = [];
   if (unit && Array.isArray(unit.lessons)) {
@@ -1967,27 +2168,35 @@ function getDynamicLessonQuestions(uIdx, lIdx) {
     }
   }
 
-  // 2. Campionamento O(1) leggero (max 15 elementi) dal mega-archivio dello sport senza iterare 5.000 oggetti
-  let bigPool = null;
+  // 2. Campionamento ampio e realmente randomico dai mega-archivi (10.000 Gael, 10.000 Pastore, F1, Basket)
+  let bigPoolSample = [];
   if (sp === 'f1' && Array.isArray(curCat?.f1Pool)) {
-    bigPool = curCat.f1Pool;
+    bigPoolSample = sampleQuestions(curCat.f1Pool, 60, recentSet);
   } else if (sp === 'basket' && Array.isArray(curCat?.basketPool)) {
-    bigPool = curCat.basketPool;
+    bigPoolSample = sampleQuestions(curCat.basketPool, 60, recentSet);
   } else if (sp === 'calcio') {
-    if (uIdx >= 25 && Array.isArray(curCat?.pastoreMode)) {
-      bigPool = curCat.pastoreMode;
-    } else if (uIdx < 10 && curCat?.gaelModes) {
-      bigPool = curCat.gaelModes.allstars || curCat.gaelModes.anni2000 || [];
+    const uMode = unit?.mode || (uIdx < 10 ? 'gael' : uIdx < 25 ? 'quizzocampo' : 'pastore');
+    if (uMode === 'pastore' && Array.isArray(curCat?.pastoreMode)) {
+      // Pesca 80 domande casuali dall'intero archivio da 10.000 sfide Pastore League
+      bigPoolSample = sampleQuestions(curCat.pastoreMode, 80, recentSet);
+    } else if (uMode === 'gael' && curCat?.gaelModes) {
+      // Pesca 80 domande casuali dall'intero archivio da 10.000 sfide Gael League (anni90 + anni2000 + allstars + pro)
+      const gaelPools = collectFullGaelPools(curCat);
+      bigPoolSample = sampleFromMultiPools(gaelPools, 80, recentSet);
     } else if (curCat?.extraModes) {
-      const modes = ['goals', 'scorers', 'derby', 'champions'];
-      bigPool = curCat.extraModes[modes[uIdx % modes.length]] || [];
+      const extraPools = [
+        curCat.extraModes.goals || [],
+        curCat.extraModes.scorers || [],
+        curCat.extraModes.derby || [],
+        curCat.extraModes.champions || []
+      ];
+      bigPoolSample = sampleFromMultiPools(extraPools, 60, recentSet);
     }
   }
-  const fastSportSample = bigPool ? sampleQuestions(bigPool, 15) : [];
 
-  // 3. Costruisci pool locale leggero (~80 elementi max) deduplicato
+  // 3. Unisci e mescola con alta entropia senza colli di bottiglia che forzino sempre le stesse 2 domande
   const uniqueMap = new Map();
-  const candidates = [...baseQuestions, ...unitQuestions, ...fastSportSample];
+  const candidates = shuffleArray([...bigPoolSample, ...unitQuestions, ...baseQuestions]);
   for (let i = 0; i < candidates.length; i++) {
     const q = candidates[i];
     const k = getQKey(q);
@@ -2000,22 +2209,18 @@ function getDynamicLessonQuestions(uIdx, lIdx) {
   const unseen = allAvailable.filter(q => !recentSet.has(getQKey(q)));
   const chosenPool = unseen.length >= 5 ? unseen : allAvailable;
 
-  // 4. Garantisce un mix equilibrato con focus sulle nuove domande 2015-2026 + classiche
-  const modern2026 = chosenPool.filter(q => q.era2015_2026);
-  const classicPool = chosenPool.filter(q => !q.era2015_2026);
-  const pickedModern = sampleQuestions(modern2026, Math.min(2, modern2026.length));
-  const pickedClassic = sampleQuestions(classicPool, 5 - pickedModern.length);
-  const picked = shuffleArray([...pickedModern, ...pickedClassic]);
+  // Estrae 5 domande garantendo soggetti (calciatori o match) tutti diversi nel round
+  const picked = sampleQuestions(chosenPool, 5, recentSet);
 
   picked.forEach(q => {
     const k = getQKey(q);
     if (k) state.recentQuestionKeys.push(k);
   });
-  if (state.recentQuestionKeys.length > 30) {
-    state.recentQuestionKeys = state.recentQuestionKeys.slice(-30);
+  if (state.recentQuestionKeys.length > 500) {
+    state.recentQuestionKeys = state.recentQuestionKeys.slice(-500);
   }
 
-  return picked.length >= 3 ? picked : (baseQuestions.length ? baseQuestions : picked);
+  return picked.length >= 3 ? picked : (baseQuestions.length ? shuffleArray(baseQuestions).slice(0, 5) : picked);
 }
 window.getDynamicLessonQuestions = getDynamicLessonQuestions;
 
@@ -2040,6 +2245,7 @@ function getQuestionsForDifficulty(gameType, diffLevel, count = 5) {
   const sp = state.activeSport || 'calcio';
   const curCat = loadedSportCatalogs[sp] || catalog;
   const units = curCat?.units || [];
+  const avoidSet = new Set([...(state.recentQuestionKeys || []), ...(state.usedQuestionIds || [])]);
   let pool = [];
 
   if (sp === 'f1') {
@@ -2050,7 +2256,7 @@ function getQuestionsForDifficulty(gameType, diffLevel, count = 5) {
       });
     }
     if (Array.isArray(curCat?.f1Pool)) {
-      pool.push(...sampleQuestions(curCat.f1Pool, 20));
+      pool.push(...sampleQuestions(curCat.f1Pool, 60, avoidSet));
     }
   } else if (sp === 'basket') {
     const targetUnit = units[Math.min(units.length - 1, targetDiff - 1)] || units[0];
@@ -2060,7 +2266,7 @@ function getQuestionsForDifficulty(gameType, diffLevel, count = 5) {
       });
     }
     if (Array.isArray(curCat?.basketPool)) {
-      pool.push(...sampleQuestions(curCat.basketPool, 20));
+      pool.push(...sampleQuestions(curCat.basketPool, 60, avoidSet));
     }
   } else {
     const actualMode = (gameType === 'quiz' || gameType === 'quizzone') ? 'quizzocampo' : (gameType || 'gael');
@@ -2073,33 +2279,48 @@ function getQuestionsForDifficulty(gameType, diffLevel, count = 5) {
       });
     }
     if (actualMode === 'pastore' && Array.isArray(curCat?.pastoreMode)) {
-      pool.push(...sampleQuestions(curCat.pastoreMode, 20));
+      pool.push(...sampleQuestions(curCat.pastoreMode, 80, avoidSet));
     } else if (actualMode === 'gael' && curCat?.gaelModes) {
-      pool.push(...sampleQuestions(curCat.gaelModes.allstars || [], 15));
+      const gaelPools = targetDiff >= 7
+        ? [curCat.gaelModes.pro || [], curCat.gaelModes.allstars || []]
+        : collectFullGaelPools(curCat);
+      pool.push(...sampleFromMultiPools(gaelPools, 80, avoidSet));
     } else if (curCat?.extraModes) {
-      pool.push(...sampleQuestions(curCat.extraModes.goals || [], 15));
+      const extraPools = [
+        curCat.extraModes.goals || [],
+        curCat.extraModes.scorers || [],
+        curCat.extraModes.derby || [],
+        curCat.extraModes.champions || []
+      ];
+      pool.push(...sampleFromMultiPools(extraPools, 60, avoidSet));
     }
   }
 
-  // Deduplica per nome/domanda/id
+  // Deduplica per id / domanda / nome
   const uniqueMap = new Map();
   pool.forEach(q => {
-    const key = q.name || q.question || q.id;
+    const key = q.id || q.question || q.name;
     if (key && !uniqueMap.has(key)) {
       uniqueMap.set(key, { ...q, difficultyLevel: targetDiff });
     }
   });
   const uniquePool = Array.from(uniqueMap.values());
 
-  // Escludi quelli già usciti nella run corrente
-  const unseen = uniquePool.filter(q => !state.usedQuestionIds?.has(q.name || q.question || q.id));
+  // Escludi quelli già usciti nella run corrente o di recente
+  const unseen = uniquePool.filter(q => !avoidSet.has(q.id || q.question || q.name));
   const chosenSource = unseen.length >= count ? unseen : uniquePool;
-  const picked = sampleQuestions(chosenSource, count);
+  const picked = sampleQuestions(chosenSource, count, avoidSet);
 
   picked.forEach(q => {
-    const key = q.name || q.question || q.id;
-    if (key && state.usedQuestionIds) state.usedQuestionIds.add(key);
+    const key = q.id || q.question || q.name;
+    if (key) {
+      if (state.usedQuestionIds) state.usedQuestionIds.add(key);
+      state.recentQuestionKeys.push(key);
+    }
   });
+  if (state.recentQuestionKeys.length > 500) {
+    state.recentQuestionKeys = state.recentQuestionKeys.slice(-500);
+  }
 
   return picked;
 }
@@ -2650,9 +2871,7 @@ function closeQuizSession() {
   // Se l'utente chiude mentre è nella schermata di fine round con bottino attivo e vite > 0, incassa automaticamente
   if (state.sessionFinished && state.hearts > 0 && (state.pendingXp > 0 || state.pendingGems > 0)) {
     const curSport = state.activeSport || 'calcio';
-    if (!state.categoryXp) state.categoryXp = { calcio: 120, f1: 0, basket: 0 };
-    state.categoryXp[curSport] = (state.categoryXp[curSport] || 0) + state.pendingXp;
-    state.xp += state.pendingXp;
+    addEarnedXpToState(state.pendingXp, curSport);
     state.gems += state.pendingGems;
     state.pendingXp = 0;
     state.pendingGems = 0;
@@ -2752,16 +2971,23 @@ function renderQuizQuestion() {
   if (isPlayer) {
     const isPro = Boolean(q.isPro) || diffLevel >= 7;
     const showJerseyNum = false; // Maglia #?? sempre nascosta per default in Gael League
-    const hideYears = diffLevel >= 4 || isPro;
-    const maskClubCount = (isPro && diffLevel >= 9) ? 2 : ((isPro || diffLevel >= 7) ? 1 : 0);
+    const hasCustomMystery = Number.isInteger(q.mysteryClubIdx) && q.mysteryClubIdx >= 0;
+    const hideYears = !hasCustomMystery && (diffLevel >= 4 || isPro);
+    const maskClubCount = hasCustomMystery ? 1 : ((isPro && diffLevel >= 9) ? 2 : ((isPro || diffLevel >= 7) ? 1 : 0));
 
-    // Determina quali club oscurare (Livelli PRO / Maestro)
-    state.mysteryClubIdx = maskClubCount >= 1 && q.clubs.length >= 3 ? Math.floor(q.clubs.length / 2) : -1;
-    state.mysteryClubIdx2 = maskClubCount >= 2 && q.clubs.length >= 4 ? Math.floor(q.clubs.length / 4) : -1;
+    // Determina quali club oscurare (Livelli PRO / Maestro o Archetipo "Quale Club Manca?")
+    state.mysteryClubIdx = hasCustomMystery
+      ? q.mysteryClubIdx
+      : (maskClubCount >= 1 && q.clubs.length >= 3 ? Math.floor(q.clubs.length / 2) : -1);
+    state.mysteryClubIdx2 = !hasCustomMystery && maskClubCount >= 2 && q.clubs.length >= 4
+      ? Math.floor(q.clubs.length / 4)
+      : -1;
 
-    tagEl.textContent = isPro
-      ? `🔥 GAEL LEAGUE PRO • CLUB MISTERIOSI ❓ (LIV. ${diffLevel})`
-      : `👕 GAEL LEAGUE • MAGLIA #?? (LIV. ${diffLevel})`;
+    tagEl.textContent = hasCustomMystery
+      ? `👕 GAEL LEAGUE • QUALE CLUB MANCA? ❓`
+      : isPro
+        ? `🔥 GAEL LEAGUE PRO • CLUB MISTERIOSI ❓ (LIV. ${diffLevel})`
+        : `👕 GAEL LEAGUE • MAGLIA #?? (LIV. ${diffLevel})`;
 
     const diffBadges = {
       1: '★★★☆☆ CULT & FANTASISTI #??',
@@ -2778,15 +3004,19 @@ function renderQuizQuestion() {
     archivePill.textContent = `${diffBadges[diffLevel] || '★★★★☆'} • ${q.era || "ANNI '90 & 2000"}`;
     archivePill.hidden = false;
 
-    promptEl.textContent = maskClubCount > 0
-      ? `Indovina il calciatore dalla carriera (${maskClubCount === 2 ? '2 Club Misteriosi ❓❓' : '1 Club Misterioso ❓'}):`
-      : hideYears
-        ? 'Indovina il calciatore dalla sola sequenza dei club (senza date):'
-        : 'Indovina il calciatore da dove ha giocato in carriera:';
+    if (q.customPrompt) {
+      promptEl.textContent = q.customPrompt;
+    } else {
+      promptEl.textContent = maskClubCount > 0
+        ? `Indovina il calciatore dalla carriera (${maskClubCount === 2 ? '2 Club Misteriosi ❓❓' : '1 Club Misterioso ❓'}):`
+        : hideYears
+          ? 'Indovina il calciatore dalla sola sequenza dei club (senza date):'
+          : 'Indovina il calciatore da dove ha giocato in carriera:';
+    }
 
     if (q.hint) {
       subEl.innerHTML = `
-        <span class="diff-rule-pill">${maskClubCount > 0 ? `🔥 ${maskClubCount} Club Oscurati + Anni Nascosti` : hideYears ? '🔒 Anni & Numero Nascosti' : !showJerseyNum ? '🔒 Numero Maglia Nascosto' : '⚽ Carriera Completa'}</span>
+        <span class="diff-rule-pill">${hasCustomMystery ? '❓ Indovina la squadra mancante' : maskClubCount > 0 ? `🔥 ${maskClubCount} Club Oscurati + Anni Nascosti` : hideYears ? '🔒 Anni & Numero Nascosti' : !showJerseyNum ? '🔒 Numero Maglia Nascosto' : '⚽ Carriera Completa'}</span>
         <button type="button" class="hint-toggle-btn" onclick="revealMisterHint()">💡 CHIEDI INDIZIO DEL MISTER</button>
       `;
     } else {
@@ -3293,9 +3523,7 @@ window.cashOutQuizRun = () => {
   const bankedXp = state.pendingXp || 0;
   const bankedGems = state.pendingGems || 0;
   const curSport = state.activeSport || 'calcio';
-  if (!state.categoryXp) state.categoryXp = { calcio: 120, f1: 0, basket: 0 };
-  state.categoryXp[curSport] = (state.categoryXp[curSport] || 0) + bankedXp;
-  state.xp += bankedXp;
+  addEarnedXpToState(bankedXp, curSport);
   state.gems += bankedGems;
   state.pendingXp = 0;
   state.pendingGems = 0;
@@ -3813,39 +4041,80 @@ function stopConfetti() {
 }
 
 // -------------------------------------------------------------
-// 10. CLASSIFICHE SEPARATE PER SPORT (CALCIO, F1 BOOMER, BASKET NBA)
+// 10. CLASSIFICHE SEPARATE PER SPORT (SETTIMANALE CON RESET DA 0 & LIFETIME)
 // -------------------------------------------------------------
 let currentLeagueSport = 'calcio';
 
+window.switchLeaguePeriod = (period) => {
+  if (period !== 'weekly' && period !== 'lifetime') return;
+  state.leaguePeriod = period;
+  playTone('click');
+  persistState();
+  renderLeaderboard(currentLeagueSport);
+};
+
 async function renderLeaderboard(targetSport) {
+  checkWeeklyLeagueReset();
   const sport = targetSport || currentLeagueSport || state.activeSport || 'calcio';
   currentLeagueSport = sport;
+  const period = state.leaguePeriod === 'lifetime' ? 'lifetime' : 'weekly';
+  const isWeekly = period === 'weekly';
 
   const list = $('#leaderboardList');
   const podiumEl = $('#leaguePodium');
   if (!list) return;
+
+  // Aggiorna switcher Settimanale vs Lifetime
+  const btnWeekly = $('#leaguePeriodWeekly');
+  const btnLifetime = $('#leaguePeriodLifetime');
+  if (btnWeekly) {
+    btnWeekly.classList.toggle('active', isWeekly);
+    btnWeekly.setAttribute('aria-selected', String(isWeekly));
+  }
+  if (btnLifetime) {
+    btnLifetime.classList.toggle('active', !isWeekly);
+    btnLifetime.setAttribute('aria-selected', String(!isWeekly));
+  }
+
+  // Aggiorna banner informativo sul reset settimanale / lifetime
+  const resetInfoText = $('#leagueResetInfoText');
+  if (resetInfoText) {
+    if (isWeekly) {
+      const countdown = getNextMondayCountdownText();
+      resetInfoText.innerHTML = `🔥 <b>Classifica Settimanale (${esc(state.currentWeekKey || getCurrentIsoWeekKey())})</b> • Riparti da <b>0 XP</b> ogni Lunedì (${esc(countdown)}). La <b>Classifica Lifetime</b> resta sempre salvata!`;
+    } else {
+      resetInfoText.innerHTML = `👑 <b>Classifica Lifetime Storica</b> • Tutti i tuoi punti XP accumulati dall'inizio della tua carriera (non si azzera mai!).`;
+    }
+  }
 
   // Aggiorna grafica, trofeo e testi della Classifica per lo Sport selezionato
   const trophyImg = $('#leagueHeroTrophy');
   const badgeEl = $('#leagueDivisionBadge');
   const titleEl = $('#leagueTitle');
   const descEl = $('#leagueDesc');
+  const periodLabel = isWeekly ? 'Settimanale' : 'Lifetime';
 
   if (sport === 'f1') {
     if (trophyImg) trophyImg.src = 'assets/trophy-f1.jpg';
-    if (badgeEl) badgeEl.textContent = 'CAMPIONATO MONDIALE COSTRUTTORI 🏎️';
-    if (titleEl) titleEl.textContent = 'Classifica Mondiale F1';
-    if (descEl) descEl.innerHTML = 'Punti Gran Premio e sfide storiche F1: scala la griglia dei migliori piloti!';
+    if (badgeEl) badgeEl.textContent = isWeekly ? 'GP DELLA SETTIMANA 🏎️' : 'HALL OF FAME MONDIALE F1 👑';
+    if (titleEl) titleEl.textContent = `Classifica ${periodLabel} F1`;
+    if (descEl) descEl.innerHTML = isWeekly
+      ? 'Gara settimanale da 0 XP: scala la griglia di partenza prima di Lunedì a mezzanotte!'
+      : 'Classifica storica generale di tutti i punti GP conquistati in carriera.';
   } else if (sport === 'basket') {
     if (trophyImg) trophyImg.src = 'assets/trophy-basket.jpg';
-    if (badgeEl) badgeEl.textContent = 'ANELLO DEI CAMPIONI NBA 🏀';
-    if (titleEl) titleEl.textContent = 'Classifica Basket NBA';
-    if (descEl) descEl.innerHTML = 'Punti canestro e record NBA: porta il tuo quintetto sul tetto del mondo!';
+    if (badgeEl) badgeEl.textContent = isWeekly ? 'FINALS DELLA SETTIMANA 🏀' : 'HALL OF FAME NBA 👑';
+    if (titleEl) titleEl.textContent = `Classifica ${periodLabel} NBA`;
+    if (descEl) descEl.innerHTML = isWeekly
+      ? 'Sfida settimanale da 0 XP: conquista l\'Anello della settimana entro Domenica sera!'
+      : 'Classifica storica generale di tutti i punti NBA conquistati in carriera.';
   } else {
     if (trophyImg) trophyImg.src = 'assets/trophy-quizzone.jpg';
-    if (badgeEl) badgeEl.textContent = 'DIVISIONE SCUDETTO 🏆';
-    if (titleEl) titleEl.textContent = 'Classifica Calcio';
-    if (descEl) descEl.innerHTML = 'I punti XP guadagnati tra Quizzone, Gael League e Pastore League ti fanno vincere lo Scudetto!';
+    if (badgeEl) badgeEl.textContent = isWeekly ? 'DIVISIONE SCUDETTO SETTIMANALE 🏆' : 'HALL OF FAME LIFETIME 👑';
+    if (titleEl) titleEl.textContent = `Classifica ${periodLabel} Calcio`;
+    if (descEl) descEl.innerHTML = isWeekly
+      ? 'Ogni Lunedì si riparte da <b>0 XP</b>! I punti vinti in Quizzone, Gael League (10k) e Pastore League (10k) valgono sia qui sia nella Classifica Lifetime.'
+      : 'La classifica storica eterna: somma tutti gli XP guadagnati dall\'inizio senza mai azzerarsi!';
   }
 
   // Aggiorna stato attivo dei tab della Classifica
@@ -3858,22 +4127,33 @@ async function renderLeaderboard(targetSport) {
   let competitors = [];
 
   // Calcolo XP per lo specifico sport per ogni concorrente reale
-  const getCompetitorSportXp = (r, sp) => {
+  const getCompetitorSportXp = (r, sp, weeklyMode) => {
     const lessons = Array.isArray(r.completed_lessons) ? r.completed_lessons : [];
+    let lifetimeVal = 0;
     if (sp === 'f1') {
       const f1Count = lessons.filter(id => id.startsWith('f1-')).length;
-      if (f1Count > 0) return f1Count * 30;
-      return Math.max(0, Math.round((Number(r.xp) || 0) * 0.28));
-    }
-    if (sp === 'basket') {
+      lifetimeVal = f1Count > 0 ? f1Count * 30 : Math.max(0, Math.round((Number(r.xp) || 0) * 0.28));
+    } else if (sp === 'basket') {
       const bCount = lessons.filter(id => id.startsWith('b-') || id.startsWith('nba-')).length;
-      if (bCount > 0) return bCount * 30;
-      return Math.max(0, Math.round((Number(r.xp) || 0) * 0.25));
+      lifetimeVal = bCount > 0 ? bCount * 30 : Math.max(0, Math.round((Number(r.xp) || 0) * 0.25));
+    } else {
+      const cCount = lessons.filter(id => !id.startsWith('f1-') && !id.startsWith('b-') && !id.startsWith('nba-')).length;
+      lifetimeVal = cCount > 0 ? cCount * 30 : (Number(r.xp) || 0);
     }
-    // Calcio
-    const cCount = lessons.filter(id => !id.startsWith('f1-') && !id.startsWith('b-') && !id.startsWith('nba-')).length;
-    if (cCount > 0) return cCount * 30;
-    return Number(r.xp) || 0;
+
+    if (!weeklyMode) return lifetimeVal;
+
+    // In modalità Settimanale, mostra solo gli XP guadagnati da utenti attivi negli ultimi 7 giorni
+    if (r.updated_at) {
+      const updatedMs = new Date(r.updated_at).getTime();
+      const now = new Date();
+      const day = now.getDay() || 7;
+      const mondayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (day - 1), 0, 0, 0, 0).getTime();
+      if (updatedMs < mondayStart) {
+        return 0; // Non ha ancora giocato in questa settimana: è a 0 XP settimanali!
+      }
+    }
+    return Math.min(lifetimeVal, Number(r.weekly_xp) || Math.round(lifetimeVal * 0.25));
   };
 
   // Se Supabase è attivo, carica ESCLUSIVAMENTE i giocatori reali registrati nel Cloud
@@ -3881,7 +4161,7 @@ async function renderLeaderboard(targetSport) {
     try {
       const { data, error } = await supabaseClient
         .from('profiles')
-        .select('id, username, avatar_letter, xp, completed_lessons')
+        .select('id, username, avatar_letter, xp, completed_lessons, updated_at')
         .order('xp', { ascending: false })
         .limit(50);
 
@@ -3890,7 +4170,7 @@ async function renderLeaderboard(targetSport) {
           .filter(r => !currentCloudUser || r.id !== currentCloudUser.id)
           .map(r => ({
             name: r.username || 'Giocatore',
-            xp: getCompetitorSportXp(r, sport),
+            xp: getCompetitorSportXp(r, sport, isWeekly),
             av: (r.avatar_letter || r.username || 'G').trim().charAt(0).toUpperCase()
           }));
       }
@@ -3899,11 +4179,16 @@ async function renderLeaderboard(targetSport) {
     }
   }
 
-  // XP dell'utente corrente nello sport attivo
+  // XP dell'utente corrente nello sport attivo (Settimanale vs Lifetime)
   if (!state.categoryXp) {
     state.categoryXp = { calcio: state.xp || 120, f1: 0, basket: 0 };
   }
-  const userSportXp = state.categoryXp[sport] ?? (sport === 'calcio' ? state.xp : 0);
+  if (!state.weeklyCategoryXp) {
+    state.weeklyCategoryXp = { calcio: 0, f1: 0, basket: 0 };
+  }
+  const userLifetimeSportXp = state.categoryXp[sport] ?? (sport === 'calcio' ? state.xp : 0);
+  const userWeeklySportXp = state.weeklyCategoryXp[sport] ?? (sport === 'calcio' ? (state.weeklyXp || 0) : 0);
+  const userSportXp = isWeekly ? userWeeklySportXp : userLifetimeSportXp;
   const userAvatar = (state.username || 'M').trim().charAt(0).toUpperCase();
 
   const full = [
@@ -4839,10 +5124,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Reset vite a mezzanotte quando l'utente riapre la scheda/app + check promemoria streak
+  // Reset vite a mezzanotte e check reset settimanale lega quando l'utente riapre la scheda/app + check promemoria streak
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
       checkMidnightHeartsReset();
+      if (checkWeeklyLeagueReset()) {
+        renderLeaderboard();
+      }
       updateHomeInstallBannerVisibility();
       updateNotificationUI();
       checkAndTriggerStreakReminder();
@@ -5155,11 +5443,16 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#resetProgressBtn')?.addEventListener('click', () => {
     localStorage.removeItem(STORAGE_KEY);
     state.xp = 120;
+    state.weeklyXp = 0;
+    state.currentWeekKey = getCurrentIsoWeekKey();
+    state.categoryXp = { calcio: 120, f1: 0, basket: 0 };
+    state.weeklyCategoryXp = { calcio: 0, f1: 0, basket: 0 };
     state.streak = 1;
     state.gems = 250;
     state.hearts = 5;
-    state.completedLessons = ['u1-l1', 'u7-l1'];
+    state.completedLessons = ['u1-l1', 'u11-l1'];
     state.claimedChests = [];
+    state.recentQuestionKeys = [];
     state.todayCorrect = 0;
     persistState();
     renderSnakePath();

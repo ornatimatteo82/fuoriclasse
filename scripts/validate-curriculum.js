@@ -116,14 +116,21 @@ if (!Array.isArray(curriculum.units) || curriculum.units.length === 0) {
   });
 }
 
-// Validazione Gael Modes (Arene Carriere Anni '90, 2000, All-Stars)
+// Validazione Gael Modes (Arene Carriere Anni '90, 2000, All-Stars, PRO)
 if (curriculum.gaelModes) {
-  ['anni90', 'anni2000', 'allstars'].forEach((modeKey) => {
+  ['anni90', 'anni2000', 'allstars', 'pro'].forEach((modeKey) => {
     if (curriculum.gaelModes[modeKey]) {
       curriculum.gaelModes[modeKey].forEach((q, idx) => {
         validateQuestion(q, `GaelMode [${modeKey}] > D${idx + 1}`);
       });
     }
+  });
+}
+
+// Validazione Pastore Mode (10.000 sfide Marcatori Serie A)
+if (Array.isArray(curriculum.pastoreMode)) {
+  curriculum.pastoreMode.forEach((q, idx) => {
+    validateQuestion(q, `PastoreMode > D${idx + 1}`);
   });
 }
 

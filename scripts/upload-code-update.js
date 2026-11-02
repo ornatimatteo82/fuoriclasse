@@ -16,23 +16,21 @@ function runAppleScript(script) {
   }
 }
 
-function runChromeJs(jsCode) {
+function runChromeJsOnUrl(urlMatch, jsCode) {
   const escapedJs = jsCode.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   const as = `
 tell application "Google Chrome"
     set foundTab to missing value
     repeat with aWindow in every window
         repeat with aTab in every tab of aWindow
-            if URL of aTab contains "fm.aruba.it" then
+            if URL of aTab contains "${urlMatch}" then
                 set foundTab to aTab
-                exit repeat
             end if
         end repeat
-        if foundTab is not missing value then exit repeat
     end repeat
     
     if foundTab is missing value then
-        error "Tab Aruba File Manager non trovato in Chrome!"
+        error "Tab ${urlMatch} non trovato in Chrome!"
     end if
     
     tell foundTab
@@ -43,11 +41,66 @@ end tell
   return runAppleScript(as);
 }
 
+function runChromeJs(jsCode) {
+  return runChromeJsOnUrl('fm.aruba.it', jsCode);
+}
+
 function sleep(ms) {
   execSync(`sleep ${ms / 1000}`);
 }
 
+function ensureFreshSession() {
+  try {
+    runChromeJs(`
+      window.__sessionOk = null;
+      fetch('php/connector.minimal.php?cmd=open&target=${ROOT_HASH}&init=1')
+        .then(r => r.json())
+        .then(d => { window.__sessionOk = !(d && d.error); })
+        .catch(() => { window.__sessionOk = false; });
+    `);
+    sleep(1500);
+    const ok = runChromeJs('String(window.__sessionOk)');
+    if (ok === 'true') return true;
+  } catch (_) {}
+
+  console.log('🔄 Sessione elFinder scaduta o chiusa. Riapertura automatica da admin.aruba.it...');
+  try {
+    // Chiude eventuali vecchi tab fm.aruba.it scaduti tranne se necessario, oppure clicca il link su admin.aruba.it
+    runChromeJsOnUrl('admin.aruba.it', `
+      (() => {
+        const link = document.querySelector('a[href*="Gestione_NewLinuxfileManager"]');
+        if (link) { link.click(); return "CLICKED_LINK"; }
+        // In alternativa cerca il bottone "Apri File Manager" dentro l'iframe o pagina
+        const btns = Array.from(document.querySelectorAll('a, input, button')).filter(el => {
+          const t = (el.innerText || el.value || '').toLowerCase();
+          return t.includes('file manager');
+        });
+        if (btns.length > 0) { btns[0].click(); return "CLICKED_BTN"; }
+        return "NOT_FOUND";
+      })()
+    `);
+    sleep(5000);
+    // Verifica se nella pagina admin è apparso un pulsante "Gestisci" / "File Manager" che apre il popup
+    try {
+      runChromeJsOnUrl('admin.aruba.it', `
+        (() => {
+          const btn = Array.from(document.querySelectorAll('input[type="button"], input[type="submit"], a.button, button')).find(el => {
+            const v = (el.value || el.innerText || '').toLowerCase();
+            return v.includes('file manager') || v.includes('gestisci');
+          });
+          if (btn) btn.click();
+        })()
+      `);
+      sleep(5000);
+    } catch (_) {}
+  } catch (e) {
+    console.warn('⚠️ Impossibile riaprire automaticamente da admin.aruba.it:', e.message);
+  }
+  return false;
+}
+
 async function uploadSinglePackage(zipFilename) {
+  ensureFreshSession();
   const zipPath = path.join(__dirname, '..', 'deploy-packages', zipFilename);
 
   console.log(`\n📦 Upload pacchetto: ${zipFilename} (${(fs.statSync(zipPath).size / 1024).toFixed(1)} KB)...`);
@@ -150,6 +203,9 @@ async function uploadSinglePackage(zipFilename) {
 async function uploadAndExtractCodeUpdate() {
   console.log('🚀 Avvio upload pacchetti aggiornati su Aruba...');
   await uploadSinglePackage('01-code.zip');
+  if (process.argv.includes('--with-data')) {
+    await uploadSinglePackage('02-data-calcio.zip');
+  }
   console.log('🎉 Tutti i pacchetti caricati ed estratti con successo!');
 }
 

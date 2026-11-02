@@ -18,8 +18,8 @@
   <meta name="apple-mobile-web-app-title" content="Fuoriclasse" />
   <title>Fuoriclasse — Gael League &amp; Quizzocampo</title>
 
-  <link rel="manifest" href="manifest.webmanifest?v=51" />
-  <link rel="icon" type="image/svg+xml" href="icon.svg?v=51" />
+  <link rel="manifest" href="manifest.webmanifest?v=52" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg?v=52" />
   <link rel="apple-touch-icon" href="assets/mascot-coach.jpg" />
   <link rel="preload" href="assets/mascot-coach.jpg" as="image" fetchpriority="high" />
 
@@ -31,14 +31,14 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="style.css?v=51" />
-  <link rel="stylesheet" href="mobile.css?v=51" />
-  <link rel="stylesheet" href="dark-theme.css?v=51" />
+  <link rel="stylesheet" href="style.css?v=52" />
+  <link rel="stylesheet" href="mobile.css?v=52" />
+  <link rel="stylesheet" href="dark-theme.css?v=52" />
   <script>
     (function() {
       try {
         // Pulizia selettiva solo di eventuali cache obsolete (mantiene la cache attiva per caricamento 0ms)
-        var ACTIVE_CACHE = 'fuoriclasse-v51';
+        var ACTIVE_CACHE = 'fuoriclasse-v52';
         if ('caches' in window) {
           caches.keys().then(function(keys) {
             return Promise.all(
@@ -272,8 +272,8 @@
               <img src="assets/gael-mascot.jpg" alt="" width="32" height="32" decoding="async" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
             </span>
             <div class="mode-switch-text">
-              <b>GAEL LEAGUE (10 UNITÀ HARD)</b>
-              <small>Cult heroes, bomber di provincia, meteore e livelli PRO con Club Misteriosi ❓</small>
+              <b>GAEL LEAGUE (10.000 SFIDE)</b>
+              <small>10.000 carriere randomizzate, bomber di provincia, meteore e Club Misteriosi ❓</small>
             </div>
           </button>
           <button class="mode-switch-btn" id="switchModePastore" data-mode="pastore" type="button" role="tab" aria-selected="false">
@@ -281,8 +281,8 @@
               <img src="assets/pastore-mascot.jpg" alt="" width="32" height="32" decoding="async" style="border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.25);" />
             </span>
             <div class="mode-switch-text">
-              <b>PASTORE LEAGUE (15 UNITÀ)</b>
-              <small>2.000 sfide sui Marcatori di Serie A dal 1990 ad oggi in stile Giuseppe Pastore!</small>
+              <b>PASTORE LEAGUE (10.000 SFIDE)</b>
+              <small>10.000 sfide randomizzate sui Marcatori e Tabellini dal 1990 al 2026!</small>
             </div>
           </button>
         </div>
@@ -352,7 +352,7 @@
       </section>
 
       <!-- =========================================================
-           TAB 2: CLASSIFICA / LEGA SETTIMANALE
+           TAB 2: CLASSIFICA / LEGA SETTIMANALE & LIFETIME
            ========================================================= -->
       <section class="view-panel" id="view-league" hidden aria-label="Classifica Lega">
         <div class="panel-card league-header-card">
@@ -363,8 +363,30 @@
           <h2 id="leagueTitle">Classifica Calcio</h2>
           <p id="leagueDesc">I punti XP guadagnati tra Quizzone, Gael League e Pastore League ti fanno scalare lo Scudetto!</p>
 
+          <!-- SELETTORE PERIODO: CLASSIFICA SETTIMANALE (RESET OGNI LUNEDÌ DA 0) vs CLASSIFICA LIFETIME -->
+          <div class="league-period-switcher" id="leaguePeriodSwitcher" role="tablist" aria-label="Tipo di Classifica">
+            <button class="league-period-btn active" id="leaguePeriodWeekly" data-period="weekly" type="button" role="tab" aria-selected="true" onclick="switchLeaguePeriod('weekly')">
+              <span class="lp-icon">🔥</span>
+              <span class="lp-text">
+                <b>SETTIMANALE</b>
+                <small>Riparti da 0 ogni Lunedì</small>
+              </span>
+            </button>
+            <button class="league-period-btn" id="leaguePeriodLifetime" data-period="lifetime" type="button" role="tab" aria-selected="false" onclick="switchLeaguePeriod('lifetime')">
+              <span class="lp-icon">👑</span>
+              <span class="lp-text">
+                <b>LIFETIME</b>
+                <small>Classifica Storica Totale</small>
+              </span>
+            </button>
+          </div>
+
+          <div class="league-reset-info-banner" id="leagueResetInfoBanner">
+            <span id="leagueResetInfoText">📅 Settimana attiva • Reset ogni Lunedì alle 00:00 (la Classifica Lifetime resta sempre salvata!)</span>
+          </div>
+
           <!-- SELETTORE SPORT PER LE CLASSIFICHE SEPARATE -->
-          <div class="macro-sport-switcher" id="leagueSportSwitcher" role="tablist" aria-label="Scegli Categoria per la Classifica" style="margin:14px 0 10px;">
+          <div class="macro-sport-switcher" id="leagueSportSwitcher" role="tablist" aria-label="Scegli Categoria per la Classifica" style="margin:10px 0 10px;">
             <button class="macro-sport-btn active" id="leagueTabCalcio" data-sport="calcio" type="button" onclick="switchLeagueSport('calcio')">
               <span class="macro-btn-icon">⚽</span>
               <div class="macro-btn-text">
@@ -514,7 +536,7 @@
           <button class="extra-card" data-gaelmode="anni90" type="button">
             <div class="extra-card-top">
               <span class="extra-card-icon">📼</span>
-              <span class="extra-pool-pill">200 Sfide</span>
+              <span class="extra-pool-pill">2.500 Sfide</span>
             </div>
             <div class="extra-card-info">
               <b>Gael League: Anni '90 Cult</b>
@@ -529,11 +551,11 @@
           <button class="extra-card" data-gaelmode="anni2000" type="button">
             <div class="extra-card-top">
               <span class="extra-card-icon">💿</span>
-              <span class="extra-pool-pill">200 Sfide</span>
+              <span class="extra-pool-pill">2.500 Sfide</span>
             </div>
             <div class="extra-card-info">
-              <b>Gael League: Primi Anni 2000</b>
-              <p>Ronaldo, Sheva, Kaká, Vieri, Adriano, Totti, Del Piero, Hübner, Toni, Miccoli e Milito.</p>
+              <b>Gael League: Anni 2000 &amp; 2026</b>
+              <p>Ronaldo, Sheva, Kaká, Vieri, Adriano, Totti, Del Piero, Hübner, Lautaro e Leão.</p>
             </div>
             <div class="extra-card-footer">
               <span class="extra-xp-tag">+50 XP</span>
@@ -544,10 +566,10 @@
           <button class="extra-card" data-gaelmode="allstars" type="button">
             <div class="extra-card-top">
               <span class="extra-card-icon">👕</span>
-              <span class="extra-pool-pill">200 Sfide</span>
+              <span class="extra-pool-pill">3.000 Sfide</span>
             </div>
             <div class="extra-card-info">
-              <b>Gael League: Maratona All-Stars</b>
+              <b>Gael League: Maratona All-Stars (10k)</b>
               <p>Tutte le carriere mescolate: dalle bandiere storiche ai grandi giramondo internazionali.</p>
             </div>
             <div class="extra-card-footer">
@@ -559,7 +581,7 @@
           <button class="extra-card mode-pro" data-gaelmode="pro" type="button" style="border: 2px solid #ff4b4b; background: linear-gradient(135deg, rgba(255, 75, 75, 0.1), rgba(20, 25, 35, 0.9));">
             <div class="extra-card-top">
               <span class="extra-card-icon">❓</span>
-              <span class="extra-pool-pill" style="background: #ff4b4b; color: #fff;">150 Sfide PRO</span>
+              <span class="extra-pool-pill" style="background: #ff4b4b; color: #fff;">2.000 Sfide PRO</span>
             </div>
             <div class="extra-card-info">
               <b style="color: #ff7676;">Gael League PRO: Club Misterioso</b>
@@ -578,8 +600,8 @@
             <img src="assets/pastore-mascot.jpg" alt="Giuseppe Pastore" width="72" height="72" loading="lazy" decoding="async" style="width:72px;height:72px;border-radius:16px;border:2px solid #ffc800;object-fit:cover;box-shadow:0 4px 14px rgba(255,200,0,0.3);" />
             <div style="flex:1;min-width:220px;">
               <span class="eyebrow-pill pill-gold">🎯 NOVITÀ ASSOLUTA • MODALITÀ PASTORE</span>
-              <h2 style="margin:4px 0;color:#fff;">Il Grande Archivio Marcatori (2.000 Sfide)</h2>
-              <p style="margin:0;font-size:13px;color:#cbd5e1;">Riconosci i marcatori storici delle grandi partite di Serie A dagli anni '90 a oggi. Dalle doppiette scudetto ai gol decisivi al 93'!</p>
+              <h2 style="margin:4px 0;color:#fff;">Il Grande Archivio Marcatori (10.000 Sfide)</h2>
+              <p style="margin:0;font-size:13px;color:#cbd5e1;">Riconosci i marcatori storici delle grandi partite di Serie A dagli anni '90 al 2026. Dalle doppiette scudetto ai gol decisivi al 93'!</p>
             </div>
           </div>
         </div>
@@ -588,11 +610,11 @@
           <button class="extra-card" data-pastoremode="all" type="button" style="border: 2px solid #ffc800;">
             <div class="extra-card-top">
               <span class="extra-card-icon">🎯</span>
-              <span class="extra-pool-pill" style="background:#ffc800;color:#000;font-weight:900;">2.000 Partite</span>
+              <span class="extra-pool-pill" style="background:#ffc800;color:#000;font-weight:900;">10.000 Partite</span>
             </div>
             <div class="extra-card-info">
-              <b>Modalità Pastore: Serie A Storica</b>
-              <p>Indovina chi ha segnato (o chi NON ha segnato) nei match leggendari dal 1990 al 2024!</p>
+              <b>Modalità Pastore: Serie A Storica (10k)</b>
+              <p>Indovina chi ha segnato (o chi NON ha segnato) nei match leggendari dal 1990 al 2026!</p>
             </div>
             <div class="extra-card-footer">
               <span class="extra-xp-tag" style="background:#ffc800;color:#000;">+75 XP</span>
@@ -684,8 +706,8 @@
             <h2 id="profileName">Mister Fuoriclasse</h2>
             <p id="profileSub">Gael League &amp; Quizzocampo • Stagione 2026</p>
             <div class="profile-badges-inline">
-              <span class="mini-tag">👕 Gael League (100+ Carriere)</span>
-              <span class="mini-tag">⚡ Quizzocampo (1.380 Sfide)</span>
+              <span class="mini-tag">👕 Gael League (10.000 Sfide)</span>
+              <span class="mini-tag">🎯 Pastore League (10.000 Sfide)</span>
               <span class="mini-tag" id="profileCompletedTag">✅ 1 Tappa</span>
             </div>
           </div>
@@ -695,7 +717,7 @@
           <div class="stat-box">
             <span class="stat-box-icon">⚡</span>
             <b id="profileTotalXp">0</b>
-            <small>XP Totali</small>
+            <small>XP Lifetime</small>
           </div>
           <div class="stat-box">
             <span class="stat-box-icon">🔥</span>
@@ -728,7 +750,7 @@
                 <span class="psi-streak" id="profileStreakCalcio">🔥 1</span>
               </div>
               <h4>CALCIO FUORICLASSE</h4>
-              <p>5.000+ Sfide • Quizzone, Gael League e Pastore League.</p>
+              <p>21.700+ Sfide • Quizzone, Gael League (10k) e Pastore League (10k).</p>
               <button class="btn-primary btn-sm w-full psi-btn" type="button">GIOCA CALCIO</button>
             </div>
             <div class="profile-sport-item" id="profileSportF1" data-sport="f1" onclick="switchSport('f1')">
@@ -1366,9 +1388,9 @@
         <button class="modal-close-x" id="sourcesClose" type="button" aria-label="Chiudi">✕</button>
       </div>
       <div class="modal-body" id="sourcesModalBody">
-        <p><strong>👕 Gael League (Carriere Hard &amp; Club Misteriosi):</strong> 10 Unità senza superstar scontate: fantasisti ribelli, bomber di provincia, meteore dimenticate e livelli PRO con club misteriosi.</p>
-        <p><strong>🎯 Modalità Pastore (Marcatori Serie A):</strong> 2.000 partite storiche dal 1990 al 2024 per indovinare i protagonisti del tabellino.</p>
-        <p><strong>⚡ Quizzocampo (Il Grande Quiz del Calcio):</strong> 1.500 sfide tra scudetti, finali europee, derby e record della Serie A.</p>
+        <p><strong>👕 Gael League (10.000 Sfide Carriere &amp; Club Misteriosi):</strong> 10.000 sfide su 259 calciatori iconici dal 1990 al 2026: carriere classiche, senza anni, club misteriosi ❓, doppi ex e anni di approdo.</p>
+        <p><strong>🎯 Modalità Pastore (10.000 Sfide Marcatori Serie A):</strong> 10.000 sfide sui tabellini storici dal 1990 al 2026: marcatori, intrusi, multi-select x2 e x3, date storiche e risultati esatti.</p>
+        <p><strong>⚡ Quizzocampo (Il Grande Quiz del Calcio):</strong> 1.700 sfide tra scudetti, finali europee, derby e record della Serie A.</p>
       </div>
     </div>
   </div>
@@ -1409,6 +1431,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="app.js?v=51" defer></script>
+  <script src="app.js?v=52" defer></script>
 </body>
 </html>
