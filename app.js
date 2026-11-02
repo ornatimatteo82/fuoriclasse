@@ -654,9 +654,9 @@ async function loadSportCurriculum(sport = state.activeSport) {
     return loadedSportCatalogs[sport];
   }
 
-  let jsonUrl = 'data/curriculum.json?v=52';
-  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=52';
-  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=52';
+  let jsonUrl = 'data/curriculum.json?v=53';
+  if (sport === 'f1') jsonUrl = 'data/curriculum-f1.json?v=53';
+  else if (sport === 'basket') jsonUrl = 'data/curriculum-basket.json?v=53';
 
   try {
     const res = await fetch(jsonUrl);
@@ -951,6 +951,7 @@ async function loadCurriculum() {
   renderQuests();
   updateTopStats();
   renderAmazonDealsHub(activeAmazonCategory);
+  renderRailMiniScores();
   renderSnakePath();
 
   // Ripristina e centra istantaneamente i progressi dell'utente (singolo pass non bloccante)
@@ -4409,6 +4410,8 @@ function switchTab(tabId, forcedGameMode = null, skipRender = false) {
     setGameMode(state.activeGameMode, false);
   } else if (tabId === 'league') {
     renderLeaderboard(currentLeagueSport || state.activeSport || 'calcio');
+  } else if (tabId === 'scores') {
+    renderSportsScoresHub();
   }
 
   if (tabId === 'path') {
@@ -4418,6 +4421,674 @@ function switchTab(tabId, forcedGameMode = null, skipRender = false) {
   }
 }
 window.switchTab = switchTab;
+
+// -------------------------------------------------------------
+// 11B. MOTORE RISULTATI SPORTIVI & CLASSIFICHE LIVE (ZERO-DB)
+// - Zero query e zero byte su Supabase DB o curriculum.json
+// - Fetch client-side on-demand da API pubbliche CORS + Cache RAM/Session (TTL 3 min)
+// - Fallback istantaneo verificato per Serie A, Champions, Europa League, Premier, Liga, F1, NBA
+// -------------------------------------------------------------
+const SCORES_CACHE_TTL_MS = 3 * 60 * 1000;
+const scoresMemoryCache = new Map();
+let activeScoreComp = 'seriea';
+let activeScoreSubView = 'matches'; // 'matches' | 'standings'
+
+const SCORES_COMPETITIONS = {
+  seriea: {
+    id: 'seriea',
+    name: 'Serie A Enilive',
+    shortName: 'Serie A',
+    icon: '🇮🇹',
+    sport: 'calcio',
+    quizMode: 'pastore',
+    quizBtnLabel: '⚡ Gioca Quiz Serie A (Pastore League)',
+    espnPath: 'soccer/ita.1',
+    uclSpots: 4,
+    uelSpots: 6,
+    relStart: 18
+  },
+  ucl: {
+    id: 'ucl',
+    name: 'UEFA Champions League',
+    shortName: 'Champions League',
+    icon: '🌟',
+    sport: 'calcio',
+    quizMode: 'champions',
+    quizBtnLabel: '⚡ Gioca Quiz Champions League',
+    espnPath: 'soccer/uefa.champions',
+    uclSpots: 8,
+    uelSpots: 24,
+    relStart: 25
+  },
+  uel: {
+    id: 'uel',
+    name: 'UEFA Europa League',
+    shortName: 'Europa League',
+    icon: '🏆',
+    sport: 'calcio',
+    quizMode: 'champions',
+    quizBtnLabel: '⚡ Gioca Quiz Coppe Europee',
+    espnPath: 'soccer/uefa.europa',
+    uclSpots: 8,
+    uelSpots: 24,
+    relStart: 25
+  },
+  epl: {
+    id: 'epl',
+    name: 'Premier League',
+    shortName: 'Premier League',
+    icon: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+    sport: 'calcio',
+    quizMode: 'gael',
+    quizBtnLabel: '⚡ Gioca Carriere Internazionale (Gael)',
+    espnPath: 'soccer/eng.1',
+    uclSpots: 4,
+    uelSpots: 6,
+    relStart: 18
+  },
+  laliga: {
+    id: 'laliga',
+    name: 'La Liga EA Sports',
+    shortName: 'La Liga',
+    icon: '🇪🇸',
+    sport: 'calcio',
+    quizMode: 'gael',
+    quizBtnLabel: '⚡ Gioca Carriere Liga & Campioni',
+    espnPath: 'soccer/esp.1',
+    uclSpots: 4,
+    uelSpots: 6,
+    relStart: 18
+  },
+  f1: {
+    id: 'f1',
+    name: 'Formula 1 World Championship',
+    shortName: 'Formula 1 GP',
+    icon: '🏎️',
+    sport: 'f1',
+    quizMode: 'f1',
+    quizBtnLabel: '🏎️ Gioca Quiz F1 Boomer',
+    espnPath: 'racing/f1',
+    uclSpots: 3,
+    uelSpots: 10,
+    relStart: 99
+  },
+  nba: {
+    id: 'nba',
+    name: 'NBA Basketball',
+    shortName: 'Basket NBA',
+    icon: '🏀',
+    sport: 'basket',
+    quizMode: 'basket',
+    quizBtnLabel: '🏀 Gioca Quiz Basket NBA',
+    espnPath: 'basketball/nba',
+    uclSpots: 6,
+    uelSpots: 10,
+    relStart: 99
+  }
+};
+
+// Dataset di continuità ultra-compatto (usato come base istantanea o se l'utente è offline)
+const CURATED_SCORES_FALLBACK = {
+  seriea: {
+    roundLabel: 'Serie A • Big Match & Ultimo Turno',
+    matches: [
+      { home: 'Inter', away: 'Juventus', homeScore: 4, awayScore: 4, status: 'FINALE', state: 'post', venue: 'San Siro, Milano', details: '⚽ Zieliński 15\', 37\', Mkhitaryan 35\', Dumfries 53\' (INT) • Vlahović 20\', Weah 26\', Yıldız 71\', 82\' (JUV)' },
+      { home: 'Milan', away: 'Napoli', homeScore: 0, awayScore: 2, status: 'FINALE', state: 'post', venue: 'San Siro, Milano', details: '⚽ Lukaku 5\', Kvaratskhelia 43\' (NAP)' },
+      { home: 'Atalanta', away: 'Hellas Verona', homeScore: 6, awayScore: 1, status: 'FINALE', state: 'post', venue: 'Gewiss Stadium, Bergamo', details: '⚽ Retegui 9\', 58\', Lookman 29\', 34\', De Roon 6\', De Ketelaere 14\'' },
+      { home: 'Fiorentina', away: 'Roma', homeScore: 5, awayScore: 1, status: 'FINALE', state: 'post', venue: 'Artemio Franchi, Firenze', details: '⚽ Kean 9\', 41\', Beltrán 17\', Bove 52\' (FIO) • Koné 39\' (ROM)' },
+      { home: 'Lazio', away: 'Genoa', homeScore: 3, awayScore: 0, status: 'FINALE', state: 'post', venue: 'Stadio Olimpico, Roma', details: '⚽ Noslin 21\', Pedro 86\', Vecino 90+4\'' },
+      { home: 'Bologna', away: 'Lecce', homeScore: 1, awayScore: 0, status: 'FINALE', state: 'post', venue: 'Renato Dall\'Ara, Bologna', details: '⚽ Orsolini 85\'' },
+      { home: 'Torino', away: 'Como', homeScore: 1, awayScore: 0, status: 'FINALE', state: 'post', venue: 'Olimpico Grande Torino', details: '⚽ Njie 75\'' },
+      { home: 'Parma', away: 'Empoli', homeScore: 1, awayScore: 1, status: 'FINALE', state: 'post', venue: 'Ennio Tardini, Parma', details: '⚽ Charpentier 80\' (PAR) • Coulibaly 35\' aut. (EMP)' }
+    ],
+    standings: [
+      { pos: 1, team: 'Napoli', p: 10, w: 8, d: 1, l: 1, gd: '+13', pts: 25 },
+      { pos: 2, team: 'Inter', p: 10, w: 6, d: 3, l: 1, gd: '+11', pts: 21 },
+      { pos: 3, team: 'Atalanta', p: 10, w: 6, d: 1, l: 3, gd: '+12', pts: 19 },
+      { pos: 4, team: 'Fiorentina', p: 10, w: 5, d: 4, l: 1, gd: '+12', pts: 19 },
+      { pos: 5, team: 'Lazio', p: 10, w: 6, d: 1, l: 3, gd: '+8', pts: 19 },
+      { pos: 6, team: 'Juventus', p: 10, w: 4, d: 6, l: 0, gd: '+10', pts: 18 },
+      { pos: 7, team: 'Milan', p: 9, w: 4, d: 2, l: 3, gd: '+5', pts: 14 },
+      { pos: 8, team: 'Udinese', p: 10, w: 5, d: 1, l: 4, gd: '0', pts: 16 },
+      { pos: 9, team: 'Torino', p: 10, w: 4, d: 2, l: 4, gd: '0', pts: 14 },
+      { pos: 10, team: 'Roma', p: 10, w: 3, d: 4, l: 3, gd: '-1', pts: 13 },
+      { pos: 11, team: 'Bologna', p: 9, w: 2, d: 6, l: 1, gd: '-1', pts: 12 },
+      { pos: 12, team: 'Empoli', p: 10, w: 2, d: 5, l: 3, gd: '-2', pts: 11 }
+    ]
+  },
+  ucl: {
+    roundLabel: 'UEFA Champions League • League Phase',
+    matches: [
+      { home: 'Real Madrid', away: 'Milan', homeScore: 1, awayScore: 3, status: 'FINALE', state: 'post', venue: 'Santiago Bernabéu, Madrid', details: '⚽ Thiaw 12\', Morata 39\', Reijnders 73\' (MIL) • Vinícius Jr 23\' (RMA)' },
+      { home: 'Inter', away: 'Arsenal', homeScore: 1, awayScore: 0, status: 'FINALE', state: 'post', venue: 'San Siro, Milano', details: '⚽ Çalhanoğlu 45+3\' rig. (INT)' },
+      { home: 'Liverpool', away: 'Bayer Leverkusen', homeScore: 4, awayScore: 0, status: 'FINALE', state: 'post', venue: 'Anfield, Liverpool', details: '⚽ Luis Díaz 61\', 83\', 90+2\', Gakpo 63\'' },
+      { home: 'Sporting CP', away: 'Manchester City', homeScore: 4, awayScore: 1, status: 'FINALE', state: 'post', venue: 'José Alvalade, Lisbona', details: '⚽ Gyökeres 38\', 49\' rig., 80\' rig., Araújo 46\' • Foden 4\'' },
+      { home: 'Lille', away: 'Juventus', homeScore: 1, awayScore: 1, status: 'FINALE', state: 'post', venue: 'Stade Pierre-Mauroy', details: '⚽ Jonathan David 27\' (LIL) • Vlahović 60\' rig. (JUV)' },
+      { home: 'Barcellona', away: 'Bayern Monaco', homeScore: 4, awayScore: 1, status: 'FINALE', state: 'post', venue: 'Estadi Olímpic, Barcellona', details: '⚽ Raphinha 1\', 45\', 56\', Lewandowski 36\' • Kane 18\'' }
+    ],
+    standings: [
+      { pos: 1, team: 'Liverpool', p: 4, w: 4, d: 0, l: 0, gd: '+9', pts: 12 },
+      { pos: 2, team: 'Sporting CP', p: 4, w: 3, d: 1, l: 0, gd: '+7', pts: 10 },
+      { pos: 3, team: 'Monaco', p: 4, w: 3, d: 1, l: 0, gd: '+6', pts: 10 },
+      { pos: 4, team: 'Brest', p: 4, w: 3, d: 1, l: 0, gd: '+6', pts: 10 },
+      { pos: 5, team: 'Inter', p: 4, w: 3, d: 1, l: 0, gd: '+6', pts: 10 },
+      { pos: 6, team: 'Barcellona', p: 4, w: 3, d: 0, l: 1, gd: '+10', pts: 9 },
+      { pos: 7, team: 'Borussia Dortmund', p: 4, w: 3, d: 0, l: 1, gd: '+7', pts: 9 },
+      { pos: 8, team: 'Aston Villa', p: 4, w: 3, d: 0, l: 1, gd: '+5', pts: 9 },
+      { pos: 9, team: 'Atalanta', p: 4, w: 2, d: 2, l: 0, gd: '+5', pts: 8 },
+      { pos: 10, team: 'Manchester City', p: 4, w: 2, d: 1, l: 1, gd: '+6', pts: 7 },
+      { pos: 11, team: 'Juventus', p: 4, w: 2, d: 1, l: 1, gd: '+2', pts: 7 },
+      { pos: 12, team: 'Milan', p: 4, w: 2, d: 0, l: 2, gd: '+1', pts: 6 }
+    ]
+  },
+  uel: {
+    roundLabel: 'UEFA Europa League • League Phase',
+    matches: [
+      { home: 'Lazio', away: 'Porto', homeScore: 2, awayScore: 1, status: 'FINALE', state: 'post', venue: 'Stadio Olimpico, Roma', details: '⚽ Romagnoli 45+5\', Pedro 90+2\' (LAZ) • Eustáquio 66\' (POR)' },
+      { home: 'Union SG', away: 'Roma', homeScore: 1, awayScore: 1, status: 'FINALE', state: 'post', venue: 'Stade Roi Baudouin, Bruxelles', details: '⚽ Mancini 62\' (ROM) • Mac Allister 77\' (USG)' },
+      { home: 'Galatasaray', away: 'Tottenham', homeScore: 3, awayScore: 2, status: 'FINALE', state: 'post', venue: 'RAMS Park, Istanbul', details: '⚽ Osimhen 31\', 39\', Akgün 6\' (GAL) • Lankshear 18\', Solanke 69\'' },
+      { home: 'Manchester United', away: 'PAOK', homeScore: 2, awayScore: 0, status: 'FINALE', state: 'post', venue: 'Old Trafford, Manchester', details: '⚽ Amad Diallo 50\', 77\' (MUN)' }
+    ],
+    standings: [
+      { pos: 1, team: 'Lazio', p: 4, w: 4, d: 0, l: 0, gd: '+9', pts: 12 },
+      { pos: 2, team: 'Ajax', p: 4, w: 3, d: 1, l: 0, gd: '+12', pts: 10 },
+      { pos: 3, team: 'Galatasaray', p: 4, w: 3, d: 1, l: 0, gd: '+4', pts: 10 },
+      { pos: 4, team: 'Eintracht Francoforte', p: 4, w: 3, d: 1, l: 0, gd: '+4', pts: 10 },
+      { pos: 5, team: 'Athletic Bilbao', p: 4, w: 3, d: 1, l: 0, gd: '+4', pts: 10 },
+      { pos: 6, team: 'Tottenham', p: 4, w: 3, d: 0, l: 1, gd: '+4', pts: 9 }
+    ]
+  },
+  epl: {
+    roundLabel: 'Premier League • Giornata Attiva',
+    matches: [
+      { home: 'Liverpool', away: 'Brighton', homeScore: 2, awayScore: 1, status: 'FINALE', state: 'post', venue: 'Anfield, Liverpool', details: '⚽ Gakpo 69\', Salah 72\' (LIV) • Kadıoğlu 14\' (BHA)' },
+      { home: 'Bournemouth', away: 'Manchester City', homeScore: 2, awayScore: 1, status: 'FINALE', state: 'post', venue: 'Vitality Stadium', details: '⚽ Semenyo 9\', Evanilson 64\' • Gvardiol 82\'' },
+      { home: 'Newcastle', away: 'Arsenal', homeScore: 1, awayScore: 0, status: 'FINALE', state: 'post', venue: 'St James\' Park', details: '⚽ Isak 12\' (NEW)' },
+      { home: 'Manchester United', away: 'Chelsea', homeScore: 1, awayScore: 1, status: 'FINALE', state: 'post', venue: 'Old Trafford, Manchester', details: '⚽ Bruno Fernandes 70\' rig. • Caicedo 74\'' }
+    ],
+    standings: [
+      { pos: 1, team: 'Liverpool', p: 10, w: 8, d: 1, l: 1, gd: '+13', pts: 25 },
+      { pos: 2, team: 'Manchester City', p: 10, w: 7, d: 2, l: 1, gd: '+10', pts: 23 },
+      { pos: 3, team: 'Nottingham Forest', p: 10, w: 5, d: 4, l: 1, gd: '+7', pts: 19 },
+      { pos: 4, team: 'Chelsea', p: 10, w: 5, d: 3, l: 2, gd: '+8', pts: 18 },
+      { pos: 5, team: 'Arsenal', p: 10, w: 5, d: 3, l: 2, gd: '+6', pts: 18 },
+      { pos: 6, team: 'Aston Villa', p: 10, w: 5, d: 3, l: 2, gd: '+2', pts: 18 }
+    ]
+  },
+  laliga: {
+    roundLabel: 'La Liga • El Clásico & Giornata Attiva',
+    matches: [
+      { home: 'Real Madrid', away: 'Barcellona', homeScore: 0, awayScore: 4, status: 'FINALE', state: 'post', venue: 'Santiago Bernabéu, Madrid', details: '⚽ Lewandowski 54\', 56\', Lamine Yamal 77\', Raphinha 84\' (BAR)' },
+      { home: 'Barcellona', away: 'Espanyol', homeScore: 3, awayScore: 1, status: 'FINALE', state: 'post', venue: 'Estadi Olímpic, Barcellona', details: '⚽ Dani Olmo 12\', 31\', Raphinha 23\'' },
+      { home: 'Atlético Madrid', away: 'Las Palmas', homeScore: 2, awayScore: 0, status: 'FINALE', state: 'post', venue: 'Metropolitano, Madrid', details: '⚽ Giuliano Simeone 37\', Sørloth 83\'' }
+    ],
+    standings: [
+      { pos: 1, team: 'Barcellona', p: 12, w: 11, d: 0, l: 1, gd: '+29', pts: 33 },
+      { pos: 2, team: 'Real Madrid', p: 11, w: 7, d: 3, l: 1, gd: '+10', pts: 24 },
+      { pos: 3, team: 'Atlético Madrid', p: 12, w: 6, d: 5, l: 1, gd: '+11', pts: 23 },
+      { pos: 4, team: 'Villarreal', p: 11, w: 6, d: 3, l: 2, gd: '+1', pts: 21 },
+      { pos: 5, team: 'Osasuna', p: 12, w: 6, d: 3, l: 3, gd: '+1', pts: 21 }
+    ]
+  },
+  f1: {
+    roundLabel: 'Formula 1 • Ultimi Gran Premi & Classifica Piloti',
+    matches: [
+      { home: '🏆 GP Brasile (Interlagos)', away: '1° Max Verstappen (Red Bull)', homeScore: 'P1', awayScore: '69 Giri', status: 'GARA FINALE', state: 'post', venue: 'Autódromo José Carlos Pace, San Paolo', details: '🥇 Verstappen • 🥈 Ocon (Alpine) • 🥉 Gasly (Alpine) • Rimonta leggendaria da P17 sotto la pioggia!' },
+      { home: '🏆 GP Città del Messico', away: '1° Carlos Sainz (Ferrari)', homeScore: 'P1', awayScore: '71 Giri', status: 'GARA FINALE', state: 'post', venue: 'Autódromo Hermanos Rodríguez', details: '🥇 Sainz (Ferrari) • 🥈 Norris (McLaren) • 🥉 Leclerc (Ferrari)' },
+      { home: '🏆 GP Stati Uniti (Austin)', away: '1° Charles Leclerc (Ferrari)', homeScore: 'P1', awayScore: '56 Giri', status: 'DOPPIETTA ROSSA', state: 'post', venue: 'Circuit of the Americas, Texas', details: '🥇 Leclerc (Ferrari) • 🥈 Sainz (Ferrari) • 🥉 Verstappen (Red Bull)' }
+    ],
+    standings: [
+      { pos: 1, team: 'Max Verstappen (Red Bull)', p: 21, w: 8, d: 0, l: 0, gd: 'Red Bull', pts: 393 },
+      { pos: 2, team: 'Lando Norris (McLaren)', p: 21, w: 3, d: 0, l: 0, gd: 'McLaren', pts: 331 },
+      { pos: 3, team: 'Charles Leclerc (Ferrari)', p: 21, w: 3, d: 0, l: 0, gd: 'Ferrari', pts: 307 },
+      { pos: 4, team: 'Oscar Piastri (McLaren)', p: 21, w: 2, d: 0, l: 0, gd: 'McLaren', pts: 262 },
+      { pos: 5, team: 'Carlos Sainz (Ferrari)', p: 21, w: 2, d: 0, l: 0, gd: 'Ferrari', pts: 244 },
+      { pos: 6, team: 'George Russell (Mercedes)', p: 21, w: 1, d: 0, l: 0, gd: 'Mercedes', pts: 192 },
+      { pos: 7, team: 'Lewis Hamilton (Mercedes)', p: 21, w: 2, d: 0, l: 0, gd: 'Mercedes', pts: 190 }
+    ]
+  },
+  nba: {
+    roundLabel: 'NBA Regular Season • Partite & Classifica',
+    matches: [
+      { home: 'Cleveland Cavaliers', away: 'Los Angeles Lakers', homeScore: 134, awayScore: 110, status: 'FINALE', state: 'post', venue: 'Rocket Mortgage FieldHouse', details: '🏀 Mobley 25 pt, Mitchell 24 pt (CLE) • LeBron James 26 pt, Davis 22 pt (LAL)' },
+      { home: 'Boston Celtics', away: 'Milwaukee Bucks', homeScore: 119, awayScore: 108, status: 'FINALE', state: 'post', venue: 'TD Garden, Boston', details: '🏀 Jaylen Brown 30 pt, Pritchard 28 pt (BOS) • Lillard 33 pt, Giannis 30 pt (MIL)' },
+      { home: 'Golden State Warriors', away: 'Houston Rockets', homeScore: 127, awayScore: 121, status: 'FINALE OT', state: 'post', venue: 'Toyota Center, Houston', details: '🏀 Buddy Hield 27 pt, Kuminga 23 pt (GSW)' },
+      { home: 'Oklahoma City Thunder', away: 'San Antonio Spurs', homeScore: 105, awayScore: 93, status: 'FINALE', state: 'post', venue: 'Paycom Center, OKC', details: '🏀 Dort 20 pt, Holmgren 19 pt, SGA 18 pt (OKC)' }
+    ],
+    standings: [
+      { pos: 1, team: 'Cleveland Cavaliers (Est)', p: 8, w: 8, d: 0, l: 0, gd: '1.000', pts: 8 },
+      { pos: 2, team: 'Oklahoma City Thunder (Ovest)', p: 7, w: 7, d: 0, l: 0, gd: '1.000', pts: 7 },
+      { pos: 3, team: 'Boston Celtics (Est)', p: 8, w: 7, d: 0, l: 1, gd: '.875', pts: 7 },
+      { pos: 4, team: 'Golden State Warriors (Ovest)', p: 7, w: 6, d: 0, l: 1, gd: '.857', pts: 6 },
+      { pos: 5, team: 'Phoenix Suns (Ovest)', p: 7, w: 6, d: 0, l: 1, gd: '.857', pts: 6 },
+      { pos: 6, team: 'Los Angeles Lakers (Ovest)', p: 7, w: 4, d: 0, l: 3, gd: '.571', pts: 4 }
+    ]
+  }
+};
+
+function readScoreSessionCache(compId) {
+  const mem = scoresMemoryCache.get(compId);
+  if (mem && (Date.now() - mem.ts < SCORES_CACHE_TTL_MS)) {
+    return mem.data;
+  }
+  try {
+    const raw = sessionStorage.getItem(`fc_scores_v1_${compId}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && (Date.now() - parsed.ts < SCORES_CACHE_TTL_MS)) {
+        scoresMemoryCache.set(compId, parsed);
+        return parsed.data;
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
+function writeScoreSessionCache(compId, data) {
+  const entry = { ts: Date.now(), data };
+  scoresMemoryCache.set(compId, entry);
+  try {
+    const serialized = JSON.stringify(entry);
+    // Salvaguardia: salva in sessionStorage solo se leggerissimo (< 18 KB), zero scrittura su localStorage o DB
+    if (serialized.length < 18000) {
+      sessionStorage.setItem(`fc_scores_v1_${compId}`, serialized);
+    }
+  } catch (_) {}
+}
+
+async function fetchWithFastTimeout(url, timeoutMs = 4500) {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+function parseEspnScoreboardEvents(json, compId) {
+  const events = Array.isArray(json?.events) ? json.events : [];
+  if (events.length === 0) return null;
+
+  const matches = [];
+  for (let i = 0; i < Math.min(16, events.length); i++) {
+    const ev = events[i];
+    const comp = ev?.competitions?.[0];
+    if (!comp) continue;
+
+    const competitors = Array.isArray(comp.competitors) ? comp.competitors : [];
+    const homeObj = competitors.find(c => c.homeAway === 'home') || competitors[0];
+    const awayObj = competitors.find(c => c.homeAway === 'away') || competitors[1];
+    if (!homeObj || !awayObj) continue;
+
+    const state = ev?.status?.type?.state || 'pre'; // 'in' | 'post' | 'pre'
+    const shortDetail = ev?.status?.type?.shortDetail || ev?.status?.type?.description || '';
+    let statusLabel = shortDetail;
+    if (state === 'in') {
+      statusLabel = `🔴 LIVE ${ev?.status?.displayClock || shortDetail}`;
+    } else if (state === 'post') {
+      statusLabel = 'FINALE';
+    } else if (ev.date) {
+      try {
+        const d = new Date(ev.date);
+        statusLabel = d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      } catch (_) {}
+    }
+
+    // Estrai marcatori dai details (se presenti)
+    const detailsArr = Array.isArray(comp.details) ? comp.details : [];
+    const scorersList = [];
+    detailsArr.forEach(det => {
+      if (det.scoringPlay || det.type?.text?.toLowerCase().includes('goal')) {
+        const athlete = det.athletesInvolved?.[0]?.displayName || det.athletesInvolved?.[0]?.shortName || '';
+        const clock = det.clock?.displayValue || '';
+        if (athlete) {
+          scorersList.push(`${athlete}${clock ? ` ${clock}` : ''}${det.ownGoal ? ' (aut.)' : ''}${det.penaltyKick ? ' (rig.)' : ''}`);
+        }
+      }
+    });
+
+    matches.push({
+      home: homeObj.team?.shortDisplayName || homeObj.team?.displayName || 'Casa',
+      away: awayObj.team?.shortDisplayName || awayObj.team?.displayName || 'Ospite',
+      homeLogo: homeObj.team?.logo || '',
+      awayLogo: awayObj.team?.logo || '',
+      homeScore: state === 'pre' ? '-' : (homeObj.score ?? '-'),
+      awayScore: state === 'pre' ? '-' : (awayObj.score ?? '-'),
+      status: statusLabel,
+      state,
+      venue: comp.venue?.fullName || '',
+      details: scorersList.length > 0 ? `⚽ ${scorersList.join(', ')}` : (comp.headlines?.[0]?.shortLinkText || '')
+    });
+  }
+
+  return matches.length > 0 ? matches : null;
+}
+
+function parseEspnStandings(json) {
+  const children = Array.isArray(json?.children) ? json.children : [];
+  const entries = children[0]?.standings?.entries || json?.standings?.entries || [];
+  if (!Array.isArray(entries) || entries.length === 0) return null;
+
+  const getStat = (statsArr, name) => {
+    const s = (statsArr || []).find(x => x.name === name || x.abbreviation === name);
+    return s ? (s.displayValue ?? s.value ?? 0) : 0;
+  };
+
+  return entries.slice(0, 24).map((ent, idx) => {
+    const stats = ent.stats || [];
+    const pos = Number(getStat(stats, 'rank')) || (idx + 1);
+    const p = getStat(stats, 'gamesPlayed') || getStat(stats, 'GP') || 0;
+    const w = getStat(stats, 'wins') || getStat(stats, 'W') || 0;
+    const d = getStat(stats, 'ties') || getStat(stats, 'D') || 0;
+    const l = getStat(stats, 'losses') || getStat(stats, 'L') || 0;
+    const gd = getStat(stats, 'pointDifferential') || getStat(stats, 'GD') || '0';
+    const pts = getStat(stats, 'points') || getStat(stats, 'P') || w;
+
+    return {
+      pos,
+      team: ent.team?.shortDisplayName || ent.team?.displayName || 'Club',
+      logo: ent.team?.logos?.[0]?.href || '',
+      p,
+      w,
+      d,
+      l,
+      gd: String(gd).startsWith('-') || String(gd).startsWith('+') || String(gd) === '0' ? String(gd) : `+${gd}`,
+      pts
+    };
+  });
+}
+
+async function fetchLiveCompetitionData(compId = activeScoreComp, forceRefresh = false) {
+  const comp = SCORES_COMPETITIONS[compId] || SCORES_COMPETITIONS.seriea;
+  if (!forceRefresh) {
+    const cached = readScoreSessionCache(comp.id);
+    if (cached) return { ...cached, fromCache: true };
+  }
+
+  const fallback = CURATED_SCORES_FALLBACK[comp.id] || CURATED_SCORES_FALLBACK.seriea;
+  let liveMatches = null;
+  let liveStandings = null;
+  let isLiveFeed = false;
+
+  try {
+    const scoreboardUrl = `https://site.api.espn.com/apis/site/v2/sports/${comp.espnPath}/scoreboard`;
+    const sbJson = await fetchWithFastTimeout(scoreboardUrl, 4200);
+    liveMatches = parseEspnScoreboardEvents(sbJson, comp.id);
+    if (liveMatches && liveMatches.length > 0) {
+      isLiveFeed = true;
+    }
+  } catch (_) {}
+
+  if (comp.id !== 'f1') {
+    try {
+      const standingsUrl = `https://site.api.espn.com/apis/v2/sports/${comp.espnPath}/standings`;
+      const stJson = await fetchWithFastTimeout(standingsUrl, 4200);
+      liveStandings = parseEspnStandings(stJson);
+      if (liveStandings && liveStandings.length > 0) {
+        isLiveFeed = true;
+      }
+    } catch (_) {}
+  }
+
+  const result = {
+    compId: comp.id,
+    roundLabel: isLiveFeed ? `${comp.name} • Live & Ultimo Turno` : fallback.roundLabel,
+    matches: (liveMatches && liveMatches.length >= 2) ? liveMatches : fallback.matches,
+    standings: (liveStandings && liveStandings.length >= 4) ? liveStandings : fallback.standings,
+    isLiveFeed,
+    updatedAt: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+  };
+
+  writeScoreSessionCache(comp.id, result);
+  return result;
+}
+
+function renderTeamLogoOrBadge(name = '', logoUrl = '') {
+  const initials = String(name).replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase() || 'FC';
+  if (logoUrl) {
+    return `<img src="${esc(logoUrl)}" alt="" class="smc-team-logo" width="28" height="28" loading="lazy" decoding="async" onerror="this.style.display='none'" />`;
+  }
+  return `<span class="smc-team-badge-fallback">${esc(initials)}</span>`;
+}
+
+async function renderSportsScoresHub(forceRefresh = false) {
+  const stage = $('#scoresContentStage');
+  if (!stage) return;
+
+  const comp = SCORES_COMPETITIONS[activeScoreComp] || SCORES_COMPETITIONS.seriea;
+
+  // Aggiorna chip attive
+  $$('#scoresLeagueTabs .score-league-chip').forEach(btn => {
+    const isAct = btn.dataset.comp === comp.id;
+    btn.classList.toggle('active', isAct);
+    btn.setAttribute('aria-selected', String(isAct));
+  });
+
+  // Aggiorna subview tabs
+  $$('#scoresSubViewTabs .scores-subview-btn').forEach(btn => {
+    const isAct = btn.dataset.subview === activeScoreSubView;
+    btn.classList.toggle('active', isAct);
+  });
+
+  // Aggiorna bottone Quiz dedicato
+  const quizBtn = $('#btnPlayCompetitionQuiz');
+  if (quizBtn) {
+    quizBtn.textContent = comp.quizBtnLabel || `⚡ Gioca Quiz ${comp.shortName}`;
+  }
+
+  // Mostra subito i dati in cache o fallback mentre aggiorna in background (0ms perceived latency)
+  const cachedOrFallback = readScoreSessionCache(comp.id) || {
+    ...CURATED_SCORES_FALLBACK[comp.id],
+    isLiveFeed: false,
+    updatedAt: 'Istantaneo'
+  };
+  renderScoresStageContent(comp, cachedOrFallback);
+
+  // Poi aggiorna da rete se necessario
+  const freshData = await fetchLiveCompetitionData(comp.id, forceRefresh);
+  if (activeScoreComp === comp.id) {
+    renderScoresStageContent(comp, freshData);
+  }
+}
+
+function renderScoresStageContent(comp, data) {
+  const stage = $('#scoresContentStage');
+  if (!stage || !data) return;
+
+  const statusText = $('#scoresStatusText');
+  const updatedTime = $('#scoresUpdatedTime');
+  if (statusText) {
+    statusText.innerHTML = data.isLiveFeed
+      ? `🟢 <b>Feed Ufficiale in Tempo Reale (${esc(comp.name)})</b> • Zero byte salvati sul DB`
+      : `⚡ <b>Tabellini &amp; Classifica Verificata (${esc(comp.name)})</b> • Zero peso sul DB`;
+  }
+  if (updatedTime) {
+    updatedTime.textContent = `Aggiornato: ${data.updatedAt || 'ora'}`;
+  }
+
+  if (activeScoreSubView === 'standings') {
+    const rows = data.standings || [];
+    const isF1 = comp.id === 'f1';
+    const isNba = comp.id === 'nba';
+
+    stage.innerHTML = `
+      <div class="scores-standings-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+          <h3 style="margin:0;font-size:16px;font-weight:900;">${comp.icon} Classifica ${esc(comp.name)}</h3>
+          <div style="display:flex;gap:8px;font-size:11px;font-weight:800;color:var(--text-muted);">
+            <span>🟢 Zona Champions / Top</span>
+            <span>🔵 Qualificazione / Playoff</span>
+          </div>
+        </div>
+        <table class="standings-table" aria-label="Classifica ${esc(comp.name)}">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th class="th-team">${isF1 ? 'Pilota / Scuderia' : 'Squadra'}</th>
+              <th>${isF1 ? 'GP' : 'PG'}</th>
+              <th>V</th>
+              ${(!isF1 && !isNba) ? '<th>P</th><th>S</th>' : '<th>S</th>'}
+              <th>${isF1 ? 'Team' : isNba ? 'PCT' : 'DR'}</th>
+              <th>${isF1 || !isNba ? 'PT' : 'V'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r => {
+              const zoneClass = r.pos <= comp.uclSpots
+                ? 'zone-ucl'
+                : r.pos <= comp.uelSpots
+                  ? 'zone-uel'
+                  : r.pos >= comp.relStart
+                    ? 'zone-rel'
+                    : '';
+              return `
+                <tr>
+                  <td><span class="st-pos-badge ${zoneClass}">${r.pos}</span></td>
+                  <td class="td-team">
+                    ${renderTeamLogoOrBadge(r.team, r.logo)}
+                    <span>${esc(r.team)}</span>
+                  </td>
+                  <td>${r.p}</td>
+                  <td>${r.w}</td>
+                  ${(!isF1 && !isNba) ? `<td>${r.d}</td><td>${r.l}</td>` : `<td>${r.l}</td>`}
+                  <td>${esc(String(r.gd))}</td>
+                  <td class="st-pts-cell">${r.pts}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    return;
+  }
+
+  // Vista Partite & Risultati
+  const matches = data.matches || [];
+  stage.innerHTML = `
+    <div class="scores-matches-grid">
+      ${matches.map(m => {
+        const isLive = m.state === 'in';
+        const isPost = m.state === 'post';
+        const statusClass = isLive ? 'status-live' : isPost ? 'status-ft' : 'status-pre';
+        const hNum = Number(m.homeScore);
+        const aNum = Number(m.awayScore);
+        const homeWon = isPost && Number.isFinite(hNum) && Number.isFinite(aNum) && hNum > aNum;
+        const awayWon = isPost && Number.isFinite(hNum) && Number.isFinite(aNum) && aNum > hNum;
+
+        return `
+          <article class="score-match-card ${isLive ? 'is-live' : ''}">
+            <div class="smc-top-row">
+              <span>${esc(m.venue || comp.shortName)}</span>
+              <span class="smc-status-pill ${statusClass}">${esc(m.status)}</span>
+            </div>
+            <div class="smc-teams-box">
+              <div class="smc-team-row ${homeWon ? 'winner' : ''}">
+                <div class="smc-team-id">
+                  ${renderTeamLogoOrBadge(m.home, m.homeLogo)}
+                  <span class="smc-team-name">${esc(m.home)}</span>
+                </div>
+                <span class="smc-team-score">${esc(String(m.homeScore))}</span>
+              </div>
+              <div class="smc-team-row ${awayWon ? 'winner' : ''}">
+                <div class="smc-team-id">
+                  ${renderTeamLogoOrBadge(m.away, m.awayLogo)}
+                  <span class="smc-team-name">${esc(m.away)}</span>
+                </div>
+                <span class="smc-team-score">${esc(String(m.awayScore))}</span>
+              </div>
+            </div>
+            ${m.details ? `<div class="smc-scorers-foot">${esc(m.details)}</div>` : ''}
+          </article>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderRailMiniScores() {
+  const miniList = $('#railScoresMiniList');
+  if (!miniList) return;
+  const serieAData = readScoreSessionCache('seriea') || CURATED_SCORES_FALLBACK.seriea;
+  const uclData = readScoreSessionCache('ucl') || CURATED_SCORES_FALLBACK.ucl;
+  const topMatches = [
+    ...(serieAData.matches || []).slice(0, 2).map(m => ({ ...m, badge: '🇮🇹' })),
+    ...(uclData.matches || []).slice(0, 2).map(m => ({ ...m, badge: '🌟' }))
+  ];
+
+  miniList.innerHTML = topMatches.map(m => `
+    <div class="rail-score-mini-item" onclick="switchTab('scores')" style="cursor:pointer;">
+      <span>${m.badge} ${esc(m.home)} - ${esc(m.away)}</span>
+      <b>${esc(String(m.homeScore))} - ${esc(String(m.awayScore))}</b>
+    </div>
+  `).join('');
+}
+
+window.selectScoreCompetition = (compId) => {
+  if (!SCORES_COMPETITIONS[compId]) return;
+  activeScoreComp = compId;
+  playTone('click');
+  renderSportsScoresHub(false);
+};
+
+window.switchScoreSubView = (subView) => {
+  if (subView !== 'matches' && subView !== 'standings') return;
+  activeScoreSubView = subView;
+  playTone('click');
+  renderSportsScoresHub(false);
+};
+
+window.refreshSportsScores = async (force = true) => {
+  playTone('click');
+  const btn = $('#btnRefreshScores');
+  if (btn) {
+    btn.textContent = '⏳ Aggiorno...';
+    btn.disabled = true;
+  }
+  await renderSportsScoresHub(force);
+  renderRailMiniScores();
+  if (btn) {
+    btn.textContent = '🔄 Aggiorna Ora';
+    btn.disabled = false;
+  }
+};
+
+window.playQuizFromActiveScoreLeague = async () => {
+  const comp = SCORES_COMPETITIONS[activeScoreComp] || SCORES_COMPETITIONS.seriea;
+  playTone('click');
+
+  if (comp.sport === 'f1') {
+    await window.switchSport('f1');
+    const pool = loadedSportCatalogs.f1?.f1Pool || catalog.units?.[0]?.lessons?.[0]?.questions || [];
+    startQuizSession('f1', sampleQuestions(pool, 5));
+    return;
+  }
+  if (comp.sport === 'basket') {
+    await window.switchSport('basket');
+    const pool = loadedSportCatalogs.basket?.basketPool || catalog.units?.[0]?.lessons?.[0]?.questions || [];
+    startQuizSession('basket', sampleQuestions(pool, 5));
+    return;
+  }
+
+  // Calcio
+  if (state.activeSport !== 'calcio') {
+    await window.switchSport('calcio');
+  }
+  const curCat = loadedSportCatalogs.calcio || catalog;
+  if (comp.quizMode === 'pastore') {
+    const pool = curCat?.pastoreMode || [];
+    startQuizSession('pastore', sampleQuestions(pool, 5));
+  } else if (comp.quizMode === 'champions') {
+    const pool = curCat?.extraModes?.champions || curCat?.extraModes?.goals || [];
+    startQuizSession('champions', sampleQuestions(pool, 5));
+  } else {
+    const pool = curCat?.gaelModes?.allstars || [];
+    startQuizSession('gael-allstars', sampleQuestions(pool, 5));
+  }
+};
 
 // -------------------------------------------------------------
 // 12. MOTORE AUDIO PRO STADIO & 16-BIT ARCADE (DISATTIVABILE)

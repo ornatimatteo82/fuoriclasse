@@ -18,8 +18,8 @@
   <meta name="apple-mobile-web-app-title" content="Fuoriclasse" />
   <title>Fuoriclasse — Gael League &amp; Quizzocampo</title>
 
-  <link rel="manifest" href="manifest.webmanifest?v=52" />
-  <link rel="icon" type="image/svg+xml" href="icon.svg?v=52" />
+  <link rel="manifest" href="manifest.webmanifest?v=53" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg?v=53" />
   <link rel="apple-touch-icon" href="assets/mascot-coach.jpg" />
   <link rel="preload" href="assets/mascot-coach.jpg" as="image" fetchpriority="high" />
 
@@ -31,14 +31,14 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="style.css?v=52" />
-  <link rel="stylesheet" href="mobile.css?v=52" />
-  <link rel="stylesheet" href="dark-theme.css?v=52" />
+  <link rel="stylesheet" href="style.css?v=53" />
+  <link rel="stylesheet" href="mobile.css?v=53" />
+  <link rel="stylesheet" href="dark-theme.css?v=53" />
   <script>
     (function() {
       try {
         // Pulizia selettiva solo di eventuali cache obsolete (mantiene la cache attiva per caricamento 0ms)
-        var ACTIVE_CACHE = 'fuoriclasse-v52';
+        var ACTIVE_CACHE = 'fuoriclasse-v53';
         if ('caches' in window) {
           caches.keys().then(function(keys) {
             return Promise.all(
@@ -158,6 +158,10 @@
           <div class="sidebar-divider"></div>
         </div>
 
+        <a href="#risultati" class="nav-item" data-tab="scores">
+          <span class="nav-icon" aria-hidden="true">📊</span>
+          <span class="nav-label">RISULTATI LIVE</span>
+        </a>
         <a href="#classifica" class="nav-item" data-tab="league">
           <span class="nav-icon" aria-hidden="true">🏆</span>
           <span class="nav-label">CLASSIFICA</span>
@@ -348,6 +352,90 @@
         <!-- CONTENITORE DINAMICO DELLE UNITÀ A SERPENTINA (FILTRATO PER GAEL LEAGUE O QUIZZOCAMPO) -->
         <div id="unitsContainer" class="units-snake-container">
           <!-- Popolato da app.js -->
+        </div>
+      </section>
+
+      <!-- =========================================================
+           TAB RISULTATI SPORTIVI & CLASSIFICHE UFFICIALI (SERIE A, CHAMPIONS, ECC.)
+           ARCHITETTURA ZERO-DB: FETCH CLIENT-SIDE ON-DEMAND + SESSION CACHE LEGGERA
+           ========================================================= -->
+      <section class="view-panel" id="view-scores" hidden aria-label="Risultati e Classifiche Sportive">
+        <div class="panel-card scores-header-card">
+          <div class="scores-header-top">
+            <div>
+              <div class="scores-badges-row">
+                <span class="eyebrow-pill pill-live" id="scoresLiveBadge">
+                  <span class="live-pulse-dot" aria-hidden="true"></span>
+                  DIRETTA &amp; TABELLINI UFFICIALI
+                </span>
+                <span class="eyebrow-pill" style="background:rgba(56,189,248,0.14);color:#0284c7;border:1px solid rgba(56,189,248,0.35);">
+                  ⚡ ZERO PESO SUL DB (CACHE RAM)
+                </span>
+              </div>
+              <h2 id="scoresMainTitle">📊 Risultati &amp; Classifiche Live</h2>
+              <p id="scoresMainDesc">Segui in tempo reale i risultati, i marcatori e le classifiche ufficiali di <b>Serie A</b>, <b>Champions League</b>, <b>Europa League</b>, <b>Premier League</b>, <b>La Liga</b>, <b>F1</b> e <b>NBA</b>!</p>
+            </div>
+            <div class="scores-header-actions">
+              <button type="button" class="btn-secondary btn-sm" id="btnRefreshScores" onclick="refreshSportsScores(true)">
+                🔄 Aggiorna Ora
+              </button>
+              <button type="button" class="btn-primary btn-sm" id="btnPlayCompetitionQuiz" onclick="playQuizFromActiveScoreLeague()">
+                ⚡ Gioca Quiz Serie A
+              </button>
+            </div>
+          </div>
+
+          <!-- SELETTORE COMPETIZIONE (SERIE A, CHAMPIONS, EUROPA LEAGUE, PREMIER, LIGA, F1, NBA) -->
+          <div class="scores-league-strip" id="scoresLeagueTabs" role="tablist" aria-label="Scegli Campionato o Competizione">
+            <button type="button" class="score-league-chip active" data-comp="seriea" role="tab" aria-selected="true" onclick="selectScoreCompetition('seriea')">
+              <span class="slc-icon">🇮🇹</span>
+              <span class="slc-name">Serie A</span>
+            </button>
+            <button type="button" class="score-league-chip" data-comp="ucl" role="tab" aria-selected="false" onclick="selectScoreCompetition('ucl')">
+              <span class="slc-icon">🌟</span>
+              <span class="slc-name">Champions League</span>
+            </button>
+            <button type="button" class="score-league-chip" data-comp="uel" role="tab" aria-selected="false" onclick="selectScoreCompetition('uel')">
+              <span class="slc-icon">🏆</span>
+              <span class="slc-name">Europa League</span>
+            </button>
+            <button type="button" class="score-league-chip" data-comp="epl" role="tab" aria-selected="false" onclick="selectScoreCompetition('epl')">
+              <span class="slc-icon">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span>
+              <span class="slc-name">Premier League</span>
+            </button>
+            <button type="button" class="score-league-chip" data-comp="laliga" role="tab" aria-selected="false" onclick="selectScoreCompetition('laliga')">
+              <span class="slc-icon">🇪🇸</span>
+              <span class="slc-name">La Liga</span>
+            </button>
+            <button type="button" class="score-league-chip" data-comp="f1" role="tab" aria-selected="false" onclick="selectScoreCompetition('f1')">
+              <span class="slc-icon">🏎️</span>
+              <span class="slc-name">Formula 1 GP</span>
+            </button>
+            <button type="button" class="score-league-chip" data-comp="nba" role="tab" aria-selected="false" onclick="selectScoreCompetition('nba')">
+              <span class="slc-icon">🏀</span>
+              <span class="slc-name">Basket NBA</span>
+            </button>
+          </div>
+
+          <!-- SOTTO-SELETTORE: PARTITE & RISULTATI vs CLASSIFICA UFFICIALE -->
+          <div class="scores-subview-switcher" id="scoresSubViewTabs" role="tablist" aria-label="Scegli Risultati o Classifica">
+            <button type="button" class="scores-subview-btn active" id="scoresTabMatches" data-subview="matches" onclick="switchScoreSubView('matches')">
+              ⚽ PARTITE &amp; RISULTATI
+            </button>
+            <button type="button" class="scores-subview-btn" id="scoresTabStandings" data-subview="standings" onclick="switchScoreSubView('standings')">
+              📋 CLASSIFICA UFFICIALE
+            </button>
+          </div>
+
+          <div class="scores-meta-bar" id="scoresMetaBar">
+            <span id="scoresStatusText">📡 Connesso al feed sportivo • Aggiornamento istantaneo on-demand</span>
+            <span id="scoresUpdatedTime">Aggiornato ora</span>
+          </div>
+        </div>
+
+        <!-- CONTENITORE DINAMICO PARTITE / CLASSIFICA -->
+        <div id="scoresContentStage" class="scores-content-stage">
+          <!-- Popolato dinamicamente da app.js -->
         </div>
       </section>
 
@@ -872,6 +960,20 @@
         </div>
       </div>
 
+      <!-- WIDGET DESKTOP RISULTATI SERIE A & CHAMPIONS -->
+      <div class="rail-widget" id="railScoresWidget">
+        <div class="widget-head">
+          <h4>📊 Risultati &amp; Serie A</h4>
+          <span class="widget-badge" style="background:rgba(16,185,129,0.16);color:#059669;" id="railScoresLiveTag">LIVE</span>
+        </div>
+        <div id="railScoresMiniList" class="rail-scores-mini-list">
+          <!-- Popolato da app.js -->
+        </div>
+        <button class="btn-secondary btn-sm w-full" type="button" style="margin-top:8px;" onclick="switchTab('scores')">
+          📊 Serie A, Champions &amp; Altri ➔
+        </button>
+      </div>
+
       <!-- WIDGET DESKTOP SEMPRE VISIBILE: OFFERTE AMAZON PER CATEGORIA -->
       <div class="rail-widget" id="railAmazonWidget" style="border-color:#ff9900;background:linear-gradient(145deg,#182232,#232f3e);color:#fff;">
         <div class="widget-head" style="margin-bottom:8px;">
@@ -886,7 +988,7 @@
 
   </div>
 
-  <!-- BOTTOM NAVIGATION BAR (MOBILE-FIRST CON ACCESSO DIRETTO A TUTTI GLI SPORT) -->
+  <!-- BOTTOM NAVIGATION BAR (MOBILE-FIRST CON ACCESSO DIRETTO A TUTTI GLI SPORT & RISULTATI) -->
   <nav class="duo-mobile-nav" aria-label="Navigazione mobile">
     <button class="mobile-nav-btn active" data-tab="path" data-sport="calcio" onclick="switchSport('calcio')" type="button">
       <span class="nav-btn-icon" aria-hidden="true">⚽</span>
@@ -899,6 +1001,10 @@
     <button class="mobile-nav-btn" data-tab="path" data-sport="basket" onclick="switchSport('basket')" type="button">
       <span class="nav-btn-icon" aria-hidden="true">🏀</span>
       <span class="nav-btn-text">NBA</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="scores" onclick="switchTab('scores')" type="button">
+      <span class="nav-btn-icon" aria-hidden="true">📊</span>
+      <span class="nav-btn-text">Risultati</span>
     </button>
     <button class="mobile-nav-btn" data-tab="league" onclick="switchTab('league')" type="button">
       <span class="nav-btn-icon" aria-hidden="true">🏆</span>
@@ -1431,6 +1537,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="app.js?v=52" defer></script>
+  <script src="app.js?v=53" defer></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
-// Fuoriclasse Service Worker v52 — Instant Cache per Curriculum JSON & Assets, Auto-Refresh & Streak Notifications
-const SW_VERSION = 'fuoriclasse-v52';
+// Fuoriclasse Service Worker v53 — Instant Cache per Curriculum JSON & Assets, Auto-Refresh & Streak Notifications
+const SW_VERSION = 'fuoriclasse-v53';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
